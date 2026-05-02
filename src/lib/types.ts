@@ -1,0 +1,74 @@
+export type ComplianceStatus = "compliant" | "non_compliant" | "not_applicable" | "pending";
+
+export interface ChecklistItem {
+  id: string;
+  title: string;
+  status: ComplianceStatus;
+  notes: string;
+  estimatedCost: number; // ILS
+  photo?: string; // dataURL
+}
+
+export interface ChecklistTemplate {
+  id: string;
+  name: string;
+  description?: string;
+  items: Omit<ChecklistItem, "id" | "status" | "notes" | "estimatedCost" | "photo">[];
+  builtIn?: boolean;
+}
+
+export interface SurveyReport {
+  id: string;
+  createdAt: number;
+  updatedAt: number;
+  // Cover
+  placeName: string;
+  clientName: string;
+  address: string;
+  surveyDate: string; // YYYY-MM-DD
+  coverPhoto?: string; // dataURL
+  // Body
+  items: ChecklistItem[];
+  // Optional notes
+  generalNotes?: string;
+}
+
+export interface ConsultantSettings {
+  companyName: string;
+  consultantName: string;
+  license: string;
+  phone: string;
+  email: string;
+  address: string;
+  logo?: string; // dataURL
+}
+
+export const DEFAULT_SETTINGS: ConsultantSettings = {
+  companyName: 'יועצי נגישות מתו"ס',
+  consultantName: "",
+  license: "",
+  phone: "",
+  email: "",
+  address: "",
+};
+
+export const DEFAULT_CHECKLIST: Omit<ChecklistItem, "id" | "status" | "notes" | "estimatedCost" | "photo">[] = [
+  { title: "שילוט הכוונה לכניסה הנגישה" },
+  { title: "כניסה נגישה ראשית" },
+  { title: "כניסת חיית שירות" },
+  { title: "דלפק קבלה / שירות בגובה נגיש" },
+  { title: "דרכי תנועה פנימיות (רוחב מינימלי)" },
+  { title: "מעלית נגישה" },
+  { title: "שירותי נכים תקניים" },
+  { title: "מקומות חניה לנכים" },
+  { title: "לחצן מצוקה בשירותים ובמעליות" },
+  { title: "מלתחה נגישה" },
+  { title: "מקלט / מרחב מוגן נגיש" },
+  { title: "לולאת השראה לכבדי שמיעה" },
+  { title: "שילוט מידע ושילוט בטיחות" },
+  { title: "תקני ישיבה / מקומות מותאמים בקהל" },
+  { title: "תאורה והדגשת מכשולים" },
+  { title: "אזהרות לעיוורים (פסי אזהרה / אריחי הכוונה)" },
+  { title: "מדרגות ומאחזי יד" },
+  { title: "רמפות וכבשים" },
+];
