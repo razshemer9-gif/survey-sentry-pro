@@ -265,15 +265,15 @@ export default function ReportEditor() {
         </div>
       </div>
 
-      {/* Preview dialog */}
+      {/* Preview dialog (uses a non-ref scaled clone) */}
       <Dialog open={previewOpen} onOpenChange={setPreviewOpen}>
-        <DialogContent className="max-h-[92vh] max-w-[95vw] overflow-auto p-2 sm:max-w-2xl">
+        <DialogContent className="max-h-[92vh] max-w-[95vw] overflow-auto p-2 sm:max-w-2xl" dir="rtl">
           <DialogHeader className="px-2">
             <DialogTitle>תצוגה מקדימה</DialogTitle>
           </DialogHeader>
           <div className="overflow-auto rounded-lg bg-muted p-2">
             <div className="origin-top-right scale-[0.42] sm:scale-[0.6]" style={{ transformOrigin: "top right" }}>
-              <PrintableReport ref={printRef} report={report} settings={settings} />
+              <PrintableReport report={report} settings={settings} />
             </div>
           </div>
           <DialogFooter className="px-2">
@@ -285,9 +285,9 @@ export default function ReportEditor() {
         </DialogContent>
       </Dialog>
 
-      {/* Hidden printable mount used when preview dialog is closed */}
+      {/* Hidden printable mount used for PDF rasterization */}
       <div className="pointer-events-none fixed -left-[10000px] top-0 opacity-0">
-        <PrintableReport ref={previewOpen ? undefined : printRef} report={report} settings={settings} />
+        <PrintableReport ref={printRef} report={report} settings={settings} />
       </div>
     </AppShell>
   );
