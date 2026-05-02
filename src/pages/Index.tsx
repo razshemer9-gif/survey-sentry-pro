@@ -1,16 +1,118 @@
-// Update this page (the content is just a fallback if you fail to update the page)
+import { useEffect, useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { Plus, FileText, Trash2, Calendar, MapPin } from "lucide-react";
+import { AppShell } from "@/components/AppShell";
+import { Button } from "@/components/ui/button";
+import { deleteReport, listReports, newReport, saveReport } from "@/lib/storage";
+import { SurveyReport } from "@/lib/types";
+import { formatHebrewDate } from "@/lib/image";
+import { toast } from "sonner";
 
-// IMPORTANT: Fully REPLACE this with your own code
-const PlaceholderIndex = () => {
-  // PLACEHOLDER: Replace this entire return statement with the user's app.
-  // The inline background color is intentionally not part of the design system.
+const Index = () => {
+  const navigate = useNavigate();
+  const [reports, setReports] = useState<SurveyReport[]>([]);
+
+  useEffect(() => {
+    setReports(listReports());
+  }, []);
+
+  function createNew() {
+    const r = saveReport(newReport());
+    navigate(`/report/${r.id}`);
+  }
+
+  function remove(id: string) {
+    if (!confirm("למחוק את הדוח?")) return;
+    deleteReport(id);
+    setReports(listReports());
+    toast.success("הדוח נמחק");
+  }
+
   return (
-    <div className="flex min-h-screen items-center justify-center" style={{ backgroundColor: '#fcfbf8' }}>
-      <img data-lovable-blank-page-placeholder="REMOVE_THIS" src="/placeholder.svg" alt="Your app will live here!" />
-    </div>
+    <AppShell>
+      <header className="hero-gradient text-primary-foreground rounded-b-[2rem] px-5 pb-8 pt-10 safe-top shadow-pop">
+        <div className="text-xs tracking-[0.3em] opacity-80">ANS · ACCESSIBILITY</div>
+        <h1 className="mt-2 text-3xl font-extrabold leading-tight">סקר נגישות מתו״ס</h1>
+        <p className="mt-1 text-sm opacity-90">צור, נהל והפק דוחות נגישות מקצועיים ישירות מהטלפון</p>
+
+        <Button
+          onClick={createNew}
+          size="lg"
+          variant="secondary"
+          className="mt-6 w-full gap-2 rounded-2xl bg-card text-foreground shadow-elev hover:bg-card/90"
+        >
+          <Plus className="h-5 w-5" />
+          סקר חדש
+        </Button>
+      </header>
+
+      <section className="px-5 pt-6">
+        <div className="mb-3 flex items-center justify-between">
+          <h2 className="text-lg font-bold">דוחות אחרונים</h2>
+          <span className="text-xs text-muted-foreground">{reports.length} סה״כ</span>
+        </div>
+
+        {reports.length === 0 ? (
+          <div className="grid place-items-center rounded-3xl border-2 border-dashed border-border bg-card/60 px-6 py-14 text-center">
+            <FileText className="mb-3 h-10 w-10 text-muted-foreground/70" />
+            <p className="text-sm text-muted-foreground">אין דוחות שמורים. התחל סקר חדש כדי להתחיל.</p>
+          </div>
+        ) : (
+          <ul className="space-y-3">
+            {reports.map((r) => (
+              <li key={r.id}>
+                <Link
+                  to={`/report/${r.id}`}
+                  className="block rounded-2xl border border-border bg-card p-4 shadow-soft transition hover:shadow-elev active:scale-[0.99]"
+                >
+                  <div className="flex items-start gap-3">
+                    {r.coverPhoto ? (
+                      <img src={r.coverPhoto} alt="" className="h-16 w-16 flex-shrink-0 rounded-xl object-cover" />
+                    ) : (
+                      <div className="grid h-16 w-16 flex-shrink-0 place-items-center rounded-xl brand-gradient text-primary-foreground">
+                        <FileText className="h-7 w-7" />
+                      </div>
+                    )}
+                    <div className="min-w-0 flex-1">
+                      <div className="truncate text-base font-bold">{r.placeName || "ללא שם"}</div>
+                      <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
+                        {r.address && (
+                          <span className="inline-flex items-center gap-1">
+                            <MapPin className="h-3 w-3" />
+                            {r.address}
+                          </span>
+                        )}
+                        <span className="inline-flex items-center gap-1">
+                          <Calendar className="h-3 w-3" />
+                          {formatHebrewDate(r.surveyDate)}
+                        </span>
+                      </div>
+                      <div className="mt-2 text-xs text-muted-foreground">
+                        {r.items.filter((i) => i.status === "compliant").length} תקין ·{" "}
+                        <span className="text-destructive">
+                          {r.items.filter((i) => i.status === "non_compliant").length} לא תקין
+                        </span>
+                      </div>
+                    </div>
+                    <button
+                      onClick={(e) => {
+                        e.preventDefault();
+                        remove(r.id);
+                      }}
+                      className="grid h-8 w-8 place-items-center rounded-full text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
+                      aria-label="מחק"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </button>
+                  </div>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
+    </AppShell>
   );
 };
-
-const Index = PlaceholderIndex;
 
 export default Index;
