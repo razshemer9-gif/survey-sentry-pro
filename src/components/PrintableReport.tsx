@@ -1,6 +1,9 @@
 import { ConsultantSettings, SurveyReport } from "@/lib/types";
 import { formatCurrency, formatHebrewDate, statusLabel } from "@/lib/pdf";
 import { forwardRef } from "react";
+import companyLogo from "@/assets/company-logo.png";
+
+const BRAND_NAME = "שמר בטיחות יועצים";
 
 interface Props {
   report: SurveyReport;
@@ -47,27 +50,64 @@ export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, sett
           flexDirection: "column",
         }}
       >
-        <div style={{ padding: "40px 48px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-          <div style={{ fontSize: 18, fontWeight: 600, opacity: 0.9 }}>{settings.companyName}</div>
-          {settings.logo ? (
-            <img src={settings.logo} alt="logo" style={{ height: 64, background: "#fff", borderRadius: 8, padding: 6 }} />
-          ) : (
-            <div
-              style={{
-                height: 64,
-                width: 64,
-                borderRadius: 12,
-                background: "rgba(255,255,255,0.18)",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                fontWeight: 800,
-                fontSize: 22,
-              }}
-            >
-              ♿
-            </div>
-          )}
+        {/* Decorative blurred glow behind logo for soft blend */}
+        <div
+          style={{
+            padding: "44px 48px 8px",
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            textAlign: "center",
+            position: "relative",
+          }}
+        >
+          <div
+            style={{
+              position: "absolute",
+              top: 20,
+              left: "50%",
+              transform: "translateX(-50%)",
+              width: 360,
+              height: 220,
+              background: "radial-gradient(ellipse at center, rgba(255,255,255,0.55) 0%, rgba(255,255,255,0) 70%)",
+              filter: "blur(2px)",
+              pointerEvents: "none",
+            }}
+          />
+          <img
+            src={settings.logo || companyLogo}
+            alt={BRAND_NAME}
+            style={{
+              height: 150,
+              objectFit: "contain",
+              position: "relative",
+              mixBlendMode: "screen",
+              filter: "drop-shadow(0 6px 16px rgba(0,0,0,0.25))",
+            }}
+            crossOrigin="anonymous"
+          />
+          <div
+            style={{
+              marginTop: 14,
+              fontSize: 26,
+              fontWeight: 800,
+              letterSpacing: 1,
+              color: "#ffffff",
+              textShadow: "0 2px 6px rgba(0,0,0,0.25)",
+              position: "relative",
+            }}
+          >
+            {BRAND_NAME}
+          </div>
+          <div
+            style={{
+              marginTop: 6,
+              width: 80,
+              height: 3,
+              background: "rgba(255,255,255,0.7)",
+              borderRadius: 999,
+            }}
+          />
         </div>
 
         <div style={{ padding: "10px 48px 24px" }}>
