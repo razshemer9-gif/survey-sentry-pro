@@ -208,7 +208,7 @@ export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, sett
 
       {/* CHECKLIST PAGE(S) */}
       <section style={{ padding: "48px", background: "#fff" }}>
-        <PageHeader title="ממצאי הסקר" company={settings.companyName} />
+        <PageHeader title="חוות דעת מורשה הנגישות" company={settings.companyName} />
 
         <div style={{ marginTop: 24, display: "flex", flexDirection: "column", gap: 14 }}>
           {report.items.map((item, idx) => (
