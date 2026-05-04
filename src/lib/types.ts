@@ -6,7 +6,9 @@ export interface ChecklistItem {
   status: ComplianceStatus;
   notes: string;
   estimatedCost: number; // ILS
-  photo?: string; // dataURL
+  photo?: string; // dataURL — תמונת מצב קיים
+  referencePhoto?: string; // dataURL — תמונת דוגמה / פרט מבוקש
+  referenceLabel?: string; // טקסט תיאור הפרט
 }
 
 export interface ChecklistTemplate {
