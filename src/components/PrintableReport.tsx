@@ -50,65 +50,44 @@ export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, sett
           flexDirection: "column",
         }}
       >
-        {/* Decorative blurred glow behind logo for soft blend */}
+        {/* White band header — logo sits on white that bleeds to both edges */}
         <div
           style={{
-            padding: "44px 48px 8px",
+            background: "#ffffff",
+            padding: "28px 48px 24px",
             display: "flex",
             flexDirection: "column",
             alignItems: "center",
             textAlign: "center",
-            position: "relative",
+            boxShadow: "0 8px 24px rgba(0,0,0,0.12)",
           }}
         >
-          <div
-            style={{
-              position: "absolute",
-              top: 20,
-              left: "50%",
-              transform: "translateX(-50%)",
-              width: 360,
-              height: 220,
-              background: "radial-gradient(ellipse at center, rgba(255,255,255,0.55) 0%, rgba(255,255,255,0) 70%)",
-              filter: "blur(2px)",
-              pointerEvents: "none",
-            }}
-          />
           <img
             src={settings.logo || companyLogo}
             alt={BRAND_NAME}
-            style={{
-              height: 150,
-              objectFit: "contain",
-              position: "relative",
-              mixBlendMode: "screen",
-              filter: "drop-shadow(0 6px 16px rgba(0,0,0,0.25))",
-            }}
+            style={{ height: 140, objectFit: "contain" }}
             crossOrigin="anonymous"
           />
           <div
             style={{
-              marginTop: 14,
-              fontSize: 26,
+              marginTop: 10,
+              fontSize: 24,
               fontWeight: 800,
               letterSpacing: 1,
-              color: "#ffffff",
-              textShadow: "0 2px 6px rgba(0,0,0,0.25)",
-              position: "relative",
+              color: "#1e3a8a",
             }}
           >
             {BRAND_NAME}
           </div>
-          <div
-            style={{
-              marginTop: 6,
-              width: 80,
-              height: 3,
-              background: "rgba(255,255,255,0.7)",
-              borderRadius: 999,
-            }}
-          />
         </div>
+        {/* Smooth gradient transition from white band into blue cover */}
+        <div
+          style={{
+            height: 40,
+            background: "linear-gradient(to bottom, #ffffff 0%, rgba(255,255,255,0) 100%)",
+            marginTop: -8,
+          }}
+        />
 
         <div style={{ padding: "10px 48px 24px" }}>
           <div style={{ fontSize: 14, letterSpacing: 4, opacity: 0.85, marginBottom: 12 }}>דו״ח רשמי</div>
