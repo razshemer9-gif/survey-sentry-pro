@@ -223,6 +223,15 @@ export default function ReportEditor() {
                 className="mb-2"
               />
 
+              <div className="mb-2">
+                <Label className="mb-1 block text-xs text-muted-foreground">תמונה</Label>
+                <PhotoPicker
+                  value={item.photo}
+                  onChange={(u) => updateItem(item.id, { photo: u })}
+                  label="צרף תמונה לפרמטר"
+                />
+              </div>
+
               {item.status === "non_compliant" && (
                 <div className="flex items-center gap-2">
                   <Label className="text-xs text-muted-foreground">אומדן עלות (₪)</Label>
