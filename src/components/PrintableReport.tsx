@@ -211,6 +211,22 @@ export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, sett
                 <StatusPill status={item.status} />
               </div>
 
+              {item.photo && (
+                <div style={{ marginTop: 10 }}>
+                  <img
+                    src={item.photo}
+                    alt={item.title}
+                    style={{
+                      width: "100%",
+                      maxHeight: 320,
+                      objectFit: "cover",
+                      borderRadius: 10,
+                      border: "1px solid #e2e8f0",
+                    }}
+                  />
+                </div>
+              )}
+
               {item.notes && (
                 <div
                   style={{
