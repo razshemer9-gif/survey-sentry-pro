@@ -224,11 +224,26 @@ export default function ReportEditor() {
               />
 
               <div className="mb-2">
-                <Label className="mb-1 block text-xs text-muted-foreground">תמונה</Label>
+                <Label className="mb-1 block text-xs text-muted-foreground">תמונה (מצב קיים)</Label>
                 <PhotoPicker
                   value={item.photo}
                   onChange={(u) => updateItem(item.id, { photo: u })}
                   label="צרף תמונה לפרמטר"
+                />
+              </div>
+
+              <div className="mb-2 rounded-xl border border-dashed border-primary/40 bg-primary-soft/30 p-3">
+                <Label className="mb-1 block text-xs font-semibold text-primary">פרט / דוגמה (אופציונלי)</Label>
+                <Input
+                  value={item.referenceLabel || ""}
+                  onChange={(e) => updateItem(item.id, { referenceLabel: e.target.value })}
+                  placeholder="לדוגמה: שלט שירותים נגישים"
+                  className="mb-2 bg-card"
+                />
+                <PhotoPicker
+                  value={item.referencePhoto}
+                  onChange={(u) => updateItem(item.id, { referencePhoto: u })}
+                  label="צרף תמונת פרט מהגלריה"
                 />
               </div>
 

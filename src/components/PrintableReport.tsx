@@ -211,19 +211,37 @@ export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, sett
                 <StatusPill status={item.status} />
               </div>
 
-              {item.photo && (
-                <div style={{ marginTop: 10 }}>
-                  <img
-                    src={item.photo}
-                    alt={item.title}
-                    style={{
-                      width: "100%",
-                      maxHeight: 320,
-                      objectFit: "cover",
-                      borderRadius: 10,
-                      border: "1px solid #e2e8f0",
-                    }}
-                  />
+              {(item.photo || item.referencePhoto) && (
+                <div
+                  style={{
+                    marginTop: 10,
+                    display: "grid",
+                    gridTemplateColumns: item.photo && item.referencePhoto ? "1fr 1fr" : "1fr",
+                    gap: 10,
+                  }}
+                >
+                  {item.photo && (
+                    <div>
+                      <div style={{ fontSize: 11, color: "#64748b", marginBottom: 4 }}>מצב קיים</div>
+                      <img
+                        src={item.photo}
+                        alt={item.title}
+                        style={{ width: "100%", maxHeight: 260, objectFit: "cover", borderRadius: 10, border: "1px solid #e2e8f0" }}
+                      />
+                    </div>
+                  )}
+                  {item.referencePhoto && (
+                    <div>
+                      <div style={{ fontSize: 11, color: "#1e3a8a", marginBottom: 4, fontWeight: 600 }}>
+                        פרט מבוקש{item.referenceLabel ? `: ${item.referenceLabel}` : ""}
+                      </div>
+                      <img
+                        src={item.referencePhoto}
+                        alt={item.referenceLabel || "פרט"}
+                        style={{ width: "100%", maxHeight: 260, objectFit: "contain", background: "#f8fafc", borderRadius: 10, border: "1px solid #bfdbfe" }}
+                      />
+                    </div>
+                  )}
                 </div>
               )}
 
