@@ -56,7 +56,7 @@ export function PhotoPicker({ value, onChange, className, label = "הוסף תמ
       <input
         ref={camRef}
         type="file"
-        accept="image/*"
+        accept="image/jpeg,image/png"
         capture="environment"
         className="hidden"
         onChange={(e) => handle(e.target.files?.[0])}
