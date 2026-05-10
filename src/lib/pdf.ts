@@ -66,7 +66,26 @@ export async function generateReportPdf(
     pageIndex++;
   }
 
-  pdf.save(fileName);
+  // Use blob + manual <a download> instead of pdf.save() — works better
+  // inside iframes (e.g. Lovable preview) and with non-ASCII filenames.
+  const blob = pdf.output("blob");
+  const url = URL.createObjectURL(blob);
+  try {
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = fileName;
+    a.rel = "noopener";
+    a.style.display = "none";
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+  } catch (err) {
+    // Fallback — open in a new tab so the user can save manually
+    window.open(url, "_blank", "noopener,noreferrer");
+    throw err;
+  } finally {
+    setTimeout(() => URL.revokeObjectURL(url), 4000);
+  }
 }
 
 export function buildPdfFileName(report: SurveyReport): string {
