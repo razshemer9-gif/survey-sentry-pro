@@ -159,6 +159,16 @@ export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, sett
           <Field label="שם הלקוח" value={report.clientName} />
           <Field label="כתובת" value={report.address} />
           <Field label="תאריך הסקר" value={formatHebrewDate(report.surveyDate)} />
+          {report.buildingType && (
+            <Field
+              label="סוג הבניין"
+              value={
+                report.buildingType === "existing_public" ? "בניין ציבורי קיים" :
+                report.buildingType === "new_public" ? "בניין ציבורי חדש" :
+                report.buildingTypeOther || "אחר"
+              }
+            />
+          )}
         </div>
       </section>
 

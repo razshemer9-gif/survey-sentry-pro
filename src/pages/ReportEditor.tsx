@@ -168,6 +168,29 @@ export default function ReportEditor() {
           <Field label="תאריך הסקר">
             <Input type="date" value={report.surveyDate} onChange={(e) => update({ surveyDate: e.target.value })} />
           </Field>
+          <Field label="סוג הבניין">
+            <Select
+              value={report.buildingType || ""}
+              onValueChange={(v) => update({ buildingType: v as "existing_public" | "new_public" | "other" })}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="בחר סוג בניין" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="existing_public">בניין ציבורי קיים</SelectItem>
+                <SelectItem value="new_public">בניין ציבורי חדש</SelectItem>
+                <SelectItem value="other">אחר</SelectItem>
+              </SelectContent>
+            </Select>
+            {report.buildingType === "other" && (
+              <Input
+                className="mt-2"
+                value={report.buildingTypeOther || ""}
+                onChange={(e) => update({ buildingTypeOther: e.target.value })}
+                placeholder="פרט סוג בניין..."
+              />
+            )}
+          </Field>
           <Field label="תמונת שער">
             <PhotoPicker value={report.coverPhoto} onChange={(u) => update({ coverPhoto: u })} label="צרף תמונת חזית" />
           </Field>

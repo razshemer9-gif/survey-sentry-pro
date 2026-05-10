@@ -31,6 +31,9 @@ export interface SurveyReport {
   coverPhoto?: string; // dataURL
   // Body
   items: ChecklistItem[];
+  // Building type
+  buildingType?: "existing_public" | "new_public" | "other";
+  buildingTypeOther?: string;
   // Optional notes
   generalNotes?: string;
 }
