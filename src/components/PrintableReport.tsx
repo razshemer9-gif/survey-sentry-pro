@@ -117,7 +117,6 @@ export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, sett
         />
 
         <div style={{ padding: "10px 48px 24px" }}>
-          <div style={{ fontSize: 14, letterSpacing: 4, opacity: 0.85, marginBottom: 12 }}>דו״ח רשמי</div>
           <h1 style={{ fontSize: 56, fontWeight: 800, lineHeight: 1.05, margin: 0 }}>
             סקר נגישות מתו״ס
           </h1>
