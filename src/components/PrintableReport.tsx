@@ -231,6 +231,26 @@ export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, sett
             </div>
           </>
         )}
+
+        <div
+          style={{
+            marginTop: 32,
+            padding: "18px 22px",
+            background: "#f8fafc",
+            border: "1px solid #e2e8f0",
+            borderRadius: 12,
+            fontSize: 13,
+            lineHeight: 1.9,
+            color: "#374151",
+            direction: "rtl",
+          }}
+        >
+          הסקר בוצע למיטב ידיעתי והדרישות לטיפול הן למיטב שיקול דעתי,
+          באחריות המזמין/ הבעלות לפעול ע"פ הדרישות בסקר וכל סטייה בביצוע מהדרישות תהיה
+          באחריות המבצע/מזמין העבודה.
+          <br /><br />
+          <strong>הערה:</strong> בעת צירוף אומדנים יש לקחת בחשבון 15% סטייה בעלויות.
+        </div>
       </section>
 
       {/* CHECKLIST PAGE(S) */}
