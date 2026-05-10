@@ -70,17 +70,6 @@ export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, sett
             style={{ height: 140, objectFit: "contain" }}
             crossOrigin="anonymous"
           />
-          <div
-            style={{
-              marginTop: 10,
-              fontSize: 24,
-              fontWeight: 800,
-              letterSpacing: 1,
-              color: "#1e3a8a",
-            }}
-          >
-            {BRAND_NAME}
-          </div>
 
           {/* QR code — discreet, blended into the white band */}
           <div
