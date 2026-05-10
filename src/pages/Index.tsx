@@ -7,25 +7,38 @@ import { deleteReport, listReports, newReport, saveReport } from "@/lib/storage"
 import { SurveyReport } from "@/lib/types";
 import { formatHebrewDate } from "@/lib/image";
 import { toast } from "sonner";
+import { Loader2 } from "lucide-react";
 
 const Index = () => {
   const navigate = useNavigate();
   const [reports, setReports] = useState<SurveyReport[]>([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    setReports(listReports());
+    listReports()
+      .then(setReports)
+      .catch(() => toast.error("שגיאה בטעינת הדוחות"))
+      .finally(() => setLoading(false));
   }, []);
 
-  function createNew() {
-    const r = saveReport(newReport());
-    navigate(`/report/${r.id}`);
+  async function createNew() {
+    try {
+      const r = await saveReport(newReport());
+      navigate(`/report/${r.id}`);
+    } catch {
+      toast.error("שגיאה ביצירת דוח חדש");
+    }
   }
 
-  function remove(id: string) {
+  async function remove(id: string) {
     if (!confirm("למחוק את הדוח?")) return;
-    deleteReport(id);
-    setReports(listReports());
-    toast.success("הדוח נמחק");
+    try {
+      await deleteReport(id);
+      setReports((prev) => prev.filter((r) => r.id !== id));
+      toast.success("הדוח נמחק");
+    } catch {
+      toast.error("שגיאה במחיקת הדוח");
+    }
   }
 
   return (
@@ -52,7 +65,11 @@ const Index = () => {
           <span className="text-xs text-muted-foreground">{reports.length} סה״כ</span>
         </div>
 
-        {reports.length === 0 ? (
+        {loading ? (
+          <div className="grid place-items-center py-14">
+            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          </div>
+        ) : reports.length === 0 ? (
           <div className="grid place-items-center rounded-3xl border-2 border-dashed border-border bg-card/60 px-6 py-14 text-center">
             <FileText className="mb-3 h-10 w-10 text-muted-foreground/70" />
             <p className="text-sm text-muted-foreground">אין דוחות שמורים. התחל סקר חדש כדי להתחיל.</p>

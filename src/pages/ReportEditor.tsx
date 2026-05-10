@@ -51,13 +51,14 @@ export default function ReportEditor() {
 
   useEffect(() => {
     if (!id) return;
-    const r = getReport(id);
-    if (!r) {
-      toast.error("דוח לא נמצא");
-      navigate("/");
-      return;
-    }
-    setReport(r);
+    getReport(id).then((r) => {
+      if (!r) {
+        toast.error("דוח לא נמצא");
+        navigate("/");
+        return;
+      }
+      setReport(r);
+    });
   }, [id, navigate]);
 
   if (!report) {
@@ -94,17 +95,21 @@ export default function ReportEditor() {
   const removeItem = (itemId: string) =>
     setReport((r) => (r ? { ...r, items: r.items.filter((it) => it.id !== itemId) } : r));
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!report) return;
-    saveReport(report);
-    toast.success("נשמר");
+    try {
+      await saveReport(report);
+      toast.success("נשמר");
+    } catch {
+      toast.error("שגיאה בשמירה");
+    }
   };
 
   const handleGenerate = async () => {
     if (!printRef.current || !report) return;
     setGenerating(true);
     try {
-      saveReport(report);
+      await saveReport(report);
       await generateReportPdf(printRef.current, buildPdfFileName(report));
       toast.success("ה-PDF הופק והורד");
     } catch (e) {
@@ -126,8 +131,7 @@ export default function ReportEditor() {
         <div className="flex items-center justify-between">
           <button
             onClick={() => {
-              saveReport(report);
-              navigate("/");
+              saveReport(report).finally(() => navigate("/"));
             }}
             className="grid h-10 w-10 place-items-center rounded-full bg-white/15 hover:bg-white/25"
             aria-label="חזור"

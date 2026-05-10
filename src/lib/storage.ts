@@ -6,10 +6,20 @@ import {
   DEFAULT_SETTINGS,
   SurveyReport,
 } from "./types";
+import { supabase } from "./supabase";
 
-const K_REPORTS = "ans.reports.v1";
 const K_TEMPLATES = "ans.templates.v1";
 const K_SETTINGS = "ans.settings.v1";
+const K_DEVICE_ID = "ans.device_id";
+
+function getDeviceId(): string {
+  let id = localStorage.getItem(K_DEVICE_ID);
+  if (!id) {
+    id = uuid();
+    localStorage.setItem(K_DEVICE_ID, id);
+  }
+  return id;
+}
 
 function read<T>(key: string, fallback: T): T {
   try {
@@ -24,28 +34,54 @@ function write<T>(key: string, value: T) {
   localStorage.setItem(key, JSON.stringify(value));
 }
 
-// ---------- Reports ----------
-export function listReports(): SurveyReport[] {
-  return read<SurveyReport[]>(K_REPORTS, []).sort((a, b) => b.updatedAt - a.updatedAt);
+// ---------- Reports (Supabase) ----------
+export async function listReports(): Promise<SurveyReport[]> {
+  const deviceId = getDeviceId();
+  const { data, error } = await supabase
+    .from("reports")
+    .select("data")
+    .eq("device_id", deviceId)
+    .order("updated_at", { ascending: false });
+  if (error) throw error;
+  return (data ?? []).map((row) => row.data as SurveyReport);
 }
-export function getReport(id: string): SurveyReport | undefined {
-  return listReports().find((r) => r.id === id);
+
+export async function getReport(id: string): Promise<SurveyReport | undefined> {
+  const deviceId = getDeviceId();
+  const { data, error } = await supabase
+    .from("reports")
+    .select("data")
+    .eq("id", id)
+    .eq("device_id", deviceId)
+    .single();
+  if (error) return undefined;
+  return data?.data as SurveyReport;
 }
-export function saveReport(report: SurveyReport) {
-  const all = read<SurveyReport[]>(K_REPORTS, []);
-  const idx = all.findIndex((r) => r.id === report.id);
+
+export async function saveReport(report: SurveyReport): Promise<SurveyReport> {
+  const deviceId = getDeviceId();
   const updated = { ...report, updatedAt: Date.now() };
-  if (idx >= 0) all[idx] = updated;
-  else all.push(updated);
-  write(K_REPORTS, all);
+  const { error } = await supabase.from("reports").upsert({
+    id: report.id,
+    device_id: deviceId,
+    data: updated,
+    created_at: updated.createdAt,
+    updated_at: updated.updatedAt,
+  });
+  if (error) throw error;
   return updated;
 }
-export function deleteReport(id: string) {
-  write(
-    K_REPORTS,
-    read<SurveyReport[]>(K_REPORTS, []).filter((r) => r.id !== id),
-  );
+
+export async function deleteReport(id: string): Promise<void> {
+  const deviceId = getDeviceId();
+  const { error } = await supabase
+    .from("reports")
+    .delete()
+    .eq("id", id)
+    .eq("device_id", deviceId);
+  if (error) throw error;
 }
+
 export function newReport(): SurveyReport {
   return {
     id: uuid(),
@@ -66,7 +102,7 @@ export function newReport(): SurveyReport {
   };
 }
 
-// ---------- Templates ----------
+// ---------- Templates (localStorage) ----------
 const BUILT_IN_TEMPLATES: ChecklistTemplate[] = [
   {
     id: "builtin-default",
@@ -96,7 +132,7 @@ export function deleteTemplate(id: string) {
   );
 }
 
-// ---------- Settings ----------
+// ---------- Settings (localStorage) ----------
 export function getSettings(): ConsultantSettings {
   return { ...DEFAULT_SETTINGS, ...read<ConsultantSettings>(K_SETTINGS, DEFAULT_SETTINGS) };
 }
