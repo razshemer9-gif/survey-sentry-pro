@@ -17,4 +17,5 @@ export interface AccessibilityRequirement {
   inspectionMethod: string;
   appliesTo: PlaceType[];
   tags: string[];
+  internalCitation?: string;
 }

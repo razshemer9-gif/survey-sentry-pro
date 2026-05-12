@@ -1,11 +1,13 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowRight, BookOpen, Search } from "lucide-react";
+import { ArrowRight, BookOpen, Search, Plus, Pencil, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
 import { AppShell } from "@/components/AppShell";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import {
   Card,
@@ -28,10 +30,16 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 
-import { STANDARDS_DATA, CATEGORIES, PLACE_TYPE_LABELS } from "@/lib/standards-data";
+import { CATEGORIES, PLACE_TYPE_LABELS } from "@/lib/standards-data";
 import { AccessibilityRequirement, Severity, PlaceType } from "@/lib/standards-types";
 import { SurveyReport } from "@/lib/types";
 import { listReports, addRequirementToReport } from "@/lib/storage";
+import {
+  listRequirements,
+  saveRequirement,
+  deleteRequirement,
+  isAdmin,
+} from "@/lib/standards-storage";
 
 const SEVERITY_LABELS: Record<Severity, string> = {
   critical: "קריטי",
@@ -51,6 +59,29 @@ const SEVERITY_CHIP_ACTIVE: Record<Severity, string> = {
   low: "bg-green-600 text-white",
 };
 
+const PLACE_TYPES = Object.keys(PLACE_TYPE_LABELS) as PlaceType[];
+
+function emptyReq(): AccessibilityRequirement {
+  return {
+    id: `req-custom-${Date.now()}`,
+    standardPart: 'ת"י 1918',
+    clause: "",
+    category: CATEGORIES[0].label,
+    categoryCode: CATEGORIES[0].code,
+    subCategory: "",
+    requirementTitle: "",
+    practicalRequirement: "",
+    defectText: "",
+    correctionText: "",
+    severity: "medium",
+    measurementFields: [],
+    inspectionMethod: "",
+    appliesTo: [],
+    tags: [],
+    internalCitation: "",
+  };
+}
+
 export default function Standards() {
   const navigate = useNavigate();
   const [search, setSearch] = useState("");
@@ -58,11 +89,37 @@ export default function Standards() {
   const [severityFilter, setSeverityFilter] = useState<Set<Severity>>(new Set());
   const [placeFilter, setPlaceFilter] = useState("all");
 
-  // Dialog state
+  const [items, setItems] = useState<AccessibilityRequirement[]>([]);
+  const [loading, setLoading] = useState(true);
+  const admin = isAdmin();
+
+  // Add-to-report dialog state
   const [selectedReq, setSelectedReq] = useState<AccessibilityRequirement | null>(null);
   const [reports, setReports] = useState<SurveyReport[]>([]);
   const [chosenReportId, setChosenReportId] = useState<string>("");
   const [adding, setAdding] = useState(false);
+
+  // Edit dialog state
+  const [editOpen, setEditOpen] = useState(false);
+  const [editIsNew, setEditIsNew] = useState(false);
+  const [draft, setDraft] = useState<AccessibilityRequirement>(emptyReq());
+  const [savingDraft, setSavingDraft] = useState(false);
+
+  const refresh = async () => {
+    setLoading(true);
+    try {
+      const list = await listRequirements();
+      setItems(list);
+    } catch {
+      toast.error("שגיאה בטעינת מאגר הדרישות");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    refresh();
+  }, []);
 
   const toggleSeverity = (s: Severity) => {
     setSeverityFilter((prev) => {
@@ -99,7 +156,78 @@ export default function Standards() {
     }
   };
 
-  const filtered = STANDARDS_DATA.filter((req) => {
+  const openNew = () => {
+    setDraft(emptyReq());
+    setEditIsNew(true);
+    setEditOpen(true);
+  };
+
+  const openEdit = (req: AccessibilityRequirement) => {
+    setDraft({
+      ...req,
+      clause: req.clause ?? "",
+      measurementFields: req.measurementFields ?? [],
+      internalCitation: req.internalCitation ?? "",
+    });
+    setEditIsNew(false);
+    setEditOpen(true);
+  };
+
+  const handleDelete = async (req: AccessibilityRequirement) => {
+    if (!confirm(`למחוק את הדרישה "${req.requirementTitle}"?`)) return;
+    try {
+      await deleteRequirement(req.id);
+      toast.success("הדרישה נמחקה");
+      await refresh();
+    } catch {
+      toast.error("שגיאה במחיקה");
+    }
+  };
+
+  const updateDraft = (patch: Partial<AccessibilityRequirement>) =>
+    setDraft((d) => ({ ...d, ...patch }));
+
+  const togglePlace = (p: PlaceType) =>
+    setDraft((d) => ({
+      ...d,
+      appliesTo: d.appliesTo.includes(p)
+        ? d.appliesTo.filter((x) => x !== p)
+        : [...d.appliesTo, p],
+    }));
+
+  const handleSaveDraft = async () => {
+    if (!draft.requirementTitle.trim()) {
+      toast.error("יש להזין כותרת דרישה");
+      return;
+    }
+    setSavingDraft(true);
+    try {
+      const cat = CATEGORIES.find((c) => c.label === draft.category) ?? CATEGORIES[0];
+      const toSave: AccessibilityRequirement = {
+        ...draft,
+        category: cat.label,
+        categoryCode: cat.code,
+        clause: draft.clause?.trim() ? draft.clause.trim() : undefined,
+        measurementFields:
+          draft.measurementFields && draft.measurementFields.length > 0
+            ? draft.measurementFields
+            : undefined,
+        internalCitation: draft.internalCitation?.trim()
+          ? draft.internalCitation.trim()
+          : undefined,
+      };
+      await saveRequirement(toSave);
+      toast.success(editIsNew ? "הדרישה נוספה" : "הדרישה עודכנה");
+      setEditOpen(false);
+      await refresh();
+    } catch {
+      toast.error("שגיאה בשמירה");
+    } finally {
+      setSavingDraft(false);
+    }
+  };
+
+  const filtered = items.filter((req) => {
     const matchSearch =
       !search ||
       req.requirementTitle.includes(search) ||
@@ -132,11 +260,19 @@ export default function Standards() {
         </div>
         <h1 className="mt-3 text-xl font-extrabold">מאגר דרישות נגישות</h1>
         <p className="mt-0.5 text-xs opacity-90">ת&quot;י 1918 – כל הקטגוריות A עד O</p>
-        <p className="mt-0.5 text-xs opacity-75">{STANDARDS_DATA.length} דרישות · {filtered.length} מוצגות</p>
+        <p className="mt-0.5 text-xs opacity-75">
+          {items.length} דרישות · {filtered.length} מוצגות
+        </p>
       </header>
 
       {/* Filters */}
       <div className="px-4 pt-4 space-y-3">
+        {admin && (
+          <Button onClick={openNew} className="w-full gap-2 rounded-xl">
+            <Plus className="h-4 w-4" /> הוסף ליקוי חדש
+          </Button>
+        )}
+
         {/* Search */}
         <div className="relative">
           <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -203,65 +339,99 @@ export default function Standards() {
 
       {/* Cards */}
       <div className="px-4 pt-4 pb-8 space-y-3">
-        {filtered.length === 0 && (
+        {loading && (
+          <p className="text-center text-sm text-muted-foreground py-8">טוען מאגר...</p>
+        )}
+        {!loading && filtered.length === 0 && (
           <p className="text-center text-sm text-muted-foreground py-8">
             לא נמצאו דרישות התואמות את הסינון
           </p>
         )}
-        {filtered.map((req) => (
-          <Card key={req.id} className="rounded-2xl shadow-soft border-border" dir="rtl">
-            <CardHeader className="pb-2 pt-4 px-4">
-              <div className="flex items-start justify-between gap-2">
-                <CardTitle className="text-sm font-bold leading-snug flex-1">
-                  {req.requirementTitle}
-                </CardTitle>
-                <Badge
-                  className={`shrink-0 text-[10px] px-2 py-0.5 border rounded-full ${SEVERITY_COLORS[req.severity]}`}
-                >
-                  {SEVERITY_LABELS[req.severity]}
-                </Badge>
-              </div>
-              <div className="flex flex-wrap gap-1 mt-1">
-                <Badge variant="outline" className="text-[10px] rounded-full">
-                  {req.standardPart}
-                  {req.clause ? ` סעיף ${req.clause}` : ""}
-                </Badge>
-                <Badge variant="secondary" className="text-[10px] rounded-full">
-                  {req.category}
-                </Badge>
-              </div>
-            </CardHeader>
-            <CardContent className="px-4 pb-4 space-y-2">
-              <div>
-                <p className="text-[10px] font-semibold text-muted-foreground mb-0.5">ליקוי</p>
-                <p className="text-xs text-foreground">{req.defectText}</p>
-              </div>
-              <div>
-                <p className="text-[10px] font-semibold text-muted-foreground mb-0.5">תיקון</p>
-                <p className="text-xs text-foreground">{req.correctionText}</p>
-              </div>
-              {req.tags.length > 0 && (
-                <div className="flex flex-wrap gap-1 pt-1">
-                  {req.tags.map((tag) => (
-                    <span
-                      key={tag}
-                      className="rounded-full bg-muted px-2 py-0.5 text-[10px] text-muted-foreground"
+        {!loading &&
+          filtered.map((req) => (
+            <Card key={req.id} className="rounded-2xl shadow-soft border-border" dir="rtl">
+              <CardHeader className="pb-2 pt-4 px-4">
+                <div className="flex items-start justify-between gap-2">
+                  <CardTitle className="text-sm font-bold leading-snug flex-1">
+                    {req.requirementTitle}
+                  </CardTitle>
+                  <div className="flex items-center gap-1 shrink-0">
+                    {admin && (
+                      <>
+                        <button
+                          onClick={() => openEdit(req)}
+                          className="grid h-7 w-7 place-items-center rounded-full hover:bg-muted text-muted-foreground"
+                          aria-label="ערוך"
+                        >
+                          <Pencil className="h-3.5 w-3.5" />
+                        </button>
+                        <button
+                          onClick={() => handleDelete(req)}
+                          className="grid h-7 w-7 place-items-center rounded-full hover:bg-red-50 text-red-600"
+                          aria-label="מחק"
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </button>
+                      </>
+                    )}
+                    <Badge
+                      className={`text-[10px] px-2 py-0.5 border rounded-full ${SEVERITY_COLORS[req.severity]}`}
                     >
-                      {tag}
-                    </span>
-                  ))}
+                      {SEVERITY_LABELS[req.severity]}
+                    </Badge>
+                  </div>
                 </div>
-              )}
-              <Button
-                size="sm"
-                className="w-full mt-2 rounded-xl text-xs"
-                onClick={() => openDialog(req)}
-              >
-                הוסף לדוח
-              </Button>
-            </CardContent>
-          </Card>
-        ))}
+                <div className="flex flex-wrap gap-1 mt-1">
+                  <Badge variant="outline" className="text-[10px] rounded-full">
+                    {req.standardPart}
+                    {req.clause ? ` סעיף ${req.clause}` : ""}
+                  </Badge>
+                  <Badge variant="secondary" className="text-[10px] rounded-full">
+                    {req.category}
+                  </Badge>
+                </div>
+              </CardHeader>
+              <CardContent className="px-4 pb-4 space-y-2">
+                <div>
+                  <p className="text-[10px] font-semibold text-muted-foreground mb-0.5">ליקוי</p>
+                  <p className="text-xs text-foreground">{req.defectText}</p>
+                </div>
+                <div>
+                  <p className="text-[10px] font-semibold text-muted-foreground mb-0.5">תיקון</p>
+                  <p className="text-xs text-foreground">{req.correctionText}</p>
+                </div>
+                {admin && req.internalCitation && (
+                  <div>
+                    <p className="text-[10px] font-semibold text-muted-foreground mb-0.5">
+                      ציטוט/מקור פנימי
+                    </p>
+                    <p className="text-xs text-foreground whitespace-pre-wrap">
+                      {req.internalCitation}
+                    </p>
+                  </div>
+                )}
+                {req.tags.length > 0 && (
+                  <div className="flex flex-wrap gap-1 pt-1">
+                    {req.tags.map((tag) => (
+                      <span
+                        key={tag}
+                        className="rounded-full bg-muted px-2 py-0.5 text-[10px] text-muted-foreground"
+                      >
+                        {tag}
+                      </span>
+                    ))}
+                  </div>
+                )}
+                <Button
+                  size="sm"
+                  className="w-full mt-2 rounded-xl text-xs"
+                  onClick={() => openDialog(req)}
+                >
+                  הוסף לדוח
+                </Button>
+              </CardContent>
+            </Card>
+          ))}
       </div>
 
       {/* Add to report dialog */}
@@ -314,6 +484,196 @@ export default function Standards() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Edit / Add requirement dialog */}
+      <Dialog open={editOpen} onOpenChange={setEditOpen}>
+        <DialogContent dir="rtl" className="max-w-md max-h-[85vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="text-base">
+              {editIsNew ? "הוספת ליקוי חדש" : "עריכת ליקוי"}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            <DraftField label="כותרת הדרישה">
+              <Input
+                value={draft.requirementTitle}
+                onChange={(e) => updateDraft({ requirementTitle: e.target.value })}
+              />
+            </DraftField>
+            <div className="flex gap-2">
+              <DraftField label="חלק התקן" className="flex-1">
+                <Input
+                  value={draft.standardPart}
+                  onChange={(e) => updateDraft({ standardPart: e.target.value })}
+                />
+              </DraftField>
+              <DraftField label="סעיף" className="w-24">
+                <Input
+                  value={draft.clause ?? ""}
+                  onChange={(e) => updateDraft({ clause: e.target.value })}
+                />
+              </DraftField>
+            </div>
+            <DraftField label="קטגוריה">
+              <Select
+                value={draft.category}
+                onValueChange={(v) => updateDraft({ category: v })}
+              >
+                <SelectTrigger dir="rtl" className="text-sm">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent dir="rtl">
+                  {CATEGORIES.map((c) => (
+                    <SelectItem key={c.code} value={c.label}>
+                      {c.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </DraftField>
+            <DraftField label="תת-קטגוריה">
+              <Input
+                value={draft.subCategory}
+                onChange={(e) => updateDraft({ subCategory: e.target.value })}
+              />
+            </DraftField>
+            <DraftField label="דרישה מעשית">
+              <Textarea
+                value={draft.practicalRequirement}
+                onChange={(e) => updateDraft({ practicalRequirement: e.target.value })}
+                rows={3}
+              />
+            </DraftField>
+            <DraftField label="נוסח ליקוי">
+              <Textarea
+                value={draft.defectText}
+                onChange={(e) => updateDraft({ defectText: e.target.value })}
+                rows={2}
+              />
+            </DraftField>
+            <DraftField label="נוסח תיקון">
+              <Textarea
+                value={draft.correctionText}
+                onChange={(e) => updateDraft({ correctionText: e.target.value })}
+                rows={2}
+              />
+            </DraftField>
+            <DraftField label="חומרה">
+              <Select
+                value={draft.severity}
+                onValueChange={(v) => updateDraft({ severity: v as Severity })}
+              >
+                <SelectTrigger dir="rtl" className="text-sm">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent dir="rtl">
+                  {(["critical", "medium", "low"] as Severity[]).map((s) => (
+                    <SelectItem key={s} value={s}>
+                      {SEVERITY_LABELS[s]}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </DraftField>
+            <DraftField label="שיטת בדיקה">
+              <Textarea
+                value={draft.inspectionMethod}
+                onChange={(e) => updateDraft({ inspectionMethod: e.target.value })}
+                rows={2}
+              />
+            </DraftField>
+            <DraftField label="שדות מדידה (מופרדים בפסיק)">
+              <Input
+                value={(draft.measurementFields ?? []).join(", ")}
+                onChange={(e) =>
+                  updateDraft({
+                    measurementFields: e.target.value
+                      .split(",")
+                      .map((x) => x.trim())
+                      .filter(Boolean),
+                  })
+                }
+              />
+            </DraftField>
+            <DraftField label="תגיות (מופרדות בפסיק)">
+              <Input
+                value={draft.tags.join(", ")}
+                onChange={(e) =>
+                  updateDraft({
+                    tags: e.target.value
+                      .split(",")
+                      .map((x) => x.trim())
+                      .filter(Boolean),
+                  })
+                }
+              />
+            </DraftField>
+            <DraftField label="חל על">
+              <div className="flex flex-wrap gap-1.5">
+                {PLACE_TYPES.map((p) => {
+                  const on = draft.appliesTo.includes(p);
+                  return (
+                    <button
+                      key={p}
+                      type="button"
+                      onClick={() => togglePlace(p)}
+                      className={`rounded-full px-3 py-1 text-xs font-semibold border transition-colors ${
+                        on
+                          ? "bg-primary text-primary-foreground border-primary"
+                          : "bg-card border-border text-muted-foreground hover:bg-muted"
+                      }`}
+                    >
+                      {PLACE_TYPE_LABELS[p]}
+                    </button>
+                  );
+                })}
+              </div>
+            </DraftField>
+            {admin && (
+              <DraftField label="ציטוט/מקור פנימי (מנהל בלבד)">
+                <Textarea
+                  value={draft.internalCitation ?? ""}
+                  onChange={(e) => updateDraft({ internalCitation: e.target.value })}
+                  rows={2}
+                />
+              </DraftField>
+            )}
+          </div>
+          <DialogFooter className="flex-row gap-2">
+            <Button
+              variant="outline"
+              className="flex-1"
+              onClick={() => setEditOpen(false)}
+            >
+              ביטול
+            </Button>
+            <Button
+              className="flex-1"
+              disabled={savingDraft}
+              onClick={handleSaveDraft}
+            >
+              {savingDraft ? "שומר..." : "שמור"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </AppShell>
+  );
+}
+
+function DraftField({
+  label,
+  children,
+  className,
+}: {
+  label: string;
+  children: React.ReactNode;
+  className?: string;
+}) {
+  return (
+    <div className={`space-y-1.5 ${className ?? ""}`}>
+      <Label className="text-xs font-semibold text-muted-foreground">{label}</Label>
+      {children}
+    </div>
   );
 }
