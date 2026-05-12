@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { v4 as uuid } from "uuid";
-import { ArrowRight, Plus, Save, Trash2, X } from "lucide-react";
+import { ArrowRight, Plus, Save, Trash2, X, BookOpen } from "lucide-react";
 import { toast } from "sonner";
 
 import { AppShell } from "@/components/AppShell";
@@ -13,6 +13,77 @@ import {
 } from "@/components/ui/dialog";
 import { ChecklistTemplate } from "@/lib/types";
 import { deleteTemplate, listTemplates, saveTemplate } from "@/lib/storage";
+import { STANDARDS_DATA } from "@/lib/standards-data";
+
+interface AccessibilityTemplate {
+  id: string;
+  name: string;
+  description: string;
+  requirementIds: string[];
+}
+
+const ACCESSIBILITY_TEMPLATES: AccessibilityTemplate[] = [
+  {
+    id: "acc-tpl-01",
+    name: "בניין משרדים – כניסה וקומות",
+    description: "דרישות נגישות לכניסה, מעברים, מדרגות ומעלית בבניין משרדים.",
+    requirementIds: ["req-a-001", "req-a-002", "req-a-005", "req-c-001", "req-d-001", "req-d-003", "req-e-001", "req-e-003", "req-f-001", "req-g-001", "req-g-002"],
+  },
+  {
+    id: "acc-tpl-02",
+    name: "חנות ומסחר קמעונאי",
+    description: "דרישות נגישות לחנויות: גישה, מעברים, דלפק שירות ושילוט.",
+    requirementIds: ["req-a-001", "req-a-002", "req-b-001", "req-e-001", "req-e-004", "req-f-001", "req-f-002", "req-l-001", "req-l-003", "req-n-001", "req-n-004"],
+  },
+  {
+    id: "acc-tpl-03",
+    name: "בית ספר ומוסד חינוך",
+    description: "דרישות נגישות לבתי ספר: גישה, כיתות, שירותים ושילוט.",
+    requirementIds: ["req-a-001", "req-a-002", "req-c-001", "req-c-003", "req-d-001", "req-e-001", "req-f-001", "req-g-001", "req-h-001", "req-h-002", "req-h-004", "req-l-001", "req-m-001"],
+  },
+  {
+    id: "acc-tpl-04",
+    name: "מסעדה ובית קפה",
+    description: "דרישות נגישות למסעדות: גישה, ישיבה, שירותים ודלפק.",
+    requirementIds: ["req-a-001", "req-b-001", "req-e-001", "req-f-001", "req-f-002", "req-h-001", "req-h-002", "req-h-003", "req-n-001", "req-o-001", "req-o-002", "req-l-001"],
+  },
+  {
+    id: "acc-tpl-05",
+    name: "בית מלון",
+    description: "דרישות נגישות למלונות: לובי, חדרים, שירותים ומקלחות נגישות.",
+    requirementIds: ["req-a-001", "req-a-002", "req-b-001", "req-e-001", "req-g-001", "req-g-003", "req-h-001", "req-h-002", "req-h-004", "req-i-001", "req-i-002", "req-i-003", "req-j-001", "req-k-001", "req-l-001"],
+  },
+  {
+    id: "acc-tpl-06",
+    name: "חניון ציבורי",
+    description: "דרישות נגישות לחניונים: מקומות נגישים, שילוט וגישה לבניין.",
+    requirementIds: ["req-b-001", "req-b-002", "req-b-003", "req-b-004", "req-a-001", "req-l-001", "req-m-001", "req-m-002"],
+  },
+  {
+    id: "acc-tpl-07",
+    name: "מרפאה ובית חולים",
+    description: "דרישות נגישות למוסדות רפואיים: גישה, מעליות, שירותים ותקשורת.",
+    requirementIds: ["req-a-001", "req-a-002", "req-b-001", "req-e-001", "req-f-001", "req-g-001", "req-g-002", "req-g-003", "req-h-001", "req-h-002", "req-h-004", "req-l-001", "req-l-004", "req-m-001", "req-n-001", "req-n-003"],
+  },
+  {
+    id: "acc-tpl-08",
+    name: "דיור מוגן ודירת נגישות",
+    description: "דרישות נגישות ליחידות דיור נגישות: כניסה, מטבח, חדר רחצה.",
+    requirementIds: ["req-j-001", "req-j-002", "req-j-003", "req-j-004", "req-i-001", "req-i-002", "req-i-003", "req-i-004", "req-h-001", "req-h-002", "req-k-001", "req-k-003", "req-k-004"],
+  },
+  {
+    id: "acc-tpl-09",
+    name: "אולם התרבות / אירועים",
+    description: "דרישות נגישות לאולמות: מקומות ישיבה, גישה לבמה, שילוט ושמיעה.",
+    requirementIds: ["req-o-001", "req-o-002", "req-o-003", "req-o-004", "req-a-001", "req-b-001", "req-g-001", "req-h-001", "req-l-001", "req-l-003", "req-m-001", "req-n-003"],
+  },
+  {
+    id: "acc-tpl-10",
+    name: "רחוב ושטח ציבורי פתוח",
+    description: "דרישות נגישות לשטחים ציבוריים פתוחים: מדרכות, צלבי כבישה, פסי הכוונה.",
+    requirementIds: ["req-a-001", "req-a-002", "req-a-003", "req-a-004", "req-a-005", "req-b-001", "req-b-003", "req-c-001", "req-c-002", "req-d-003", "req-m-001", "req-m-002", "req-m-003", "req-m-004"],
+  },
+];
 
 export default function Templates() {
   const navigate = useNavigate();
@@ -122,6 +193,54 @@ export default function Templates() {
           </li>
         ))}
       </ul>
+
+      {/* Accessibility templates */}
+      <div className="px-5 pt-6 pb-2">
+        <div className="flex items-center gap-2 mb-3">
+          <BookOpen className="h-4 w-4 text-primary" />
+          <h2 className="text-base font-bold">תבניות נגישות ת&quot;י 1918</h2>
+        </div>
+        <p className="text-xs text-muted-foreground mb-3">
+          בחר תבנית מוכנה לפי סוג המבנה. כל תבנית תיטען כרשימת פרמטרים מותאמת.
+        </p>
+        <ul className="space-y-2">
+          {ACCESSIBILITY_TEMPLATES.map((tpl) => {
+            const items = tpl.requirementIds
+              .map((id) => STANDARDS_DATA.find((r) => r.id === id))
+              .filter(Boolean);
+            return (
+              <li
+                key={tpl.id}
+                className="rounded-2xl border border-border bg-card p-4 shadow-soft"
+              >
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0 flex-1">
+                    <h3 className="text-sm font-bold">{tpl.name}</h3>
+                    <p className="mt-0.5 text-xs text-muted-foreground">{tpl.description}</p>
+                    <p className="mt-1 text-xs text-muted-foreground">{items.length} דרישות</p>
+                  </div>
+                  <button
+                    onClick={() => {
+                      const newTpl: ChecklistTemplate = {
+                        id: uuid(),
+                        name: tpl.name,
+                        description: tpl.description,
+                        items: items
+                          .filter((r): r is NonNullable<typeof r> => r !== undefined)
+                          .map((r) => ({ title: r.requirementTitle })),
+                      };
+                      setEditing(newTpl);
+                    }}
+                    className="shrink-0 rounded-xl bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground hover:opacity-90"
+                  >
+                    טען
+                  </button>
+                </div>
+              </li>
+            );
+          })}
+        </ul>
+      </div>
 
       {/* Edit dialog */}
       <Dialog open={!!editing} onOpenChange={(o) => !o && setEditing(null)}>

@@ -1,10 +1,11 @@
 import { Link, useLocation } from "react-router-dom";
-import { ClipboardList, Settings, FileStack } from "lucide-react";
+import { ClipboardList, Settings, FileStack, BookOpen } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const tabs = [
   { to: "/", label: "דוחות", icon: FileStack },
   { to: "/templates", label: "תבניות", icon: ClipboardList },
+  { to: "/standards", label: "מאגר", icon: BookOpen },
   { to: "/settings", label: "הגדרות", icon: Settings },
 ];
 
@@ -12,7 +13,7 @@ export function BottomNav() {
   const { pathname } = useLocation();
   return (
     <nav className="fixed bottom-0 inset-x-0 z-40 border-t border-border bg-card/95 backdrop-blur-md safe-bottom">
-      <ul className="mx-auto grid max-w-md grid-cols-3">
+      <ul className="mx-auto grid max-w-md grid-cols-4">
         {tabs.map((t) => {
           const active =
             t.to === "/" ? pathname === "/" || pathname.startsWith("/report") : pathname.startsWith(t.to);

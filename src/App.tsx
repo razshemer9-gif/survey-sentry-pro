@@ -8,6 +8,7 @@ import NotFound from "./pages/NotFound.tsx";
 import ReportEditor from "./pages/ReportEditor.tsx";
 import Settings from "./pages/Settings.tsx";
 import Templates from "./pages/Templates.tsx";
+import Standards from "./pages/Standards.tsx";
 
 const queryClient = new QueryClient();
 
@@ -22,6 +23,7 @@ const App = () => (
           <Route path="/report/:id" element={<ReportEditor />} />
           <Route path="/templates" element={<Templates />} />
           <Route path="/settings" element={<Settings />} />
+          <Route path="/standards" element={<Standards />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
