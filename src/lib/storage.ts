@@ -6,6 +6,7 @@ import {
   DEFAULT_SETTINGS,
   SurveyReport,
 } from "./types";
+import { AccessibilityRequirement } from "./standards-types";
 import { supabase } from "./supabase";
 
 const K_TEMPLATES = "ans.templates.v1";
@@ -100,6 +101,24 @@ export function newReport(): SurveyReport {
     })),
     generalNotes: "",
   };
+}
+
+// ---------- Requirements → Report ----------
+export async function addRequirementToReport(
+  reportId: string,
+  req: AccessibilityRequirement,
+): Promise<void> {
+  const report = await getReport(reportId);
+  if (!report) throw new Error("Report not found");
+  const newItem = {
+    id: uuid(),
+    title: req.requirementTitle,
+    status: "pending" as const,
+    notes: req.defectText,
+    estimatedCost: 0,
+  };
+  const updated: SurveyReport = { ...report, items: [...report.items, newItem] };
+  await saveReport(updated);
 }
 
 // ---------- Templates (localStorage) ----------
