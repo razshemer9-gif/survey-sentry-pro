@@ -8,14 +8,26 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { PhotoPicker } from "@/components/PhotoPicker";
+import { Switch } from "@/components/ui/switch";
 import { ConsultantSettings } from "@/lib/types";
 import { getSettings, saveSettings } from "@/lib/storage";
 
 export default function Settings() {
   const navigate = useNavigate();
   const [s, setS] = useState<ConsultantSettings | null>(null);
+  const [admin, setAdmin] = useState(false);
 
-  useEffect(() => setS(getSettings()), []);
+  useEffect(() => {
+    setS(getSettings());
+    setAdmin(localStorage.getItem("ans.admin") === "1");
+  }, []);
+
+  const toggleAdmin = (v: boolean) => {
+    setAdmin(v);
+    if (v) localStorage.setItem("ans.admin", "1");
+    else localStorage.removeItem("ans.admin");
+    toast.success(v ? "מצב מנהל הופעל" : "מצב מנהל בוטל");
+  };
 
   if (!s) return null;
 
@@ -67,6 +79,16 @@ export default function Settings() {
         <Button onClick={handleSave} className="w-full gap-2 rounded-2xl" size="lg">
           <Save className="h-5 w-5" /> שמור הגדרות
         </Button>
+
+        <div className="mt-2 rounded-2xl border border-border bg-card p-4" dir="rtl">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-semibold">מצב מנהל</p>
+              <p className="text-xs text-muted-foreground">מאפשר עריכה, הוספה ומחיקה של דרישות במאגר וצפייה במקור הפנימי</p>
+            </div>
+            <Switch checked={admin} onCheckedChange={toggleAdmin} />
+          </div>
+        </div>
 
         <p className="pb-4 pt-2 text-center text-xs text-muted-foreground">
           כל הנתונים נשמרים מקומית במכשיר שלך בלבד
