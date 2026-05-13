@@ -10,9 +10,10 @@ interface Props {
   className?: string;
   label?: string;
   aspect?: "video" | "square";
+  removable?: boolean;
 }
 
-export function PhotoPicker({ value, onChange, className, label = "הוסף תמונה", aspect = "video" }: Props) {
+export function PhotoPicker({ value, onChange, className, label = "הוסף תמונה", aspect = "video", removable = true }: Props) {
   const camRef = useRef<HTMLInputElement>(null);
   const galRef = useRef<HTMLInputElement>(null);
 
@@ -27,14 +28,16 @@ export function PhotoPicker({ value, onChange, className, label = "הוסף תמ
       {value ? (
         <div className={cn("relative w-full overflow-hidden rounded-2xl border border-border bg-muted", aspect === "video" ? "aspect-video" : "aspect-square")}>
           <img src={value} alt="" className="h-full w-full object-cover" />
-          <button
-            type="button"
-            onClick={() => onChange(undefined)}
-            className="absolute top-2 left-2 grid h-9 w-9 place-items-center rounded-full bg-background/90 text-foreground shadow-elev"
-            aria-label="הסר תמונה"
-          >
-            <X className="h-4 w-4" />
-          </button>
+          {removable && (
+            <button
+              type="button"
+              onClick={() => onChange(undefined)}
+              className="absolute top-2 left-2 grid h-9 w-9 place-items-center rounded-full bg-background/90 text-foreground shadow-elev"
+              aria-label="הסר תמונה"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          )}
         </div>
       ) : (
         <div className={cn("grid w-full place-items-center rounded-2xl border-2 border-dashed border-border bg-primary-soft/40 text-muted-foreground", aspect === "video" ? "aspect-video" : "aspect-square")}>
