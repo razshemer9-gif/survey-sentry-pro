@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { ArrowRight, Download, Eye, FileDown, Loader2, Plus, Save, Trash2 } from "lucide-react";
 import { v4 as uuid } from "uuid";
@@ -27,8 +27,10 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 
-import { ChecklistItem, ComplianceStatus, SurveyReport } from "@/lib/types";
-import { getReport, getSettings, listTemplates, saveReport } from "@/lib/storage";
+import { ChecklistItem, ComplianceStatus, ConsultantSettings, DEFAULT_SETTINGS, SurveyReport } from "@/lib/types";
+import { getReport, listTemplates, saveReport } from "@/lib/storage";
+import { supabase } from "@/lib/supabase";
+import { useAuth } from "@/contexts/AuthContext";
 import { buildPdfFileName, generateReportPdf, statusLabel } from "@/lib/pdf";
 import { formatCurrency } from "@/lib/image";
 import { cn } from "@/lib/utils";
@@ -43,11 +45,26 @@ const STATUS_COLOR: Record<ComplianceStatus, string> = {
 export default function ReportEditor() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [report, setReport] = useState<SurveyReport | null>(null);
   const [previewOpen, setPreviewOpen] = useState(false);
   const [generating, setGenerating] = useState(false);
-  const settings = useMemo(() => getSettings(), []);
+  const [settings, setSettings] = useState<ConsultantSettings>({ ...DEFAULT_SETTINGS });
   const printRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!user) return;
+    supabase
+      .from("user_settings")
+      .select("settings")
+      .eq("user_id", user.id)
+      .single()
+      .then(({ data }) => {
+        if (data?.settings) {
+          setSettings({ ...DEFAULT_SETTINGS, ...(data.settings as ConsultantSettings) });
+        }
+      });
+  }, [user]);
 
   useEffect(() => {
     if (!id) return;

@@ -3,8 +3,6 @@ import { formatCurrency, formatHebrewDate, statusLabel } from "@/lib/pdf";
 import { forwardRef } from "react";
 import qrCode from "@/assets/qr-shemersafety.png";
 
-const BRAND_NAME = "שמר בטיחות יועצים";
-
 interface Props {
   report: SurveyReport;
   settings: ConsultantSettings;
@@ -66,10 +64,28 @@ export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, sett
           {settings.logo && (
             <img
               src={settings.logo}
-              alt={BRAND_NAME}
+              alt={settings.companyName || "לוגו"}
               style={{ height: 140, objectFit: "contain" }}
               crossOrigin="anonymous"
             />
+          )}
+          {settings.companyName && (
+            <div
+              style={{
+                marginTop: 10,
+                fontSize: 24,
+                fontWeight: 800,
+                letterSpacing: 1,
+                color: "#1e3a8a",
+              }}
+            >
+              {settings.companyName}
+            </div>
+          )}
+          {settings.consultantName && (
+            <div style={{ fontSize: 16, color: "#475569", marginTop: 4 }}>
+              {settings.consultantName}
+            </div>
           )}
 
           {/* QR code — discreet, blended into the white band */}
