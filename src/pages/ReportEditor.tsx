@@ -271,6 +271,7 @@ export default function ReportEditor() {
                   value={item.referencePhoto}
                   onChange={(u) => updateItem(item.id, { referencePhoto: u })}
                   label="צרף תמונת פרט מהגלריה"
+                  removable={false}
                 />
               </div>
 
