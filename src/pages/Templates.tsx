@@ -244,7 +244,7 @@ export default function Templates() {
 
       {/* Edit dialog */}
       <Dialog open={!!editing} onOpenChange={(o) => !o && setEditing(null)}>
-        <DialogContent className="max-h-[90vh] overflow-auto" dir="rtl">
+        <DialogContent className="w-[95vw] max-w-lg max-h-[90vh] overflow-auto" dir="rtl">
           <DialogHeader>
             <DialogTitle>{editing?.builtIn ? "צפייה" : "עריכת תבנית"}</DialogTitle>
           </DialogHeader>
@@ -267,8 +267,9 @@ export default function Templates() {
                 <Label className="text-xs">פרמטרים</Label>
                 <div className="mt-2 space-y-2">
                   {editing.items.map((it, i) => (
-                    <div key={i} className="flex items-center gap-2">
+                    <div key={i} className="flex min-w-0 items-center gap-2">
                       <Input
+                        className="min-w-0 flex-1"
                         value={it.title}
                         onChange={(e) => {
                           const next = [...editing.items];

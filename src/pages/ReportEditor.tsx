@@ -276,13 +276,13 @@ export default function ReportEditor() {
 
               {item.status === "non_compliant" && (
                 <div className="flex items-center gap-2">
-                  <Label className="text-xs text-muted-foreground">אומדן עלות (₪)</Label>
+                  <Label className="shrink-0 text-xs text-muted-foreground">אומדן עלות (₪)</Label>
                   <Input
                     type="number"
                     inputMode="numeric"
                     value={item.estimatedCost || ""}
                     onChange={(e) => updateItem(item.id, { estimatedCost: Number(e.target.value) || 0 })}
-                    className="h-9"
+                    className="h-9 min-w-0 flex-1"
                     placeholder="0"
                   />
                 </div>
@@ -304,7 +304,7 @@ export default function ReportEditor() {
       </Tabs>
 
       {/* Bottom action bar */}
-      <div className="fixed inset-x-0 bottom-16 z-30 mx-auto max-w-md px-4">
+      <div className="fixed inset-x-0 bottom-16 z-30 mx-auto max-w-lg px-4">
         <div className="grid grid-cols-2 gap-2 rounded-2xl bg-card/95 p-2 shadow-pop backdrop-blur-md border border-border">
           <Button variant="outline" onClick={() => setPreviewOpen(true)} className="gap-2 rounded-xl">
             <Eye className="h-4 w-4" /> תצוגה מקדימה

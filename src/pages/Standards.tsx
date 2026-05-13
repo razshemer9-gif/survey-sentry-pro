@@ -286,9 +286,9 @@ export default function Standards() {
         </div>
 
         {/* Category + Place filters */}
-        <div className="flex gap-2">
+        <div className="flex flex-col gap-2 sm:flex-row">
           <Select value={categoryFilter} onValueChange={setCategoryFilter}>
-            <SelectTrigger className="flex-1 text-xs" dir="rtl">
+            <SelectTrigger className="w-full text-xs sm:flex-1" dir="rtl">
               <SelectValue placeholder="קטגוריה" />
             </SelectTrigger>
             <SelectContent dir="rtl">
@@ -302,7 +302,7 @@ export default function Standards() {
           </Select>
 
           <Select value={placeFilter} onValueChange={setPlaceFilter}>
-            <SelectTrigger className="flex-1 text-xs" dir="rtl">
+            <SelectTrigger className="w-full text-xs sm:flex-1" dir="rtl">
               <SelectValue placeholder="סוג מקום" />
             </SelectTrigger>
             <SelectContent dir="rtl">
@@ -317,7 +317,7 @@ export default function Standards() {
         </div>
 
         {/* Severity chips */}
-        <div className="flex gap-2" dir="rtl">
+        <div className="flex flex-wrap gap-2" dir="rtl">
           {(["critical", "medium", "low"] as Severity[]).map((s) => {
             const active = severityFilter.has(s);
             return (
@@ -436,7 +436,7 @@ export default function Standards() {
 
       {/* Add to report dialog */}
       <Dialog open={!!selectedReq} onOpenChange={(o) => !o && setSelectedReq(null)}>
-        <DialogContent dir="rtl" className="max-w-sm">
+        <DialogContent dir="rtl" className="w-[95vw] max-w-sm">
           <DialogHeader>
             <DialogTitle className="text-base">הוסף לדוח</DialogTitle>
           </DialogHeader>
@@ -487,7 +487,7 @@ export default function Standards() {
 
       {/* Edit / Add requirement dialog */}
       <Dialog open={editOpen} onOpenChange={setEditOpen}>
-        <DialogContent dir="rtl" className="max-w-md max-h-[85vh] overflow-y-auto">
+        <DialogContent dir="rtl" className="w-[95vw] max-w-md max-h-[85vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="text-base">
               {editIsNew ? "הוספת ליקוי חדש" : "עריכת ליקוי"}

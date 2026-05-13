@@ -13,7 +13,7 @@ export function BottomNav() {
   const { pathname } = useLocation();
   return (
     <nav className="fixed bottom-0 inset-x-0 z-40 border-t border-border bg-card/95 backdrop-blur-md safe-bottom">
-      <ul className="mx-auto grid max-w-md grid-cols-4">
+      <ul className="mx-auto grid max-w-lg grid-cols-4">
         {tabs.map((t) => {
           const active =
             t.to === "/" ? pathname === "/" || pathname.startsWith("/report") : pathname.startsWith(t.to);
@@ -23,12 +23,12 @@ export function BottomNav() {
               <Link
                 to={t.to}
                 className={cn(
-                  "flex flex-col items-center justify-center gap-1 py-2.5 text-xs font-medium transition-colors",
+                  "flex flex-col items-center justify-center gap-1 py-2.5 text-[10px] sm:text-xs font-medium transition-colors",
                   active ? "text-primary" : "text-muted-foreground",
                 )}
               >
-                <Icon className={cn("h-5 w-5", active && "scale-110")} />
-                {t.label}
+                <Icon className={cn("h-5 w-5 shrink-0", active && "scale-110")} />
+                <span className="truncate">{t.label}</span>
               </Link>
             </li>
           );
@@ -41,7 +41,7 @@ export function BottomNav() {
 export function AppShell({ children, hideNav }: { children: React.ReactNode; hideNav?: boolean }) {
   return (
     <div className="min-h-screen pb-24">
-      <div className="mx-auto max-w-md">{children}</div>
+      <div className="mx-auto max-w-lg w-full">{children}</div>
       {!hideNav && <BottomNav />}
     </div>
   );
