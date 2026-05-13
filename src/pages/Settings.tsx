@@ -83,7 +83,19 @@ export default function Settings() {
 
       <div className="space-y-4 px-5 pt-5">
         <Field label="לוגו / סמליל">
-          <PhotoPicker value={s.logo} onChange={(u) => update({ logo: u })} aspect="square" label="העלה לוגו" />
+          <div className="space-y-2">
+            <PhotoPicker value={s.logo} onChange={(u) => update({ logo: u })} aspect="square" label="העלה לוגו" />
+            {s.logo && (
+              <Button
+                onClick={() => update({ logo: undefined })}
+                variant="outline"
+                size="sm"
+                className="w-full text-destructive hover:bg-destructive/10"
+              >
+                נקה לוגו
+              </Button>
+            )}
+          </div>
         </Field>
 
         <Field label="שם החברה / משרד">
