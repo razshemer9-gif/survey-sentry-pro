@@ -11,15 +11,11 @@ import { supabase } from "./supabase";
 
 const K_TEMPLATES = "ans.templates.v1";
 const K_SETTINGS = "ans.settings.v1";
-const K_DEVICE_ID = "ans.device_id";
 
-function getDeviceId(): string {
-  let id = localStorage.getItem(K_DEVICE_ID);
-  if (!id) {
-    id = uuid();
-    localStorage.setItem(K_DEVICE_ID, id);
-  }
-  return id;
+async function getUserId(): Promise<string> {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error("משתמש לא מחובר");
+  return user.id;
 }
 
 function read<T>(key: string, fallback: T): T {
@@ -37,34 +33,34 @@ function write<T>(key: string, value: T) {
 
 // ---------- Reports (Supabase) ----------
 export async function listReports(): Promise<SurveyReport[]> {
-  const deviceId = getDeviceId();
+  const userId = await getUserId();
   const { data, error } = await supabase
     .from("reports")
     .select("data")
-    .eq("device_id", deviceId)
+    .eq("device_id", userId)
     .order("updated_at", { ascending: false });
   if (error) throw error;
   return (data ?? []).map((row) => row.data as SurveyReport);
 }
 
 export async function getReport(id: string): Promise<SurveyReport | undefined> {
-  const deviceId = getDeviceId();
+  const userId = await getUserId();
   const { data, error } = await supabase
     .from("reports")
     .select("data")
     .eq("id", id)
-    .eq("device_id", deviceId)
+    .eq("device_id", userId)
     .single();
   if (error) return undefined;
   return data?.data as SurveyReport;
 }
 
 export async function saveReport(report: SurveyReport): Promise<SurveyReport> {
-  const deviceId = getDeviceId();
+  const userId = await getUserId();
   const updated = { ...report, updatedAt: Date.now() };
   const { error } = await supabase.from("reports").upsert({
     id: report.id,
-    device_id: deviceId,
+    device_id: userId,
     data: updated,
     created_at: updated.createdAt,
     updated_at: updated.updatedAt,
@@ -74,12 +70,12 @@ export async function saveReport(report: SurveyReport): Promise<SurveyReport> {
 }
 
 export async function deleteReport(id: string): Promise<void> {
-  const deviceId = getDeviceId();
+  const userId = await getUserId();
   const { error } = await supabase
     .from("reports")
     .delete()
     .eq("id", id)
-    .eq("device_id", deviceId);
+    .eq("device_id", userId);
   if (error) throw error;
 }
 
