@@ -13,12 +13,14 @@ export default function AuthPage() {
   const [loginPassword, setLoginPassword] = useState("");
   const [loginLoading, setLoginLoading] = useState(false);
   const [loginError, setLoginError] = useState("");
+  const [showLoginPassword, setShowLoginPassword] = useState(false);
 
   const [regEmail, setRegEmail] = useState("");
   const [regPassword, setRegPassword] = useState("");
   const [regLoading, setRegLoading] = useState(false);
   const [regError, setRegError] = useState("");
   const [regSuccess, setRegSuccess] = useState(false);
+  const [showRegPassword, setShowRegPassword] = useState(false);
 
   async function handleLogin(e: FormEvent) {
     e.preventDefault();
@@ -83,13 +85,17 @@ export default function AuthPage() {
                 <Label htmlFor="login-password">סיסמה</Label>
                 <Input
                   id="login-password"
-                  type="password"
+                  type={showLoginPassword ? "text" : "password"}
                   autoComplete="current-password"
                   value={loginPassword}
                   onChange={(e) => setLoginPassword(e.target.value)}
                   required
                   disabled={loginLoading}
                 />
+                <label className="flex items-center gap-2 text-sm text-muted-foreground cursor-pointer w-fit">
+                  <input type="checkbox" checked={showLoginPassword} onChange={(e) => setShowLoginPassword(e.target.checked)} className="h-4 w-4 accent-primary" />
+                  הצג סיסמה
+                </label>
               </div>
               {loginError && (
                 <p className="text-sm text-destructive">{loginError}</p>
@@ -125,7 +131,7 @@ export default function AuthPage() {
                   <Label htmlFor="reg-password">סיסמה (לפחות 6 תווים)</Label>
                   <Input
                     id="reg-password"
-                    type="password"
+                    type={showRegPassword ? "text" : "password"}
                     autoComplete="new-password"
                     value={regPassword}
                     onChange={(e) => setRegPassword(e.target.value)}
@@ -133,6 +139,10 @@ export default function AuthPage() {
                     minLength={6}
                     disabled={regLoading}
                   />
+                  <label className="flex items-center gap-2 text-sm text-muted-foreground cursor-pointer w-fit">
+                    <input type="checkbox" checked={showRegPassword} onChange={(e) => setShowRegPassword(e.target.checked)} className="h-4 w-4 accent-primary" />
+                    הצג סיסמה
+                  </label>
                 </div>
                 {regError && (
                   <p className="text-sm text-destructive">{regError}</p>
