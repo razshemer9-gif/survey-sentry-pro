@@ -1,6 +1,7 @@
-import { Link, useLocation } from "react-router-dom";
-import { ClipboardList, Settings, FileStack, BookOpen } from "lucide-react";
+import { Link, useLocation, useNavigate } from "react-router-dom";
+import { ClipboardList, Settings, FileStack, BookOpen, LogOut } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { signOut } from "@/lib/auth";
 
 const tabs = [
   { to: "/", label: "דוחות", icon: FileStack },
@@ -11,9 +12,16 @@ const tabs = [
 
 export function BottomNav() {
   const { pathname } = useLocation();
+  const navigate = useNavigate();
+
+  async function handleSignOut() {
+    await signOut();
+    navigate("/auth");
+  }
+
   return (
     <nav className="fixed bottom-0 inset-x-0 z-40 border-t border-border bg-card/95 backdrop-blur-md safe-bottom">
-      <ul className="mx-auto grid max-w-lg grid-cols-4">
+      <ul className="mx-auto grid max-w-lg grid-cols-5">
         {tabs.map((t) => {
           const active =
             t.to === "/" ? pathname === "/" || pathname.startsWith("/report") : pathname.startsWith(t.to);
@@ -33,6 +41,16 @@ export function BottomNav() {
             </li>
           );
         })}
+        <li>
+          <button
+            onClick={handleSignOut}
+            className="flex w-full flex-col items-center justify-center gap-1 py-2.5 text-[10px] sm:text-xs font-medium text-muted-foreground transition-colors hover:text-destructive"
+            title="התנתק"
+          >
+            <LogOut className="h-5 w-5 shrink-0" />
+            <span className="truncate">יציאה</span>
+          </button>
+        </li>
       </ul>
     </nav>
   );

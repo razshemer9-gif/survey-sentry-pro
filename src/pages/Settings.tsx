@@ -9,18 +9,34 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { PhotoPicker } from "@/components/PhotoPicker";
 import { Switch } from "@/components/ui/switch";
-import { ConsultantSettings } from "@/lib/types";
-import { getSettings, saveSettings } from "@/lib/storage";
+import { ConsultantSettings, DEFAULT_SETTINGS } from "@/lib/types";
+import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/lib/supabase";
 
 export default function Settings() {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [s, setS] = useState<ConsultantSettings | null>(null);
   const [admin, setAdmin] = useState(false);
+  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
-    setS(getSettings());
+    if (!user) return;
     setAdmin(localStorage.getItem("ans.admin") === "1");
-  }, []);
+
+    supabase
+      .from("user_settings")
+      .select("settings")
+      .eq("user_id", user.id)
+      .single()
+      .then(({ data }) => {
+        if (data?.settings) {
+          setS({ ...DEFAULT_SETTINGS, ...(data.settings as ConsultantSettings) });
+        } else {
+          setS({ ...DEFAULT_SETTINGS });
+        }
+      });
+  }, [user]);
 
   const toggleAdmin = (v: boolean) => {
     setAdmin(v);
@@ -33,9 +49,22 @@ export default function Settings() {
 
   const update = (patch: Partial<ConsultantSettings>) => setS({ ...s, ...patch });
 
-  const handleSave = () => {
-    saveSettings(s);
-    toast.success("ההגדרות נשמרו");
+  const handleSave = async () => {
+    if (!user) return;
+    setSaving(true);
+    try {
+      const { error } = await supabase.from("user_settings").upsert({
+        user_id: user.id,
+        settings: s,
+        updated_at: Date.now(),
+      });
+      if (error) throw error;
+      toast.success("ההגדרות נשמרו");
+    } catch {
+      toast.error("שגיאה בשמירת ההגדרות");
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (
@@ -76,8 +105,8 @@ export default function Settings() {
           <Input value={s.address} onChange={(e) => update({ address: e.target.value })} />
         </Field>
 
-        <Button onClick={handleSave} className="w-full gap-2 rounded-2xl" size="lg">
-          <Save className="h-5 w-5" /> שמור הגדרות
+        <Button onClick={handleSave} className="w-full gap-2 rounded-2xl" size="lg" disabled={saving}>
+          <Save className="h-5 w-5" /> {saving ? "שומר..." : "שמור הגדרות"}
         </Button>
 
         <div className="mt-2 rounded-2xl border border-border bg-card p-4" dir="rtl">
@@ -91,7 +120,7 @@ export default function Settings() {
         </div>
 
         <p className="pb-4 pt-2 text-center text-xs text-muted-foreground">
-          כל הנתונים נשמרים מקומית במכשיר שלך בלבד
+          ההגדרות נשמרות בענן ומשויכות לחשבונך
         </p>
       </div>
     </AppShell>
