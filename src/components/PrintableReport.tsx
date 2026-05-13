@@ -1,7 +1,6 @@
 import { ConsultantSettings, SurveyReport } from "@/lib/types";
 import { formatCurrency, formatHebrewDate, statusLabel } from "@/lib/pdf";
 import { forwardRef } from "react";
-import companyLogo from "@/assets/company-logo.png";
 import qrCode from "@/assets/qr-shemersafety.png";
 
 const BRAND_NAME = "שמר בטיחות יועצים";
@@ -64,12 +63,14 @@ export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, sett
             boxShadow: "0 8px 24px rgba(0,0,0,0.12)",
           }}
         >
-          <img
-            src={settings.logo || companyLogo}
-            alt={BRAND_NAME}
-            style={{ height: 140, objectFit: "contain" }}
-            crossOrigin="anonymous"
-          />
+          {settings.logo && (
+            <img
+              src={settings.logo}
+              alt={BRAND_NAME}
+              style={{ height: 140, objectFit: "contain" }}
+              crossOrigin="anonymous"
+            />
+          )}
 
           {/* QR code — discreet, blended into the white band */}
           <div
