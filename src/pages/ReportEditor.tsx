@@ -121,7 +121,7 @@ export default function ReportEditor() {
   };
 
   const totalCost = report.items
-    .filter((i) => i.status === "non_compliant")
+    .filter((i) => i.includeInCost)
     .reduce((s, i) => s + (Number(i.estimatedCost) || 0), 0);
 
   return (
@@ -274,8 +274,7 @@ export default function ReportEditor() {
                 />
               </div>
 
-              {item.status === "non_compliant" && (
-                <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2">
                   <Label className="shrink-0 text-xs text-muted-foreground">אומדן עלות (₪)</Label>
                   <Input
                     type="number"
@@ -285,8 +284,16 @@ export default function ReportEditor() {
                     className="h-9 min-w-0 flex-1"
                     placeholder="0"
                   />
+                  <label className="flex shrink-0 items-center gap-1 text-xs text-muted-foreground cursor-pointer select-none">
+                    <input
+                      type="checkbox"
+                      checked={!!item.includeInCost}
+                      onChange={(e) => updateItem(item.id, { includeInCost: e.target.checked })}
+                      className="h-4 w-4 accent-primary"
+                    />
+                    כלול באומדן
+                  </label>
                 </div>
-              )}
             </div>
           ))}
 

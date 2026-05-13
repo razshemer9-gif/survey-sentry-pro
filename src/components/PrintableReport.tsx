@@ -17,7 +17,7 @@ interface Props {
  */
 export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, settings }, ref) => {
   const totalCost = report.items
-    .filter((i) => i.status === "non_compliant")
+    .filter((i) => i.includeInCost)
     .reduce((sum, i) => sum + (Number(i.estimatedCost) || 0), 0);
 
   const counts = {
