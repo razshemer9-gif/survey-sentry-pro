@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { ArrowRight, Download, Eye, FileDown, Loader2, Plus, Save, Trash2 } from "lucide-react";
+import { ArrowRight, Download, Eye, FileDown, Loader2, PenLine, Plus, Save, Trash2, Wand2, X } from "lucide-react";
 import { v4 as uuid } from "uuid";
 import { toast } from "sonner";
 
@@ -34,6 +34,8 @@ import { useAuth } from "@/contexts/AuthContext";
 import { buildPdfFileName, generateReportPdf, statusLabel } from "@/lib/pdf";
 import { formatCurrency } from "@/lib/image";
 import { cn } from "@/lib/utils";
+import { findMatchingRequirement } from "@/lib/matching";
+import { SignaturePad } from "@/components/SignaturePad";
 
 const STATUS_COLOR: Record<ComplianceStatus, string> = {
   compliant: "bg-success/15 text-success border-success/30",
@@ -50,6 +52,7 @@ export default function ReportEditor() {
   const [previewOpen, setPreviewOpen] = useState(false);
   const [generating, setGenerating] = useState(false);
   const [settings, setSettings] = useState<ConsultantSettings>({ ...DEFAULT_SETTINGS });
+  const [signatureOpen, setSignatureOpen] = useState(false);
   const printRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -91,9 +94,29 @@ export default function ReportEditor() {
   const update = (patch: Partial<SurveyReport>) => setReport((r) => (r ? { ...r, ...patch } : r));
 
   const updateItem = (itemId: string, patch: Partial<ChecklistItem>) => {
-    setReport((r) =>
-      r ? { ...r, items: r.items.map((it) => (it.id === itemId ? { ...it, ...patch } : it)) } : r,
-    );
+    setReport((r) => {
+      if (!r) return r;
+      const items = r.items.map((it) => {
+        if (it.id !== itemId) return it;
+        const updated = { ...it, ...patch };
+        // Auto-suggest correction when status changes to non_compliant
+        if (patch.status === "non_compliant" && !it.suggestedCorrection) {
+          const match = findMatchingRequirement(updated.title);
+          if (match) {
+            updated.suggestedCorrection = match.correctionText;
+            updated.matchedRequirementId = match.id;
+          }
+        }
+        // Clear suggestion when status changes away from non_compliant
+        if (patch.status && patch.status !== "non_compliant") {
+          updated.suggestedCorrection = undefined;
+          updated.matchedRequirementId = undefined;
+          updated.correctionApplied = undefined;
+        }
+        return updated;
+      });
+      return { ...r, items };
+    });
   };
 
   const addItem = () =>
@@ -312,6 +335,43 @@ export default function ReportEditor() {
                     כלול באומדן
                   </label>
                 </div>
+
+                {/* Auto-recommendation */}
+                {item.status === "non_compliant" && item.suggestedCorrection && !item.correctionApplied && (
+                  <div className="mt-2 rounded-xl border border-blue-200 bg-blue-50 p-3">
+                    <div className="flex items-start gap-2">
+                      <Wand2 className="h-4 w-4 mt-0.5 shrink-0 text-blue-600" />
+                      <div className="flex-1 min-w-0">
+                        <p className="text-xs font-semibold text-blue-700 mb-1">הצעת תיקון מת"י 1918</p>
+                        <p className="text-xs text-blue-800 leading-relaxed">{item.suggestedCorrection}</p>
+                        <div className="flex gap-2 mt-2">
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="h-7 text-xs gap-1 border-blue-300 text-blue-700 hover:bg-blue-100"
+                            onClick={() => {
+                              updateItem(item.id, {
+                                notes: item.notes ? `${item.notes}\n${item.suggestedCorrection}` : item.suggestedCorrection,
+                                correctionApplied: true,
+                              });
+                              toast.success("הצעת התיקון הועתקה לממצאים");
+                            }}
+                          >
+                            קבל הצעה
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            className="h-7 text-xs gap-1 text-muted-foreground"
+                            onClick={() => updateItem(item.id, { suggestedCorrection: undefined, matchedRequirementId: undefined })}
+                          >
+                            <X className="h-3 w-3" /> דחה
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
             </div>
           ))}
 
@@ -330,11 +390,15 @@ export default function ReportEditor() {
 
       {/* Bottom action bar */}
       <div className="fixed inset-x-0 bottom-16 z-30 mx-auto max-w-lg px-4">
-        <div className="grid grid-cols-2 gap-2 rounded-2xl bg-card/95 p-2 shadow-pop backdrop-blur-md border border-border">
-          <Button variant="outline" onClick={() => setPreviewOpen(true)} className="gap-2 rounded-xl">
-            <Eye className="h-4 w-4" /> תצוגה מקדימה
+        <div className="grid grid-cols-3 gap-2 rounded-2xl bg-card/95 p-2 shadow-pop backdrop-blur-md border border-border">
+          <Button variant="outline" onClick={() => setPreviewOpen(true)} className="gap-1.5 rounded-xl text-xs">
+            <Eye className="h-4 w-4" /> תצוגה
           </Button>
-          <Button onClick={handleGenerate} disabled={generating} className="gap-2 rounded-xl">
+          <Button variant="outline" onClick={() => setSignatureOpen(true)} className="gap-1.5 rounded-xl text-xs relative">
+            <PenLine className="h-4 w-4" /> חתימה
+            {report.signatureDataUrl && <span className="absolute top-1 right-1 h-2 w-2 rounded-full bg-success" />}
+          </Button>
+          <Button onClick={handleGenerate} disabled={generating} className="gap-1.5 rounded-xl text-xs">
             {generating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
             הפק PDF
           </Button>
@@ -358,6 +422,43 @@ export default function ReportEditor() {
               הורד PDF
             </Button>
           </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Signature dialog */}
+      <Dialog open={signatureOpen} onOpenChange={setSignatureOpen}>
+        <DialogContent className="max-w-sm" dir="rtl">
+          <DialogHeader>
+            <DialogTitle>חתימה דיגיטלית</DialogTitle>
+          </DialogHeader>
+          {report.signatureDataUrl ? (
+            <div className="space-y-4">
+              <div className="rounded-xl border border-border bg-white p-3 text-center">
+                <img src={report.signatureDataUrl} alt="חתימה" className="mx-auto max-h-24 object-contain" />
+                <p className="mt-1 text-xs text-muted-foreground">{report.signatureConsultantName} • {report.signatureDate}</p>
+              </div>
+              <div className="flex gap-2">
+                <Button variant="outline" className="flex-1 gap-2 text-destructive hover:bg-destructive/10" onClick={() => update({ signatureDataUrl: undefined, signatureDate: undefined, signatureConsultantName: undefined })}>
+                  <X className="h-4 w-4" /> מחק חתימה
+                </Button>
+                <Button className="flex-1" onClick={() => setSignatureOpen(false)}>סגור</Button>
+              </div>
+            </div>
+          ) : (
+            <SignaturePad
+              consultantName={settings.consultantName}
+              onSave={(dataUrl) => {
+                update({
+                  signatureDataUrl: dataUrl,
+                  signatureDate: new Date().toLocaleDateString("he-IL"),
+                  signatureConsultantName: settings.consultantName || "",
+                });
+                setSignatureOpen(false);
+                toast.success("החתימה נשמרה");
+              }}
+              onCancel={() => setSignatureOpen(false)}
+            />
+          )}
         </DialogContent>
       </Dialog>
 

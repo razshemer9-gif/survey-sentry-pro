@@ -10,6 +10,10 @@ export interface ChecklistItem {
   photo?: string; // dataURL — תמונת מצב קיים
   referencePhoto?: string; // dataURL — תמונת דוגמה / פרט מבוקש
   referenceLabel?: string; // טקסט תיאור הפרט
+  // Auto-recommendation fields
+  suggestedCorrection?: string; // הצעת תיקון מת"י 1918
+  matchedRequirementId?: string; // ID של הדרישה
+  correctionApplied?: boolean; // האם המשתמש אישר את ההצעה
 }
 
 export interface ChecklistTemplate {
@@ -37,6 +41,10 @@ export interface SurveyReport {
   buildingTypeOther?: string;
   // Optional notes
   generalNotes?: string;
+  // Digital signature
+  signatureDataUrl?: string;
+  signatureDate?: string;
+  signatureConsultantName?: string;
 }
 
 export interface ConsultantSettings {
