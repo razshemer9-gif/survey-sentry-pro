@@ -86,7 +86,6 @@ export default function Standards() {
   const navigate = useNavigate();
   const [search, setSearch] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("all");
-  const [severityFilter, setSeverityFilter] = useState<Set<Severity>>(new Set());
   const [placeFilter, setPlaceFilter] = useState("all");
 
   const [items, setItems] = useState<AccessibilityRequirement[]>([]);
@@ -120,15 +119,6 @@ export default function Standards() {
   useEffect(() => {
     refresh();
   }, []);
-
-  const toggleSeverity = (s: Severity) => {
-    setSeverityFilter((prev) => {
-      const next = new Set(prev);
-      if (next.has(s)) next.delete(s);
-      else next.add(s);
-      return next;
-    });
-  };
 
   const openDialog = async (req: AccessibilityRequirement) => {
     setSelectedReq(req);
@@ -235,10 +225,9 @@ export default function Standards() {
       req.defectText.includes(search) ||
       req.tags.some((t) => t.includes(search));
     const matchCategory = categoryFilter === "all" || req.categoryCode === categoryFilter;
-    const matchSeverity = severityFilter.size === 0 || severityFilter.has(req.severity);
     const matchPlace =
       placeFilter === "all" || req.appliesTo.includes(placeFilter as PlaceType);
-    return matchSearch && matchCategory && matchSeverity && matchPlace;
+    return matchSearch && matchCategory && matchPlace;
   });
 
   return (
@@ -316,25 +305,6 @@ export default function Standards() {
           </Select>
         </div>
 
-        {/* Severity chips */}
-        <div className="flex flex-wrap gap-2" dir="rtl">
-          {(["critical", "medium", "low"] as Severity[]).map((s) => {
-            const active = severityFilter.has(s);
-            return (
-              <button
-                key={s}
-                onClick={() => toggleSeverity(s)}
-                className={`rounded-full px-3 py-1 text-xs font-semibold border transition-colors ${
-                  active
-                    ? SEVERITY_CHIP_ACTIVE[s]
-                    : "bg-card border-border text-muted-foreground hover:bg-muted"
-                }`}
-              >
-                {SEVERITY_LABELS[s]}
-              </button>
-            );
-          })}
-        </div>
       </div>
 
       {/* Cards */}
@@ -374,11 +344,6 @@ export default function Standards() {
                         </button>
                       </>
                     )}
-                    <Badge
-                      className={`text-[10px] px-2 py-0.5 border rounded-full ${SEVERITY_COLORS[req.severity]}`}
-                    >
-                      {SEVERITY_LABELS[req.severity]}
-                    </Badge>
                   </div>
                 </div>
                 <div className="flex flex-wrap gap-1 mt-1">
@@ -558,15 +523,16 @@ export default function Standards() {
                 rows={2}
               />
             </DraftField>
-            <DraftField label="חומרה">
+            <DraftField label="חומרה (אופציונלי)">
               <Select
-                value={draft.severity}
-                onValueChange={(v) => updateDraft({ severity: v as Severity })}
+                value={draft.severity ?? "none"}
+                onValueChange={(v) => updateDraft({ severity: v === "none" ? undefined as unknown as Severity : v as Severity })}
               >
                 <SelectTrigger dir="rtl" className="text-sm">
-                  <SelectValue />
+                  <SelectValue placeholder="ללא ציון חומרה" />
                 </SelectTrigger>
                 <SelectContent dir="rtl">
+                  <SelectItem value="none">ללא ציון חומרה</SelectItem>
                   {(["critical", "medium", "low"] as Severity[]).map((s) => (
                     <SelectItem key={s} value={s}>
                       {SEVERITY_LABELS[s]}
