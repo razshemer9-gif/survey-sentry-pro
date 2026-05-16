@@ -12,7 +12,7 @@ export interface AccessibilityRequirement {
   practicalRequirement: string;
   defectText: string;
   correctionText: string;
-  severity: Severity;
+  severity?: Severity;
   measurementFields?: string[];
   inspectionMethod: string;
   appliesTo: PlaceType[];

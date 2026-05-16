@@ -73,7 +73,7 @@ function emptyReq(): AccessibilityRequirement {
     practicalRequirement: "",
     defectText: "",
     correctionText: "",
-    severity: "medium",
+    severity: undefined as unknown as Severity,
     measurementFields: [],
     inspectionMethod: "",
     appliesTo: [],
