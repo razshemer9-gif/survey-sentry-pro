@@ -112,6 +112,8 @@ export async function addRequirementToReport(
     status: "pending" as const,
     notes: req.defectText,
     estimatedCost: 0,
+    // Copy reference photo from standards library — user can replace per-report
+    referencePhoto: req.referencePhoto,
   };
   const updated: SurveyReport = { ...report, items: [...report.items, newItem] };
   await saveReport(updated);
