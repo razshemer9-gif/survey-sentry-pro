@@ -4,14 +4,14 @@ import { ArrowRight, Save } from "lucide-react";
 import { toast } from "sonner";
 
 import { AppShell } from "@/components/AppShell";
+import { Field } from "@/components/Field";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { PhotoPicker } from "@/components/PhotoPicker";
 import { Switch } from "@/components/ui/switch";
-import { ConsultantSettings, DEFAULT_SETTINGS } from "@/lib/types";
+import { ConsultantSettings } from "@/lib/types";
+import { loadUserSettings, saveUserSettings } from "@/lib/storage";
 import { useAuth } from "@/contexts/AuthContext";
-import { supabase } from "@/lib/supabase";
 
 export default function Settings() {
   const navigate = useNavigate();
@@ -24,18 +24,7 @@ export default function Settings() {
     if (!user) return;
     setAdmin(localStorage.getItem("ans.admin") === "1");
 
-    supabase
-      .from("user_settings")
-      .select("settings")
-      .eq("user_id", user.id)
-      .single()
-      .then(({ data }) => {
-        if (data?.settings) {
-          setS({ ...DEFAULT_SETTINGS, ...(data.settings as ConsultantSettings) });
-        } else {
-          setS({ ...DEFAULT_SETTINGS });
-        }
-      });
+    loadUserSettings(user.id).then(setS);
   }, [user]);
 
   const toggleAdmin = (v: boolean) => {
@@ -53,12 +42,7 @@ export default function Settings() {
     if (!user) return;
     setSaving(true);
     try {
-      const { error } = await supabase.from("user_settings").upsert({
-        user_id: user.id,
-        settings: s,
-        updated_at: Date.now(),
-      });
-      if (error) throw error;
+      await saveUserSettings(user.id, s);
       toast.success("ההגדרות נשמרו");
     } catch {
       toast.error("שגיאה בשמירת ההגדרות");
@@ -136,14 +120,5 @@ export default function Settings() {
         </p>
       </div>
     </AppShell>
-  );
-}
-
-function Field({ label, children }: { label: string; children: React.ReactNode }) {
-  return (
-    <div className="space-y-1.5">
-      <Label className="text-xs font-semibold text-muted-foreground">{label}</Label>
-      {children}
-    </div>
   );
 }

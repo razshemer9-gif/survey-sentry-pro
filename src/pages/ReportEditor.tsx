@@ -5,6 +5,7 @@ import { v4 as uuid } from "uuid";
 import { toast } from "sonner";
 
 import { AppShell } from "@/components/AppShell";
+import { Field } from "@/components/Field";
 import { PhotoPicker } from "@/components/PhotoPicker";
 import { PrintableReport } from "@/components/PrintableReport";
 import { ReferencePhotoPicker } from "@/components/ReferencePhotoPicker";
@@ -29,8 +30,7 @@ import {
 } from "@/components/ui/dialog";
 
 import { ChecklistItem, ComplianceStatus, ConsultantSettings, DEFAULT_SETTINGS, ReferencePhotoEntry, SurveyReport } from "@/lib/types";
-import { getReport, listTemplates, saveReport } from "@/lib/storage";
-import { supabase } from "@/lib/supabase";
+import { getReport, listTemplates, loadUserSettings, saveReport, saveUserSettings } from "@/lib/storage";
 import { useAuth } from "@/contexts/AuthContext";
 import { buildPdfFileName, generateReportPdf, statusLabel } from "@/lib/pdf";
 import { formatCurrency } from "@/lib/image";
@@ -86,16 +86,7 @@ export default function ReportEditor() {
 
   useEffect(() => {
     if (!user) return;
-    supabase
-      .from("user_settings")
-      .select("settings")
-      .eq("user_id", user.id)
-      .single()
-      .then(({ data }) => {
-        if (data?.settings) {
-          setSettings({ ...DEFAULT_SETTINGS, ...(data.settings as ConsultantSettings) });
-        }
-      });
+    loadUserSettings(user.id).then(setSettings);
   }, [user]);
 
   useEffect(() => {
@@ -631,20 +622,14 @@ export default function ReportEditor() {
           .map((r) => ({ label: r.requirementTitle, photo: r.referencePhoto! }))}
         personalPhotos={settings.referencePhotos ?? []}
         onAddPersonal={async (entry) => {
-          const updated: ReferencePhotoEntry[] = [...(settings.referencePhotos ?? []), entry];
-          const newSettings = { ...settings, referencePhotos: updated };
+          const newSettings = { ...settings, referencePhotos: [...(settings.referencePhotos ?? []), entry] };
           setSettings(newSettings);
-          if (user) {
-            await supabase.from("user_settings").upsert({ user_id: user.id, settings: newSettings });
-          }
+          if (user) await saveUserSettings(user.id, newSettings);
         }}
         onDeletePersonal={async (id) => {
-          const updated = (settings.referencePhotos ?? []).filter((p) => p.id !== id);
-          const newSettings = { ...settings, referencePhotos: updated };
+          const newSettings = { ...settings, referencePhotos: (settings.referencePhotos ?? []).filter((p) => p.id !== id) };
           setSettings(newSettings);
-          if (user) {
-            await supabase.from("user_settings").upsert({ user_id: user.id, settings: newSettings });
-          }
+          if (user) await saveUserSettings(user.id, newSettings);
         }}
       />
 
@@ -653,15 +638,6 @@ export default function ReportEditor() {
         <PrintableReport ref={printRef} report={report} settings={settings} />
       </div>
     </AppShell>
-  );
-}
-
-function Field({ label, children }: { label: string; children: React.ReactNode }) {
-  return (
-    <div className="space-y-1.5">
-      <Label className="text-xs font-semibold text-muted-foreground">{label}</Label>
-      {children}
-    </div>
   );
 }
 

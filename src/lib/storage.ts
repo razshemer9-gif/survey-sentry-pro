@@ -156,3 +156,20 @@ export function getSettings(): ConsultantSettings {
 export function saveSettings(s: ConsultantSettings) {
   write(K_SETTINGS, s);
 }
+
+// ---------- User settings (Supabase) ----------
+export async function loadUserSettings(userId: string): Promise<ConsultantSettings> {
+  const { data } = await supabase
+    .from("user_settings")
+    .select("settings")
+    .eq("user_id", userId)
+    .single();
+  return { ...DEFAULT_SETTINGS, ...(data?.settings as ConsultantSettings | undefined) };
+}
+
+export async function saveUserSettings(userId: string, s: ConsultantSettings): Promise<void> {
+  const { error } = await supabase
+    .from("user_settings")
+    .upsert({ user_id: userId, settings: s, updated_at: Date.now() });
+  if (error) throw error;
+}
