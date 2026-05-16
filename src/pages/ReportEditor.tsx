@@ -53,7 +53,10 @@ export default function ReportEditor() {
   const [generating, setGenerating] = useState(false);
   const [settings, setSettings] = useState<ConsultantSettings>({ ...DEFAULT_SETTINGS });
   const [signatureOpen, setSignatureOpen] = useState(false);
+  const [autoSaveStatus, setAutoSaveStatus] = useState<"saved" | "saving" | "unsaved">("saved");
   const printRef = useRef<HTMLDivElement>(null);
+  const autoSaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const isFirstLoad = useRef(true);
 
   useEffect(() => {
     if (!user) return;
@@ -86,8 +89,30 @@ export default function ReportEditor() {
         return it;
       });
       setReport({ ...r, items });
+      isFirstLoad.current = true;
     });
   }, [id, navigate]);
+
+  // Auto-save: debounce 3s after every change
+  useEffect(() => {
+    if (!report) return;
+    if (isFirstLoad.current) {
+      isFirstLoad.current = false;
+      return;
+    }
+    setAutoSaveStatus("unsaved");
+    if (autoSaveTimer.current) clearTimeout(autoSaveTimer.current);
+    autoSaveTimer.current = setTimeout(async () => {
+      setAutoSaveStatus("saving");
+      try {
+        await saveReport(report);
+        setAutoSaveStatus("saved");
+      } catch {
+        setAutoSaveStatus("unsaved");
+      }
+    }, 3000);
+    return () => { if (autoSaveTimer.current) clearTimeout(autoSaveTimer.current); };
+  }, [report]);
 
   if (!report) {
     return (
@@ -186,7 +211,14 @@ export default function ReportEditor() {
           >
             <ArrowRight className="h-5 w-5" />
           </button>
-          <div className="text-sm font-semibold opacity-90">עריכת דוח</div>
+          <div className="flex flex-col items-center">
+            <div className="text-sm font-semibold opacity-90">עריכת דוח</div>
+            <div className="text-[10px] opacity-70 mt-0.5">
+              {autoSaveStatus === "saving" && "שומר..."}
+              {autoSaveStatus === "saved" && "✓ נשמר"}
+              {autoSaveStatus === "unsaved" && "לא שמור"}
+            </div>
+          </div>
           <button
             onClick={handleSave}
             className="grid h-10 w-10 place-items-center rounded-full bg-white/15 hover:bg-white/25"
