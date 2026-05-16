@@ -317,7 +317,7 @@ export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, sett
             >
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 12 }}>
                 <div style={{ flex: 1 }}>
-                  <div style={{ fontSize: 12, color: "#64748b" }}>פרמטר {idx + 1}</div>
+                  <div style={{ fontSize: 12, color: "#64748b" }}>ממצא {idx + 1}</div>
                   <div style={{ fontSize: 17, fontWeight: 700, color: "#0f172a", marginTop: 2 }}>{item.title}</div>
                 </div>
                 <StatusPill status={item.status} />

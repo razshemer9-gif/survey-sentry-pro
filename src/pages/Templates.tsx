@@ -98,7 +98,7 @@ export default function Templates() {
       id: uuid(),
       name: "תבנית חדשה",
       description: "",
-      items: [{ title: "פרמטר ראשון" }],
+      items: [{ title: "ממצא ראשון" }],
     });
 
   const remove = (id: string) => {
@@ -128,7 +128,7 @@ export default function Templates() {
           <div className="w-10" />
         </div>
         <h1 className="mt-3 text-2xl font-extrabold">ניהול תבניות</h1>
-        <p className="mt-1 text-sm opacity-90">צור רשימות פרמטרים מותאמות לסוג מבנה או עסק</p>
+        <p className="mt-1 text-sm opacity-90">צור רשימות ממצאים מותאמות לסוג מבנה או עסק</p>
       </header>
 
       <div className="px-5 pt-4">
@@ -154,7 +154,7 @@ export default function Templates() {
                   )}
                 </div>
                 {t.description && <p className="mt-1 text-xs text-muted-foreground">{t.description}</p>}
-                <p className="mt-2 text-xs text-muted-foreground">{t.items.length} פרמטרים</p>
+                <p className="mt-2 text-xs text-muted-foreground">{t.items.length} ממצאים</p>
               </div>
               <div className="flex flex-col gap-1">
                 {!t.builtIn && (
@@ -201,7 +201,7 @@ export default function Templates() {
           <h2 className="text-base font-bold">תבניות נגישות ת&quot;י 1918</h2>
         </div>
         <p className="text-xs text-muted-foreground mb-3">
-          בחר תבנית מוכנה לפי סוג המבנה. כל תבנית תיטען כרשימת פרמטרים מותאמת.
+          בחר תבנית מוכנה לפי סוג המבנה. כל תבנית תיטען כרשימת ממצאים מותאמת.
         </p>
         <ul className="space-y-2">
           {ACCESSIBILITY_TEMPLATES.map((tpl) => {
@@ -264,7 +264,7 @@ export default function Templates() {
               </div>
 
               <div>
-                <Label className="text-xs">פרמטרים</Label>
+                <Label className="text-xs">ממצאים</Label>
                 <div className="mt-2 space-y-2">
                   {editing.items.map((it, i) => (
                     <div key={i} className="flex min-w-0 items-center gap-2">
@@ -293,10 +293,10 @@ export default function Templates() {
                   variant="outline"
                   className="mt-2 w-full gap-2"
                   onClick={() =>
-                    setEditing({ ...editing, items: [...editing.items, { title: "פרמטר חדש" }] })
+                    setEditing({ ...editing, items: [...editing.items, { title: "ממצא חדש" }] })
                   }
                 >
-                  <Plus className="h-4 w-4" /> הוסף פרמטר
+                  <Plus className="h-4 w-4" /> הוסף ממצא
                 </Button>
               </div>
             </div>

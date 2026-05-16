@@ -166,7 +166,7 @@ export default function ReportEditor() {
             ...r,
             items: [
               ...r.items,
-              { id: uuid(), title: "פרמטר חדש", status: "pending", notes: "", estimatedCost: 0 },
+              { id: uuid(), title: "ממצא חדש", status: "pending", notes: "", estimatedCost: 0 },
             ],
           }
         : r,
@@ -295,7 +295,7 @@ export default function ReportEditor() {
           {report.items.map((item, idx) => (
             <div key={item.id} className="rounded-2xl border border-border bg-card p-4 shadow-soft animate-fade-in">
               <div className="mb-2 flex items-center justify-between">
-                <span className="text-xs font-semibold text-muted-foreground">פרמטר {idx + 1}</span>
+                <span className="text-xs font-semibold text-muted-foreground">ממצא {idx + 1}</span>
                 <button onClick={() => removeItem(item.id)} className="text-muted-foreground hover:text-destructive" aria-label="מחק">
                   <Trash2 className="h-4 w-4" />
                 </button>
@@ -335,7 +335,7 @@ export default function ReportEditor() {
                 <PhotoPicker
                   value={item.photo}
                   onChange={(u) => updateItem(item.id, { photo: u })}
-                  label="צרף תמונה לפרמטר"
+                  label="צרף תמונה לממצא"
                 />
               </div>
 
@@ -406,7 +406,7 @@ export default function ReportEditor() {
                       if (match) {
                         updateItem(item.id, { suggestedCorrection: match.correctionText, matchedRequirementId: match.id });
                       } else {
-                        toast.info("לא נמצאה המלצה מתאימה לפרמטר זה");
+                        toast.info("לא נמצאה המלצה מתאימה לממצא זה");
                       }
                     }}
                   >
@@ -455,7 +455,7 @@ export default function ReportEditor() {
 
           <div className="grid grid-cols-2 gap-2">
             <Button onClick={addItem} variant="outline" className="gap-2 rounded-2xl border-dashed">
-              <Plus className="h-4 w-4" /> פרמטר חדש
+              <Plus className="h-4 w-4" /> ממצא חדש
             </Button>
             <Button
               variant="outline"
@@ -560,7 +560,7 @@ export default function ReportEditor() {
       <Dialog open={libraryOpen} onOpenChange={setLibraryOpen}>
         <DialogContent className="max-h-[85vh] max-w-lg flex flex-col gap-0 p-0" dir="rtl">
           <DialogHeader className="px-4 pt-4 pb-2">
-            <DialogTitle>הוסף פרמטר מהמאגר</DialogTitle>
+            <DialogTitle>הוסף ממצא מהמאגר</DialogTitle>
           </DialogHeader>
           <div className="px-4 pb-2">
             <Input
@@ -658,12 +658,12 @@ function TemplateSwap({ onLoad }: { onLoad: (items: ChecklistItem[]) => void }) 
   const templates = listTemplates();
   return (
     <div className="rounded-2xl border border-border bg-primary-soft/40 p-3">
-      <Label className="mb-2 block text-xs font-semibold text-primary">טען רשימת פרמטרים מתבנית</Label>
+      <Label className="mb-2 block text-xs font-semibold text-primary">טען רשימת ממצאים מתבנית</Label>
       <Select
         onValueChange={(val) => {
           const t = templates.find((x) => x.id === val);
           if (!t) return;
-          if (!confirm("לטעון את הפרמטרים מהתבנית? פרמטרים קיימים יוחלפו.")) return;
+          if (!confirm("לטעון את הממצאים מהתבנית? ממצאים קיימים יוחלפו.")) return;
           onLoad(
             t.items.map((i) => ({
               id: uuid(),
