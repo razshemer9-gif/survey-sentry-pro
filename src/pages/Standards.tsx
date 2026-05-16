@@ -30,6 +30,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 
+import { PhotoPicker } from "@/components/PhotoPicker";
 import { CATEGORIES, PLACE_TYPE_LABELS } from "@/lib/standards-data";
 import { AccessibilityRequirement, Severity, PlaceType } from "@/lib/standards-types";
 import { SurveyReport } from "@/lib/types";
@@ -375,6 +376,16 @@ export default function Standards() {
                     </p>
                   </div>
                 )}
+                {req.referencePhoto && (
+                  <div className="pt-1">
+                    <p className="text-[10px] font-semibold text-primary mb-1">תמונת פרט</p>
+                    <img
+                      src={req.referencePhoto}
+                      alt="תמונת פרט"
+                      className="w-full rounded-xl object-cover border border-border max-h-48"
+                    />
+                  </div>
+                )}
                 {req.tags.length > 0 && (
                   <div className="flex flex-wrap gap-1 pt-1">
                     {req.tags.map((tag) => (
@@ -521,6 +532,15 @@ export default function Standards() {
                 value={draft.correctionText}
                 onChange={(e) => updateDraft({ correctionText: e.target.value })}
                 rows={2}
+              />
+            </DraftField>
+            <DraftField label="תמונת פרט (משותפת לכל המשתמשים)">
+              <PhotoPicker
+                value={draft.referencePhoto}
+                onChange={(u) => updateDraft({ referencePhoto: u ?? undefined })}
+                label="העלה תמונת פרט"
+                aspect="video"
+                removable={true}
               />
             </DraftField>
             <DraftField label="חומרה (אופציונלי)">

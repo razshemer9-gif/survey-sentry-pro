@@ -18,4 +18,5 @@ export interface AccessibilityRequirement {
   appliesTo: PlaceType[];
   tags: string[];
   internalCitation?: string;
+  referencePhoto?: string; // dataURL — תמונת פרט משותפת לכל המשתמשים
 }
