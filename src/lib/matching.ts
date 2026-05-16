@@ -116,16 +116,28 @@ export function findMatchingRequirement(itemTitle: string): AccessibilityRequire
   const queryTokens = tokenize(itemTitle);
   if (queryTokens.length === 0) return null;
 
-  let bestScore = 0;
-  let bestMatch: AccessibilityRequirement | null = null;
+  const scored = STANDARDS_DATA
+    .map((req) => ({ req, score: scoreRequirement(req, queryTokens) }))
+    .filter(({ score }) => score >= 8)
+    .sort((a, b) => b.score - a.score);
 
-  for (const req of STANDARDS_DATA) {
-    const score = scoreRequirement(req, queryTokens);
-    if (score > bestScore) {
-      bestScore = score;
-      bestMatch = req;
-    }
-  }
+  if (scored.length === 0) return null;
 
-  return bestScore >= 8 ? bestMatch : null;
+  const bestScore = scored[0].score;
+  // Collect all requirements within 50% of the best score
+  const relevant = scored.filter(({ score }) => score >= bestScore * 0.5);
+
+  if (relevant.length === 1) return relevant[0].req;
+
+  // Merge correctionTexts from all relevant requirements into a synthetic one
+  const seen = new Set<string>();
+  const merged = relevant
+    .map(({ req }) => req.correctionText)
+    .filter((t) => { if (seen.has(t)) return false; seen.add(t); return true; })
+    .join("\n• ");
+
+  return {
+    ...relevant[0].req,
+    correctionText: "• " + merged,
+  };
 }
