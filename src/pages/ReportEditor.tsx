@@ -77,7 +77,15 @@ export default function ReportEditor() {
         navigate("/");
         return;
       }
-      setReport(r);
+      // Auto-suggest for existing non_compliant items that don't have a suggestion yet
+      const items = r.items.map((it) => {
+        if (it.status === "non_compliant" && !it.suggestedCorrection && !it.correctionApplied) {
+          const match = findMatchingRequirement(it.title);
+          if (match) return { ...it, suggestedCorrection: match.correctionText, matchedRequirementId: match.id };
+        }
+        return it;
+      });
+      setReport({ ...r, items });
     });
   }, [id, navigate]);
 
@@ -335,6 +343,25 @@ export default function ReportEditor() {
                     כלול באומדן
                   </label>
                 </div>
+
+                {/* Manual search button when no match found */}
+                {item.status === "non_compliant" && !item.suggestedCorrection && !item.correctionApplied && (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="mt-2 h-7 w-full text-xs gap-1.5 border-dashed text-muted-foreground"
+                    onClick={() => {
+                      const match = findMatchingRequirement(item.title);
+                      if (match) {
+                        updateItem(item.id, { suggestedCorrection: match.correctionText, matchedRequirementId: match.id });
+                      } else {
+                        toast.info("לא נמצאה המלצה מתאימה לפרמטר זה");
+                      }
+                    }}
+                  >
+                    <Wand2 className="h-3 w-3" /> חפש המלצה מת"י 1918
+                  </Button>
+                )}
 
                 {/* Auto-recommendation */}
                 {item.status === "non_compliant" && item.suggestedCorrection && !item.correctionApplied && (
