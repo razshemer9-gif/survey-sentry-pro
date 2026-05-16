@@ -301,7 +301,7 @@ export default function ReportEditor() {
         </TabsContent>
 
         {/* CHECKLIST TAB */}
-        <TabsContent value="checklist" className="mt-4 space-y-3">
+        <TabsContent value="checklist" className="mt-4 space-y-3 pb-20">
           <TemplateSwap onLoad={(items) => setReport((r) => (r ? { ...r, items } : r))} />
 
           {report.items.map((item, idx) => (
@@ -439,17 +439,17 @@ export default function ReportEditor() {
                 )}
               </div>
 
-              <div className="flex items-center gap-2">
+              <div className="flex flex-wrap items-center gap-2">
                   <Label className="shrink-0 text-xs text-muted-foreground">אומדן עלות (₪)</Label>
                   <Input
                     type="number"
                     inputMode="numeric"
                     value={item.estimatedCost || ""}
                     onChange={(e) => updateItem(item.id, { estimatedCost: Number(e.target.value) || 0 })}
-                    className="h-9 min-w-0 flex-1"
+                    className="h-9 w-28 min-w-0"
                     placeholder="0"
                   />
-                  <label className="flex shrink-0 items-center gap-1 text-xs text-muted-foreground cursor-pointer select-none">
+                  <label className="flex shrink-0 items-center gap-1.5 text-xs text-muted-foreground cursor-pointer select-none min-h-[44px]">
                     <input
                       type="checkbox"
                       checked={!!item.includeInCost}
@@ -493,8 +493,8 @@ export default function ReportEditor() {
         </TabsContent>
       </Tabs>
 
-      {/* Bottom action bar */}
-      <div className="fixed inset-x-0 bottom-16 z-30 mx-auto max-w-lg px-4">
+      {/* Bottom action bar — sits above BottomNav, accounts for safe-area */}
+      <div className="fixed inset-x-0 z-30 mx-auto max-w-lg px-4" style={{ bottom: 'calc(3.5rem + env(safe-area-inset-bottom, 0px))' }}>
         <div className="grid grid-cols-3 gap-2 rounded-2xl bg-card/95 p-2 shadow-pop backdrop-blur-md border border-border">
           <Button variant="outline" onClick={() => setPreviewOpen(true)} className="gap-1.5 rounded-xl text-xs">
             <Eye className="h-4 w-4" /> תצוגה

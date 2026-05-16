@@ -68,7 +68,7 @@ export function BottomNav() {
 
 export function AppShell({ children, hideNav }: { children: React.ReactNode; hideNav?: boolean }) {
   return (
-    <div className="min-h-screen pb-24">
+    <div className="min-h-screen" style={{ paddingBottom: 'calc(7rem + env(safe-area-inset-bottom, 0px))' }}>
       <div className="mx-auto max-w-lg w-full">{children}</div>
       {!hideNav && <BottomNav />}
     </div>
