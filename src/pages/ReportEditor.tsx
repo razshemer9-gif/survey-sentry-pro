@@ -97,15 +97,7 @@ export default function ReportEditor() {
         navigate("/");
         return;
       }
-      // Auto-suggest for existing non_compliant items that don't have a suggestion yet
-      const items = r.items.map((it) => {
-        if (it.status === "non_compliant" && !it.suggestedCorrection && !it.correctionApplied) {
-          const found = findMatch(it.title);
-          if (found) return { ...it, suggestedCorrection: found.correctionText, matchedRequirementId: found.id };
-        }
-        return it;
-      });
-      setReport({ ...r, items });
+      setReport(r);
       isFirstLoad.current = true;
     });
   }, [id, navigate]);
@@ -142,14 +134,6 @@ export default function ReportEditor() {
       const items = r.items.map((it) => {
         if (it.id !== itemId) return it;
         const updated = { ...it, ...patch };
-        // Auto-suggest correction when status changes to non_compliant
-        if (patch.status === "non_compliant" && !it.suggestedCorrection) {
-          const found = findMatch(updated.title);
-          if (found) {
-            updated.suggestedCorrection = found.correctionText;
-            updated.matchedRequirementId = found.id;
-          }
-        }
         // Clear suggestion when status changes away from non_compliant
         if (patch.status && patch.status !== "non_compliant") {
           updated.suggestedCorrection = undefined;
@@ -338,22 +322,11 @@ export default function ReportEditor() {
                   <div className="flex items-center gap-1.5 mb-2">
                     <Wand2 className="h-3.5 w-3.5 text-blue-600 shrink-0" />
                     <p className="text-xs font-semibold text-blue-700">הצעת תיקון</p>
-                    {!item.suggestedCorrection && (
-                      <button
-                        className="mr-auto text-[10px] text-blue-500 underline underline-offset-2"
-                        onClick={() => {
-                          const found = findMatch(item.title);
-                          if (found) updateItem(item.id, { suggestedCorrection: found.correctionText, matchedRequirementId: found.id });
-                        }}
-                      >
-                        חפש מת"י 1918
-                      </button>
-                    )}
                   </div>
                   <Textarea
                     value={item.suggestedCorrection || ""}
                     onChange={(e) => updateItem(item.id, { suggestedCorrection: e.target.value })}
-                    placeholder="הקלד הצעת תיקון ידנית, או לחץ 'חפש מת&quot;י 1918' למעלה..."
+                    placeholder="הקלד הצעת תיקון ידנית..."
                     rows={3}
                     className="text-xs bg-white border-blue-200 text-blue-900 placeholder:text-blue-300 resize-none"
                   />
