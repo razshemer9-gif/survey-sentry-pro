@@ -1,6 +1,5 @@
 import { STANDARDS_DATA } from "./standards-data";
 import { AccessibilityRequirement } from "./standards-types";
-
 const STOP_WORDS = new Set([
   "את", "של", "עם", "על", "אל", "לא", "יש", "כי", "הם", "הן", "אם",
   "כל", "זה", "זו", "הוא", "היא", "לפי", "בין", "עד", "גם", "רק",
@@ -110,13 +109,16 @@ function scoreRequirement(req: AccessibilityRequirement, queryTokens: string[]):
   return score;
 }
 
-export function findMatchingRequirement(itemTitle: string): AccessibilityRequirement | null {
+export function findMatchingRequirement(
+  itemTitle: string,
+  source: AccessibilityRequirement[] = STANDARDS_DATA,
+): AccessibilityRequirement | null {
   if (!itemTitle || itemTitle.trim().length < 3) return null;
 
   const queryTokens = tokenize(itemTitle);
   if (queryTokens.length === 0) return null;
 
-  const scored = STANDARDS_DATA
+  const scored = source
     .map((req) => ({ req, score: scoreRequirement(req, queryTokens) }))
     .filter(({ score }) => score >= 8)
     .sort((a, b) => b.score - a.score);

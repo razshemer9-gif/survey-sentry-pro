@@ -58,16 +58,21 @@ export default function ReportEditor() {
   const [signatureOpen, setSignatureOpen] = useState(false);
   const [libraryOpen, setLibraryOpen] = useState(false);
   const [libraryItems, setLibraryItems] = useState<AccessibilityRequirement[]>([]);
+  const libraryItemsRef = useRef<AccessibilityRequirement[]>([]);
   const [librarySearch, setLibrarySearch] = useState("");
   const [refPickerItemId, setRefPickerItemId] = useState<string | null>(null);
 
   const openRefPicker = async (itemId: string) => {
-    if (libraryItems.length === 0) {
+    if (libraryItemsRef.current.length === 0) {
       const items = await listRequirements();
       setLibraryItems(items);
+      libraryItemsRef.current = items;
     }
     setRefPickerItemId(itemId);
   };
+
+  const findMatch = (title: string) =>
+    findMatchingRequirement(title, libraryItemsRef.current.length > 0 ? libraryItemsRef.current : undefined);
   const printRef = useRef<HTMLDivElement>(null);
   const autoSaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const isFirstLoad = useRef(true);
@@ -97,8 +102,8 @@ export default function ReportEditor() {
       // Auto-suggest for existing non_compliant items that don't have a suggestion yet
       const items = r.items.map((it) => {
         if (it.status === "non_compliant" && !it.suggestedCorrection && !it.correctionApplied) {
-          const match = findMatchingRequirement(it.title);
-          if (match) return { ...it, suggestedCorrection: match.correctionText, matchedRequirementId: match.id };
+          const found = findMatch(it.title);
+          if (found) return { ...it, suggestedCorrection: found.correctionText, matchedRequirementId: found.id };
         }
         return it;
       });
@@ -141,10 +146,10 @@ export default function ReportEditor() {
         const updated = { ...it, ...patch };
         // Auto-suggest correction when status changes to non_compliant
         if (patch.status === "non_compliant" && !it.suggestedCorrection) {
-          const match = findMatchingRequirement(updated.title);
-          if (match) {
-            updated.suggestedCorrection = match.correctionText;
-            updated.matchedRequirementId = match.id;
+          const found = findMatch(updated.title);
+          if (found) {
+            updated.suggestedCorrection = found.correctionText;
+            updated.matchedRequirementId = found.id;
           }
         }
         // Clear suggestion when status changes away from non_compliant
@@ -340,8 +345,8 @@ export default function ReportEditor() {
                       <button
                         className="mr-auto text-[10px] text-blue-500 underline underline-offset-2"
                         onClick={() => {
-                          const match = findMatchingRequirement(item.title);
-                          if (match) updateItem(item.id, { suggestedCorrection: match.correctionText, matchedRequirementId: match.id });
+                          const found = findMatch(item.title);
+                          if (found) updateItem(item.id, { suggestedCorrection: found.correctionText, matchedRequirementId: found.id });
                         }}
                       >
                         חפש מת"י 1918
@@ -459,9 +464,10 @@ export default function ReportEditor() {
               variant="outline"
               className="gap-2 rounded-2xl border-dashed"
               onClick={async () => {
-                if (libraryItems.length === 0) {
+                if (libraryItemsRef.current.length === 0) {
                   const items = await listRequirements();
                   setLibraryItems(items);
+                  libraryItemsRef.current = items;
                 }
                 setLibrarySearch("");
                 setLibraryOpen(true);
@@ -581,7 +587,7 @@ export default function ReportEditor() {
                   key={req.id}
                   className="w-full text-right rounded-xl border border-border bg-card p-3 hover:bg-muted transition-colors"
                   onClick={() => {
-                    const match = findMatchingRequirement(req.requirementTitle);
+                    const found = findMatch(req.requirementTitle);
                     const newItem = {
                       id: uuid(),
                       title: req.requirementTitle,
