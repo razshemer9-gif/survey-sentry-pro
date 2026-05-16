@@ -277,6 +277,26 @@ export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, sett
           <br /><br />
           <strong>הערה:</strong> בעת צירוף אומדנים יש לקחת בחשבון 15% סטייה בעלויות.
         </div>
+
+        {/* Digital signature */}
+        <div style={{ marginTop: 32, display: "flex", justifyContent: "flex-start", gap: 48 }}>
+          <div>
+            {report.signatureDataUrl ? (
+              <img
+                src={report.signatureDataUrl}
+                alt="חתימה"
+                style={{ height: 64, maxWidth: 200, objectFit: "contain", display: "block" }}
+                crossOrigin="anonymous"
+              />
+            ) : (
+              <div style={{ height: 64, width: 200, borderBottom: "1px solid #94a3b8" }} />
+            )}
+            <div style={{ fontSize: 12, color: "#64748b", marginTop: 4 }}>
+              {report.signatureConsultantName || settings.consultantName || "חתימת היועץ"}
+              {report.signatureDate ? ` • ${report.signatureDate}` : ""}
+            </div>
+          </div>
+        </div>
       </section>
 
       {/* CHECKLIST PAGE(S) */}
@@ -351,6 +371,24 @@ export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, sett
                   }}
                 >
                   {item.notes}
+                </div>
+              )}
+
+              {item.status === "non_compliant" && item.correctionApplied && item.suggestedCorrection && (
+                <div
+                  style={{
+                    marginTop: 10,
+                    background: "#eff6ff",
+                    border: "1px solid #bfdbfe",
+                    borderRadius: 10,
+                    padding: "10px 12px",
+                    fontSize: 13,
+                    color: "#1e40af",
+                    lineHeight: 1.6,
+                  }}
+                >
+                  <span style={{ fontWeight: 700, display: "block", marginBottom: 2 }}>📋 הצעת תיקון ע"פ ת"י 1918:</span>
+                  {item.suggestedCorrection}
                 </div>
               )}
 
