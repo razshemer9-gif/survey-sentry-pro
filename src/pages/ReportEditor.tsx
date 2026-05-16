@@ -330,6 +330,62 @@ export default function ReportEditor() {
                 className="mb-2"
               />
 
+              {/* Manual search button when no match found */}
+              {item.status === "non_compliant" && !item.suggestedCorrection && !item.correctionApplied && (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="mb-2 h-7 w-full text-xs gap-1.5 border-dashed text-muted-foreground"
+                  onClick={() => {
+                    const match = findMatchingRequirement(item.title);
+                    if (match) {
+                      updateItem(item.id, { suggestedCorrection: match.correctionText, matchedRequirementId: match.id });
+                    } else {
+                      toast.info("לא נמצאה המלצה מתאימה לממצא זה");
+                    }
+                  }}
+                >
+                  <Wand2 className="h-3 w-3" /> חפש המלצה מת"י 1918
+                </Button>
+              )}
+
+              {/* Auto-recommendation */}
+              {item.status === "non_compliant" && item.suggestedCorrection && !item.correctionApplied && (
+                <div className="mb-2 rounded-xl border border-blue-200 bg-blue-50 p-3">
+                  <div className="flex items-start gap-2">
+                    <Wand2 className="h-4 w-4 mt-0.5 shrink-0 text-blue-600" />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs font-semibold text-blue-700 mb-1">הצעת תיקון מת"י 1918</p>
+                      <p className="text-xs text-blue-800 leading-relaxed">{item.suggestedCorrection}</p>
+                      <div className="flex gap-2 mt-2">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="h-7 text-xs gap-1 border-blue-300 text-blue-700 hover:bg-blue-100"
+                          onClick={() => {
+                            updateItem(item.id, {
+                              notes: item.notes ? `${item.notes}\n${item.suggestedCorrection}` : item.suggestedCorrection,
+                              correctionApplied: true,
+                            });
+                            toast.success("הצעת התיקון הועתקה לממצאים");
+                          }}
+                        >
+                          קבל הצעה
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="h-7 text-xs gap-1 text-muted-foreground"
+                          onClick={() => updateItem(item.id, { suggestedCorrection: undefined, matchedRequirementId: undefined })}
+                        >
+                          <X className="h-3 w-3" /> דחה
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
               <div className="mb-2">
                 <Label className="mb-1 block text-xs text-muted-foreground">תמונה (מצב קיים)</Label>
                 <PhotoPicker
@@ -395,61 +451,6 @@ export default function ReportEditor() {
                   </label>
                 </div>
 
-                {/* Manual search button when no match found */}
-                {item.status === "non_compliant" && !item.suggestedCorrection && !item.correctionApplied && (
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    className="mt-2 h-7 w-full text-xs gap-1.5 border-dashed text-muted-foreground"
-                    onClick={() => {
-                      const match = findMatchingRequirement(item.title);
-                      if (match) {
-                        updateItem(item.id, { suggestedCorrection: match.correctionText, matchedRequirementId: match.id });
-                      } else {
-                        toast.info("לא נמצאה המלצה מתאימה לממצא זה");
-                      }
-                    }}
-                  >
-                    <Wand2 className="h-3 w-3" /> חפש המלצה מת"י 1918
-                  </Button>
-                )}
-
-                {/* Auto-recommendation */}
-                {item.status === "non_compliant" && item.suggestedCorrection && !item.correctionApplied && (
-                  <div className="mt-2 rounded-xl border border-blue-200 bg-blue-50 p-3">
-                    <div className="flex items-start gap-2">
-                      <Wand2 className="h-4 w-4 mt-0.5 shrink-0 text-blue-600" />
-                      <div className="flex-1 min-w-0">
-                        <p className="text-xs font-semibold text-blue-700 mb-1">הצעת תיקון מת"י 1918</p>
-                        <p className="text-xs text-blue-800 leading-relaxed">{item.suggestedCorrection}</p>
-                        <div className="flex gap-2 mt-2">
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            className="h-7 text-xs gap-1 border-blue-300 text-blue-700 hover:bg-blue-100"
-                            onClick={() => {
-                              updateItem(item.id, {
-                                notes: item.notes ? `${item.notes}\n${item.suggestedCorrection}` : item.suggestedCorrection,
-                                correctionApplied: true,
-                              });
-                              toast.success("הצעת התיקון הועתקה לממצאים");
-                            }}
-                          >
-                            קבל הצעה
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            className="h-7 text-xs gap-1 text-muted-foreground"
-                            onClick={() => updateItem(item.id, { suggestedCorrection: undefined, matchedRequirementId: undefined })}
-                          >
-                            <X className="h-3 w-3" /> דחה
-                          </Button>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                )}
             </div>
           ))}
 
