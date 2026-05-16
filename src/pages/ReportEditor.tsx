@@ -31,6 +31,7 @@ import {
 
 import { ChecklistItem, ComplianceStatus, ConsultantSettings, DEFAULT_SETTINGS, ReferencePhotoEntry, SurveyReport } from "@/lib/types";
 import { getReport, listTemplates, loadUserSettings, saveReport, saveUserSettings } from "@/lib/storage";
+import { saveRequirement } from "@/lib/standards-storage";
 import { useAuth } from "@/contexts/AuthContext";
 import { buildPdfFileName, generateReportPdf, statusLabel } from "@/lib/pdf";
 import { formatCurrency } from "@/lib/image";
@@ -68,6 +69,9 @@ export default function ReportEditor() {
   const libraryItemsRef = useRef<AccessibilityRequirement[]>([]);
   const [librarySearch, setLibrarySearch] = useState("");
   const [refPickerItemId, setRefPickerItemId] = useState<string | null>(null);
+  // Editable defect text per matched requirement (reqId → draft text)
+  const [defectDrafts, setDefectDrafts] = useState<Record<string, string>>({});
+  const [savingDefect, setSavingDefect] = useState<string | null>(null);
 
   const openRefPicker = async (itemId: string) => {
     if (libraryItemsRef.current.length === 0) {
@@ -307,6 +311,63 @@ export default function ReportEditor() {
                   </button>
                 ))}
               </div>
+
+              {/* Suggested defect text from matched standard requirement */}
+              {item.status === "non_compliant" && (() => {
+                const req = findMatch(item.title);
+                if (!req) return null;
+                const draft = defectDrafts[req.id] ?? req.defectText;
+                const isDirty = draft !== req.defectText;
+                return (
+                  <div className="mb-2 rounded-xl border border-amber-200 bg-amber-50 p-3 animate-fade-in">
+                    <p className="text-[10px] font-semibold text-amber-700 mb-1.5">הצעה לתיאור הממצא (מת"י 1918)</p>
+                    <Textarea
+                      value={draft}
+                      onChange={(e) => setDefectDrafts((prev) => ({ ...prev, [req.id]: e.target.value }))}
+                      rows={2}
+                      className="text-xs bg-white border-amber-200 text-amber-900 resize-none mb-2"
+                    />
+                    <div className="flex gap-2">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="h-7 text-xs border-amber-300 text-amber-800 hover:bg-amber-100"
+                        onClick={() => updateItem(item.id, { notes: item.notes ? `${item.notes}\n${draft}` : draft })}
+                      >
+                        הכנס לממצאים
+                      </Button>
+                      {isDirty && (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          disabled={savingDefect === req.id}
+                          className="h-7 text-xs border-amber-300 text-amber-800 hover:bg-amber-100"
+                          onClick={async () => {
+                            setSavingDefect(req.id);
+                            try {
+                              const updated = { ...req, defectText: draft };
+                              await saveRequirement(updated);
+                              // Update local cache so future matches use new text
+                              libraryItemsRef.current = libraryItemsRef.current.map((r) =>
+                                r.id === req.id ? updated : r
+                              );
+                              setLibraryItems((prev) => prev.map((r) => r.id === req.id ? updated : r));
+                              setDefectDrafts((prev) => { const n = { ...prev }; delete n[req.id]; return n; });
+                              toast.success("הטקסט עודכן לכל המשתמשים");
+                            } catch {
+                              toast.error("שגיאה בשמירה");
+                            } finally {
+                              setSavingDefect(null);
+                            }
+                          }}
+                        >
+                          {savingDefect === req.id ? <Loader2 className="h-3 w-3 animate-spin" /> : "שמור לכולם"}
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+                );
+              })()}
 
               <Textarea
                 value={item.notes}
