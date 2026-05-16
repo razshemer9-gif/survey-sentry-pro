@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import { AppShell } from "@/components/AppShell";
 import { PhotoPicker } from "@/components/PhotoPicker";
 import { PrintableReport } from "@/components/PrintableReport";
+import { ReferencePhotoPicker } from "@/components/ReferencePhotoPicker";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -27,7 +28,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 
-import { ChecklistItem, ComplianceStatus, ConsultantSettings, DEFAULT_SETTINGS, SurveyReport } from "@/lib/types";
+import { ChecklistItem, ComplianceStatus, ConsultantSettings, DEFAULT_SETTINGS, ReferencePhotoEntry, SurveyReport } from "@/lib/types";
 import { getReport, listTemplates, saveReport } from "@/lib/storage";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/contexts/AuthContext";
@@ -58,6 +59,15 @@ export default function ReportEditor() {
   const [libraryOpen, setLibraryOpen] = useState(false);
   const [libraryItems, setLibraryItems] = useState<AccessibilityRequirement[]>([]);
   const [librarySearch, setLibrarySearch] = useState("");
+  const [refPickerItemId, setRefPickerItemId] = useState<string | null>(null);
+
+  const openRefPicker = async (itemId: string) => {
+    if (libraryItems.length === 0) {
+      const items = await listRequirements();
+      setLibraryItems(items);
+    }
+    setRefPickerItemId(itemId);
+  };
   const printRef = useRef<HTMLDivElement>(null);
   const autoSaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const isFirstLoad = useRef(true);
@@ -337,12 +347,31 @@ export default function ReportEditor() {
                   placeholder="פרט:"
                   className="mb-2 bg-card"
                 />
-                <PhotoPicker
-                  value={item.referencePhoto}
-                  onChange={(u) => updateItem(item.id, { referencePhoto: u })}
-                  label="צרף תמונת פרט מהגלריה"
-                  removable={false}
-                />
+                {item.referencePhoto ? (
+                  <div className="relative">
+                    <img src={item.referencePhoto} alt={item.referenceLabel || "פרט"} className="w-full max-h-28 object-contain rounded-lg border border-border bg-white" />
+                    <button
+                      onClick={() => updateItem(item.id, { referencePhoto: undefined })}
+                      className="absolute top-1 left-1 h-5 w-5 rounded-full bg-destructive/90 text-white flex items-center justify-center"
+                    >
+                      <X className="h-3 w-3" />
+                    </button>
+                    <button
+                      onClick={() => openRefPicker(item.id)}
+                      className="mt-1 w-full text-xs text-primary underline underline-offset-2"
+                    >
+                      החלף תמונה
+                    </button>
+                  </div>
+                ) : (
+                  <button
+                    onClick={() => openRefPicker(item.id)}
+                    className="w-full rounded-xl border-2 border-dashed border-primary/40 py-3 flex flex-col items-center gap-1 text-primary hover:bg-primary/5 transition-colors"
+                  >
+                    <Plus className="h-4 w-4" />
+                    <span className="text-xs">בחר תמונת פרט מהמאגר</span>
+                  </button>
+                )}
               </div>
 
               <div className="flex items-center gap-2">
@@ -577,6 +606,36 @@ export default function ReportEditor() {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Reference photo library picker */}
+      <ReferencePhotoPicker
+        open={refPickerItemId !== null}
+        onClose={() => setRefPickerItemId(null)}
+        onSelect={(photo, label) => {
+          if (!refPickerItemId) return;
+          updateItem(refPickerItemId, { referencePhoto: photo, referenceLabel: label });
+        }}
+        globalPhotos={libraryItems
+          .filter((r) => r.referencePhoto)
+          .map((r) => ({ label: r.requirementTitle, photo: r.referencePhoto! }))}
+        personalPhotos={settings.referencePhotos ?? []}
+        onAddPersonal={async (entry) => {
+          const updated: ReferencePhotoEntry[] = [...(settings.referencePhotos ?? []), entry];
+          const newSettings = { ...settings, referencePhotos: updated };
+          setSettings(newSettings);
+          if (user) {
+            await supabase.from("user_settings").upsert({ user_id: user.id, settings: newSettings });
+          }
+        }}
+        onDeletePersonal={async (id) => {
+          const updated = (settings.referencePhotos ?? []).filter((p) => p.id !== id);
+          const newSettings = { ...settings, referencePhotos: updated };
+          setSettings(newSettings);
+          if (user) {
+            await supabase.from("user_settings").upsert({ user_id: user.id, settings: newSettings });
+          }
+        }}
+      />
 
       {/* Hidden printable mount used for PDF rasterization */}
       <div className="pointer-events-none fixed -left-[10000px] top-0 opacity-0">

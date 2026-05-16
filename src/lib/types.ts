@@ -47,6 +47,12 @@ export interface SurveyReport {
   signatureConsultantName?: string;
 }
 
+export interface ReferencePhotoEntry {
+  id: string;
+  label: string;
+  photo: string; // dataURL
+}
+
 export interface ConsultantSettings {
   companyName: string;
   consultantName: string;
@@ -55,6 +61,7 @@ export interface ConsultantSettings {
   email: string;
   address: string;
   logo?: string; // dataURL
+  referencePhotos?: ReferencePhotoEntry[]; // personal photo library
 }
 
 export const DEFAULT_SETTINGS: ConsultantSettings = {
