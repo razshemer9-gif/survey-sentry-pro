@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { ArrowRight, Download, Eye, FileDown, Loader2, PenLine, Plus, Save, Trash2, Wand2, X } from "lucide-react";
+import { BookOpen, ArrowRight, Download, Eye, FileDown, Loader2, PenLine, Plus, Save, Trash2, Wand2, X } from "lucide-react";
 import { v4 as uuid } from "uuid";
 import { toast } from "sonner";
 
@@ -36,6 +36,8 @@ import { formatCurrency } from "@/lib/image";
 import { cn } from "@/lib/utils";
 import { findMatchingRequirement } from "@/lib/matching";
 import { SignaturePad } from "@/components/SignaturePad";
+import { listRequirements } from "@/lib/standards-storage";
+import { AccessibilityRequirement } from "@/lib/standards-types";
 
 const STATUS_COLOR: Record<ComplianceStatus, string> = {
   compliant: "bg-success/15 text-success border-success/30",
@@ -53,6 +55,9 @@ export default function ReportEditor() {
   const [generating, setGenerating] = useState(false);
   const [settings, setSettings] = useState<ConsultantSettings>({ ...DEFAULT_SETTINGS });
   const [signatureOpen, setSignatureOpen] = useState(false);
+  const [libraryOpen, setLibraryOpen] = useState(false);
+  const [libraryItems, setLibraryItems] = useState<AccessibilityRequirement[]>([]);
+  const [librarySearch, setLibrarySearch] = useState("");
   const printRef = useRef<HTMLDivElement>(null);
   const autoSaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const isFirstLoad = useRef(true);
@@ -419,9 +424,25 @@ export default function ReportEditor() {
             </div>
           ))}
 
-          <Button onClick={addItem} variant="outline" className="w-full gap-2 rounded-2xl border-dashed">
-            <Plus className="h-4 w-4" /> הוסף פרמטר
-          </Button>
+          <div className="grid grid-cols-2 gap-2">
+            <Button onClick={addItem} variant="outline" className="gap-2 rounded-2xl border-dashed">
+              <Plus className="h-4 w-4" /> פרמטר חדש
+            </Button>
+            <Button
+              variant="outline"
+              className="gap-2 rounded-2xl border-dashed"
+              onClick={async () => {
+                if (libraryItems.length === 0) {
+                  const items = await listRequirements();
+                  setLibraryItems(items);
+                }
+                setLibrarySearch("");
+                setLibraryOpen(true);
+              }}
+            >
+              <BookOpen className="h-4 w-4" /> מהמאגר
+            </Button>
+          </div>
 
           <div className="rounded-2xl bg-primary text-primary-foreground p-4 shadow-glow">
             <div className="flex items-center justify-between">
@@ -503,6 +524,57 @@ export default function ReportEditor() {
               onCancel={() => setSignatureOpen(false)}
             />
           )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Library picker dialog */}
+      <Dialog open={libraryOpen} onOpenChange={setLibraryOpen}>
+        <DialogContent className="max-h-[85vh] max-w-lg flex flex-col gap-0 p-0" dir="rtl">
+          <DialogHeader className="px-4 pt-4 pb-2">
+            <DialogTitle>הוסף פרמטר מהמאגר</DialogTitle>
+          </DialogHeader>
+          <div className="px-4 pb-2">
+            <Input
+              placeholder="חיפוש..."
+              value={librarySearch}
+              onChange={(e) => setLibrarySearch(e.target.value)}
+              autoFocus
+            />
+          </div>
+          <div className="overflow-y-auto flex-1 px-4 pb-4 space-y-2">
+            {libraryItems
+              .filter((r) =>
+                !librarySearch ||
+                r.requirementTitle.includes(librarySearch) ||
+                r.subCategory.includes(librarySearch) ||
+                r.tags.some((t) => t.includes(librarySearch))
+              )
+              .map((req) => (
+                <button
+                  key={req.id}
+                  className="w-full text-right rounded-xl border border-border bg-card p-3 hover:bg-muted transition-colors"
+                  onClick={() => {
+                    const match = findMatchingRequirement(req.requirementTitle);
+                    const newItem = {
+                      id: uuid(),
+                      title: req.requirementTitle,
+                      status: "pending" as const,
+                      notes: req.defectText,
+                      estimatedCost: 0,
+                      referencePhoto: req.referencePhoto,
+                      suggestedCorrection: req.correctionText,
+                      matchedRequirementId: req.id,
+                    };
+                    setReport((r) => r ? { ...r, items: [...r.items, newItem] } : r);
+                    setLibraryOpen(false);
+                    toast.success(`נוסף: ${req.requirementTitle}`);
+                  }}
+                >
+                  <p className="text-sm font-semibold">{req.requirementTitle}</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">{req.subCategory} · {req.standardPart}</p>
+                </button>
+              ))}
+          </div>
         </DialogContent>
       </Dialog>
 
