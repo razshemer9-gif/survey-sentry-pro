@@ -88,6 +88,7 @@ export function ReferencePhotoPicker({
                   <button
                     onClick={() => onDeletePersonal(p.id)}
                     className="absolute top-1 left-1 h-5 w-5 rounded-full bg-destructive/90 text-white hidden group-hover:flex items-center justify-center"
+                    aria-label={`מחק ${p.label}`}
                   >
                     <Trash2 className="h-3 w-3" />
                   </button>

@@ -195,8 +195,7 @@ export default function ReportEditor() {
       await saveReport(report);
       await generateReportPdf(printRef.current, buildPdfFileName(report));
       toast.success("ה-PDF הופק והורד");
-    } catch (e) {
-      console.error(e);
+    } catch {
       toast.error("שגיאה ביצירת ה-PDF");
     } finally {
       setGenerating(false);
@@ -244,13 +243,13 @@ export default function ReportEditor() {
         {/* COVER TAB */}
         <TabsContent value="cover" className="mt-4 space-y-4">
           <Field label="שם המקום / העסק">
-            <Input value={report.placeName} onChange={(e) => update({ placeName: e.target.value })} placeholder="לדוגמה: בית קפה הגליל" />
+            <Input value={report.placeName} onChange={(e) => update({ placeName: e.target.value })} placeholder="לדוגמה: בית קפה הגליל" autoComplete="organization" />
           </Field>
           <Field label="שם הלקוח">
-            <Input value={report.clientName} onChange={(e) => update({ clientName: e.target.value })} />
+            <Input value={report.clientName} onChange={(e) => update({ clientName: e.target.value })} autoComplete="name" />
           </Field>
           <Field label="כתובת">
-            <Input value={report.address} onChange={(e) => update({ address: e.target.value })} />
+            <Input value={report.address} onChange={(e) => update({ address: e.target.value })} autoComplete="street-address" />
           </Field>
           <Field label="תאריך הסקר">
             <Input type="date" value={report.surveyDate} onChange={(e) => update({ surveyDate: e.target.value })} />
@@ -409,6 +408,7 @@ export default function ReportEditor() {
                     <button
                       onClick={() => updateItem(item.id, { referencePhoto: undefined })}
                       className="absolute top-1 left-1 h-5 w-5 rounded-full bg-destructive/90 text-white flex items-center justify-center"
+                      aria-label="הסר תמונת פרט"
                     >
                       <X className="h-3 w-3" />
                     </button>
