@@ -334,7 +334,7 @@ export default function ReportEditor() {
                 <Input
                   value={item.referenceLabel || ""}
                   onChange={(e) => updateItem(item.id, { referenceLabel: e.target.value })}
-                  placeholder="לדוגמה: שלט שירותים נגישים"
+                  placeholder="פרט:"
                   className="mb-2 bg-card"
                 />
                 <PhotoPicker
