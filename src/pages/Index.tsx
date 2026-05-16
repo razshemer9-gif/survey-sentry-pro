@@ -77,12 +77,12 @@ const Index = () => {
         ) : (
           <ul className="space-y-3">
             {reports.map((r) => (
-              <li key={r.id}>
+              <li key={r.id} className="animate-fade-in">
                 <Link
                   to={`/report/${r.id}`}
-                  className="block rounded-2xl border border-border bg-card p-4 shadow-soft transition hover:shadow-elev active:scale-[0.99]"
+                  className="block rounded-2xl border border-border bg-card shadow-soft transition-all duration-200 hover:shadow-elev hover:-translate-y-0.5 active:scale-[0.99] active:shadow-soft overflow-hidden"
                 >
-                  <div className="flex items-start gap-3">
+                  <div className="flex items-start gap-3 p-4">
                     {r.coverPhoto ? (
                       <img src={r.coverPhoto} alt="" className="h-16 w-16 flex-shrink-0 rounded-xl object-cover" />
                     ) : (
@@ -104,24 +104,38 @@ const Index = () => {
                           {formatHebrewDate(r.surveyDate)}
                         </span>
                       </div>
-                      <div className="mt-2 text-xs text-muted-foreground">
-                        {r.items.filter((i) => i.status === "compliant").length} תקין ·{" "}
-                        <span className="text-destructive">
-                          {r.items.filter((i) => i.status === "non_compliant").length} לא תקין
+                      <div className="mt-2 flex items-center gap-2">
+                        <span className="inline-flex items-center gap-1 rounded-full bg-success/10 px-2 py-0.5 text-[10px] font-semibold text-success">
+                          ✓ {r.items.filter((i) => i.status === "compliant").length} תקין
                         </span>
+                        {r.items.filter((i) => i.status === "non_compliant").length > 0 && (
+                          <span className="inline-flex items-center gap-1 rounded-full bg-destructive/10 px-2 py-0.5 text-[10px] font-semibold text-destructive">
+                            ✕ {r.items.filter((i) => i.status === "non_compliant").length} לא תקין
+                          </span>
+                        )}
                       </div>
                     </div>
                     <button
-                      onClick={(e) => {
-                        e.preventDefault();
-                        remove(r.id);
-                      }}
-                      className="grid h-8 w-8 place-items-center rounded-full text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
+                      onClick={(e) => { e.preventDefault(); remove(r.id); }}
+                      className="grid h-8 w-8 place-items-center rounded-full text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive"
                       aria-label="מחק"
                     >
                       <Trash2 className="h-4 w-4" />
                     </button>
                   </div>
+                  {/* Thin status bar at bottom */}
+                  {r.items.length > 0 && (() => {
+                    const total = r.items.length;
+                    const ok = r.items.filter(i => i.status === "compliant").length;
+                    const bad = r.items.filter(i => i.status === "non_compliant").length;
+                    return (
+                      <div className="flex h-1 w-full overflow-hidden">
+                        <div className="bg-success/60 transition-all" style={{ width: `${(ok/total)*100}%` }} />
+                        <div className="bg-destructive/50 transition-all" style={{ width: `${(bad/total)*100}%` }} />
+                        <div className="flex-1 bg-border/40" />
+                      </div>
+                    );
+                  })()}
                 </Link>
               </li>
             ))}

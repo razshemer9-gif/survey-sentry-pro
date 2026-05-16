@@ -20,7 +20,7 @@ export function BottomNav() {
   }
 
   return (
-    <nav className="fixed bottom-0 inset-x-0 z-40 border-t border-border bg-card/95 backdrop-blur-md safe-bottom">
+    <nav className="fixed bottom-0 inset-x-0 z-40 border-t border-border/80 bg-card/95 backdrop-blur-md safe-bottom shadow-[0_-1px_12px_hsl(217_91%_20%/0.06)]">
       <ul className="mx-auto grid max-w-lg grid-cols-5">
         {tabs.map((t) => {
           const active =
@@ -31,11 +31,19 @@ export function BottomNav() {
               <Link
                 to={t.to}
                 className={cn(
-                  "flex flex-col items-center justify-center gap-1 py-2.5 text-[10px] sm:text-xs font-medium transition-colors",
-                  active ? "text-primary" : "text-muted-foreground",
+                  "relative flex flex-col items-center justify-center gap-0.5 py-2 text-[10px] sm:text-xs font-medium transition-colors duration-150",
+                  active ? "text-primary" : "text-muted-foreground hover:text-foreground",
                 )}
               >
-                <Icon className={cn("h-5 w-5 shrink-0", active && "scale-110")} />
+                {active && (
+                  <span className="absolute top-0 inset-x-4 h-[2px] rounded-b-full bg-primary" />
+                )}
+                <span className={cn(
+                  "grid place-items-center rounded-xl px-3 py-1 transition-all duration-200",
+                  active ? "bg-primary/10" : "",
+                )}>
+                  <Icon className="h-5 w-5 shrink-0" />
+                </span>
                 <span className="truncate">{t.label}</span>
               </Link>
             </li>
@@ -44,10 +52,12 @@ export function BottomNav() {
         <li>
           <button
             onClick={handleSignOut}
-            className="flex w-full flex-col items-center justify-center gap-1 py-2.5 text-[10px] sm:text-xs font-medium text-muted-foreground transition-colors hover:text-destructive"
+            className="flex w-full flex-col items-center justify-center gap-0.5 py-2 text-[10px] sm:text-xs font-medium text-muted-foreground transition-colors hover:text-destructive"
             title="התנתק"
           >
-            <LogOut className="h-5 w-5 shrink-0" />
+            <span className="grid place-items-center rounded-xl px-3 py-1">
+              <LogOut className="h-5 w-5 shrink-0" />
+            </span>
             <span className="truncate">יציאה</span>
           </button>
         </li>

@@ -47,6 +47,13 @@ const STATUS_COLOR: Record<ComplianceStatus, string> = {
   pending: "bg-warning/15 text-warning border-warning/30",
 };
 
+const ITEM_BORDER: Record<ComplianceStatus, string> = {
+  compliant: "border-r-success",
+  non_compliant: "border-r-destructive",
+  not_applicable: "border-r-border",
+  pending: "border-r-warning",
+};
+
 export default function ReportEditor() {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -298,7 +305,7 @@ export default function ReportEditor() {
           <TemplateSwap onLoad={(items) => setReport((r) => (r ? { ...r, items } : r))} />
 
           {report.items.map((item, idx) => (
-            <div key={item.id} className="rounded-2xl border border-border bg-card p-4 shadow-soft animate-fade-in">
+            <div key={item.id} className={cn("rounded-2xl border border-border bg-card p-4 shadow-soft animate-fade-in transition-colors border-r-4", ITEM_BORDER[item.status])}>
               <div className="mb-2 flex items-center justify-between">
                 <span className="text-xs font-semibold text-muted-foreground">ממצא {idx + 1}</span>
                 <button onClick={() => removeItem(item.id)} className="text-muted-foreground hover:text-destructive" aria-label="מחק">
