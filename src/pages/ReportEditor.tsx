@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { BookOpen, ArrowRight, Download, Eye, FileDown, Loader2, PenLine, Plus, Save, Trash2, Wand2, X } from "lucide-react";
+import { BookOpen, ArrowRight, Download, Eye, FileDown, Loader2, PenLine, Plus, Save, Trash2, X } from "lucide-react";
 import { v4 as uuid } from "uuid";
 import { toast } from "sonner";
 
@@ -316,47 +316,6 @@ export default function ReportEditor() {
                 className="mb-2"
               />
 
-              {/* Recommendation box — shown when non_compliant and not yet applied */}
-              {item.status === "non_compliant" && !item.correctionApplied && (
-                <div className="mb-2 rounded-xl border border-blue-200 bg-blue-50 p-3">
-                  <div className="flex items-center gap-1.5 mb-2">
-                    <Wand2 className="h-3.5 w-3.5 text-blue-600 shrink-0" />
-                    <p className="text-xs font-semibold text-blue-700">הצעת תיקון</p>
-                  </div>
-                  <Textarea
-                    value={item.suggestedCorrection || ""}
-                    onChange={(e) => updateItem(item.id, { suggestedCorrection: e.target.value })}
-                    placeholder="הקלד הצעת תיקון ידנית..."
-                    rows={3}
-                    className="text-xs bg-white border-blue-200 text-blue-900 placeholder:text-blue-300 resize-none"
-                  />
-                  <div className="flex gap-2 mt-2">
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      disabled={!item.suggestedCorrection}
-                      className="h-7 text-xs gap-1 border-blue-300 text-blue-700 hover:bg-blue-100 disabled:opacity-40"
-                      onClick={() => {
-                        updateItem(item.id, {
-                          notes: item.notes ? `${item.notes}\n${item.suggestedCorrection}` : item.suggestedCorrection,
-                          correctionApplied: true,
-                        });
-                        toast.success("הצעת התיקון הועתקה לממצאים");
-                      }}
-                    >
-                      העבר לממצאים
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      className="h-7 text-xs gap-1 text-muted-foreground"
-                      onClick={() => updateItem(item.id, { suggestedCorrection: undefined, matchedRequirementId: undefined })}
-                    >
-                      <X className="h-3 w-3" /> נקה
-                    </Button>
-                  </div>
-                </div>
-              )}
 
               <div className="mb-2">
                 <Label className="mb-1 block text-xs text-muted-foreground">תמונה (מצב קיים)</Label>
