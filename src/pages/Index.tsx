@@ -45,7 +45,7 @@ const Index = () => {
     <AppShell>
       <header className="hero-gradient text-primary-foreground rounded-b-[2rem] px-5 pb-8 pt-10 safe-top shadow-pop">
         <div className="text-xs tracking-[0.3em] opacity-80">ANS · ACCESSIBILITY</div>
-        <h1 className="mt-2 text-3xl font-extrabold leading-tight">סקר נגישות מתו״ס</h1>
+        <h1 className="mt-2 text-2xl font-extrabold leading-tight">סקר נגישות מתו״ס ושירות</h1>
         <p className="mt-1 text-sm opacity-90">צור, נהל והפק דוחות נגישות מקצועיים ישירות מהטלפון</p>
 
         <Button
