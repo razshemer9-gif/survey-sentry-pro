@@ -124,7 +124,7 @@ const BUILT_IN_TEMPLATES: ChecklistTemplate[] = [
   {
     id: "builtin-default",
     name: "תבנית ברירת מחדל",
-    description: "רשימה כללית לסקר נגישות מתו״ס",
+    description: "רשימה כללית לסקר נגישות מתו״ס ושירות",
     items: DEFAULT_CHECKLIST,
     builtIn: true,
   },
