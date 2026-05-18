@@ -1,7 +1,6 @@
 import { ConsultantSettings, SurveyReport } from "@/lib/types";
 import { formatCurrency, formatHebrewDate, statusLabel } from "@/lib/pdf";
 import { forwardRef } from "react";
-import qrCode from "@/assets/qr-shemersafety.png";
 
 interface Props {
   report: SurveyReport;
@@ -88,41 +87,6 @@ export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, sett
             </div>
           )}
 
-          {/* QR code — discreet, blended into the white band */}
-          <div
-            style={{
-              position: "absolute",
-              top: 28,
-              left: 40,
-              display: "flex",
-              flexDirection: "column",
-              alignItems: "center",
-              gap: 4,
-            }}
-          >
-            <div
-              style={{
-                padding: 6,
-                background: "#ffffff",
-                borderRadius: 10,
-                border: "1px solid #e2e8f0",
-                boxShadow: "0 4px 12px rgba(30,58,138,0.12)",
-              }}
-            >
-              <img
-                src={qrCode}
-                alt="QR"
-                style={{
-                  width: 84,
-                  height: 84,
-                  display: "block",
-                  mixBlendMode: "multiply",
-                }}
-                crossOrigin="anonymous"
-              />
-            </div>
-            <div style={{ fontSize: 9, color: "#64748b", letterSpacing: 1 }}>סרקו לפרטים</div>
-          </div>
         </div>
         {/* Smooth gradient transition from white band into blue cover */}
         <div
