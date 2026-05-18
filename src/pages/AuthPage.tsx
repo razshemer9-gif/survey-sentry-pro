@@ -64,7 +64,12 @@ export default function AuthPage() {
             <img
               src={supernagishLogo}
               alt="SuperNagish"
-              className="auth-logo-img"
+              style={{
+                maxWidth: "320px",
+                width: "100%",
+                height: "auto",
+                objectFit: "contain",
+              }}
             />
           </div>
           <p className="auth-tagline">פלטפורמת סקרי נגישות מקצועית</p>
