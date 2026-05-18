@@ -224,6 +224,8 @@ export default function Standards() {
       req.requirementTitle.includes(search) ||
       req.subCategory.includes(search) ||
       req.defectText.includes(search) ||
+      req.standardPart.includes(search) ||
+      (req.clause?.includes(search) ?? false) ||
       req.tags.some((t) => t.includes(search));
     const matchCategory = categoryFilter === "all" || req.categoryCode === categoryFilter;
     const matchPlace =

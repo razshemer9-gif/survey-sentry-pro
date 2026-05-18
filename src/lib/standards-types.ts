@@ -1,6 +1,8 @@
 export type Severity = 'critical' | 'medium' | 'low';
 export type PlaceType = 'exterior' | 'interior' | 'restroom' | 'parking' | 'accessible-route' | 'apartment' | 'signage' | 'vision' | 'communication';
 
+export type SourceConfidence = 'high' | 'needs-review';
+
 export interface AccessibilityRequirement {
   id: string;
   standardPart: string; // e.g. "ת\"י 1918 חלק 2"
@@ -19,4 +21,8 @@ export interface AccessibilityRequirement {
   tags: string[];
   internalCitation?: string;
   referencePhoto?: string; // dataURL — תמונת פרט משותפת לכל המשתמשים
+  // Source tracking — for items extracted from the Israeli Standard 1918 documents
+  sourceFile?: string;       // original filename in src/empty-folder
+  sourceConfidence?: SourceConfidence;
+  sourceNote?: string;       // raw text from the standard, or note for items that need review
 }
