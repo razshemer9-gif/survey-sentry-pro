@@ -30,9 +30,8 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 
-import { PhotoPicker } from "@/components/PhotoPicker";
 import { CATEGORIES, PLACE_TYPE_LABELS } from "@/lib/standards-data";
-import { AccessibilityRequirement, Severity, PlaceType } from "@/lib/standards-types";
+import { AccessibilityRequirement, PlaceType } from "@/lib/standards-types";
 import { SurveyReport } from "@/lib/types";
 import { listReports, addRequirementToReport } from "@/lib/storage";
 import {
@@ -42,25 +41,6 @@ import {
   isAdmin,
 } from "@/lib/standards-storage";
 
-const SEVERITY_LABELS: Record<Severity, string> = {
-  critical: "קריטי",
-  medium: "בינוני",
-  low: "נמוך",
-};
-
-const SEVERITY_COLORS: Record<Severity, string> = {
-  critical: "bg-red-100 text-red-800 border-red-200",
-  medium: "bg-yellow-100 text-yellow-800 border-yellow-200",
-  low: "bg-green-100 text-green-800 border-green-200",
-};
-
-const SEVERITY_CHIP_ACTIVE: Record<Severity, string> = {
-  critical: "bg-red-600 text-white",
-  medium: "bg-yellow-500 text-white",
-  low: "bg-green-600 text-white",
-};
-
-const PLACE_TYPES = Object.keys(PLACE_TYPE_LABELS) as PlaceType[];
 
 function emptyReq(): AccessibilityRequirement {
   return {
@@ -74,7 +54,6 @@ function emptyReq(): AccessibilityRequirement {
     practicalRequirement: "",
     defectText: "",
     correctionText: "",
-    severity: undefined as unknown as Severity,
     measurementFields: [],
     inspectionMethod: "",
     appliesTo: [],
@@ -177,14 +156,6 @@ export default function Standards() {
 
   const updateDraft = (patch: Partial<AccessibilityRequirement>) =>
     setDraft((d) => ({ ...d, ...patch }));
-
-  const togglePlace = (p: PlaceType) =>
-    setDraft((d) => ({
-      ...d,
-      appliesTo: d.appliesTo.includes(p)
-        ? d.appliesTo.filter((x) => x !== p)
-        : [...d.appliesTo, p],
-    }));
 
   const handleSaveDraft = async () => {
     if (!draft.requirementTitle.trim()) {
@@ -476,6 +447,7 @@ export default function Standards() {
               <Input
                 value={draft.requirementTitle}
                 onChange={(e) => updateDraft({ requirementTitle: e.target.value })}
+                placeholder="לדוגמה: רמפת גישה לכניסה"
               />
             </DraftField>
             <div className="flex gap-2">
@@ -492,140 +464,22 @@ export default function Standards() {
                 />
               </DraftField>
             </div>
-            <DraftField label="קטגוריה">
-              <Select
-                value={draft.category}
-                onValueChange={(v) => updateDraft({ category: v })}
-              >
-                <SelectTrigger dir="rtl" className="text-sm">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent dir="rtl">
-                  {CATEGORIES.map((c) => (
-                    <SelectItem key={c.code} value={c.label}>
-                      {c.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </DraftField>
-            <DraftField label="תת-קטגוריה">
-              <Input
-                value={draft.subCategory}
-                onChange={(e) => updateDraft({ subCategory: e.target.value })}
-              />
-            </DraftField>
-            <DraftField label="דרישה מעשית">
-              <Textarea
-                value={draft.practicalRequirement}
-                onChange={(e) => updateDraft({ practicalRequirement: e.target.value })}
-                rows={3}
-              />
-            </DraftField>
-            <DraftField label="נוסח ליקוי">
+            <DraftField label="בעיה">
               <Textarea
                 value={draft.defectText}
                 onChange={(e) => updateDraft({ defectText: e.target.value })}
-                rows={2}
+                rows={3}
+                placeholder="תאר את הליקוי שנמצא..."
               />
             </DraftField>
-            <DraftField label="נוסח תיקון">
+            <DraftField label="פתרון">
               <Textarea
                 value={draft.correctionText}
                 onChange={(e) => updateDraft({ correctionText: e.target.value })}
-                rows={2}
+                rows={3}
+                placeholder="תאר את הפעולה הנדרשת לתיקון..."
               />
             </DraftField>
-            <DraftField label="תמונת פרט (משותפת לכל המשתמשים)">
-              <PhotoPicker
-                value={draft.referencePhoto}
-                onChange={(u) => updateDraft({ referencePhoto: u ?? undefined })}
-                label="העלה תמונת פרט"
-                aspect="video"
-                removable={true}
-              />
-            </DraftField>
-            <DraftField label="חומרה (אופציונלי)">
-              <Select
-                value={draft.severity ?? "none"}
-                onValueChange={(v) => updateDraft({ severity: v === "none" ? undefined as unknown as Severity : v as Severity })}
-              >
-                <SelectTrigger dir="rtl" className="text-sm">
-                  <SelectValue placeholder="ללא ציון חומרה" />
-                </SelectTrigger>
-                <SelectContent dir="rtl">
-                  <SelectItem value="none">ללא ציון חומרה</SelectItem>
-                  {(["critical", "medium", "low"] as Severity[]).map((s) => (
-                    <SelectItem key={s} value={s}>
-                      {SEVERITY_LABELS[s]}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </DraftField>
-            <DraftField label="שיטת בדיקה">
-              <Textarea
-                value={draft.inspectionMethod}
-                onChange={(e) => updateDraft({ inspectionMethod: e.target.value })}
-                rows={2}
-              />
-            </DraftField>
-            <DraftField label="שדות מדידה (מופרדים בפסיק)">
-              <Input
-                value={(draft.measurementFields ?? []).join(", ")}
-                onChange={(e) =>
-                  updateDraft({
-                    measurementFields: e.target.value
-                      .split(",")
-                      .map((x) => x.trim())
-                      .filter(Boolean),
-                  })
-                }
-              />
-            </DraftField>
-            <DraftField label="תגיות (מופרדות בפסיק)">
-              <Input
-                value={draft.tags.join(", ")}
-                onChange={(e) =>
-                  updateDraft({
-                    tags: e.target.value
-                      .split(",")
-                      .map((x) => x.trim())
-                      .filter(Boolean),
-                  })
-                }
-              />
-            </DraftField>
-            <DraftField label="חל על">
-              <div className="flex flex-wrap gap-1.5">
-                {PLACE_TYPES.map((p) => {
-                  const on = draft.appliesTo.includes(p);
-                  return (
-                    <button
-                      key={p}
-                      type="button"
-                      onClick={() => togglePlace(p)}
-                      className={`rounded-full px-3 py-1 text-xs font-semibold border transition-colors ${
-                        on
-                          ? "bg-primary text-primary-foreground border-primary"
-                          : "bg-card border-border text-muted-foreground hover:bg-muted"
-                      }`}
-                    >
-                      {PLACE_TYPE_LABELS[p]}
-                    </button>
-                  );
-                })}
-              </div>
-            </DraftField>
-            {admin && (
-              <DraftField label="ציטוט/מקור פנימי (מנהל בלבד)">
-                <Textarea
-                  value={draft.internalCitation ?? ""}
-                  onChange={(e) => updateDraft({ internalCitation: e.target.value })}
-                  rows={2}
-                />
-              </DraftField>
-            )}
           </div>
           <DialogFooter className="flex-row gap-2">
             <Button
