@@ -21,6 +21,7 @@ interface DbRow {
   applies_to: string[];
   tags: string[];
   internal_citation: string | null;
+  reference_photo?: string | null; // SQL: ALTER TABLE accessibility_requirements ADD COLUMN reference_photo text;
   updated_at: number;
 }
 
@@ -42,6 +43,7 @@ function rowToReq(r: DbRow): AccessibilityRequirement {
     appliesTo: (r.applies_to ?? []) as PlaceType[],
     tags: r.tags ?? [],
     internalCitation: r.internal_citation ?? undefined,
+    referencePhoto: r.reference_photo ?? undefined,
   };
 }
 
@@ -63,6 +65,7 @@ function reqToRow(req: AccessibilityRequirement): DbRow {
     applies_to: req.appliesTo ?? [],
     tags: req.tags ?? [],
     internal_citation: req.internalCitation ?? null,
+    reference_photo: req.referencePhoto ?? null,
     updated_at: Date.now(),
   };
 }

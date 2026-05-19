@@ -1,6 +1,7 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowRight, BookOpen, Search, Plus, Pencil, Trash2 } from "lucide-react";
+import { ArrowRight, BookOpen, Camera, Link2, Pencil, Plus, Search, Trash2, X } from "lucide-react";
+import { fileToCompressedDataUrl } from "@/lib/image";
 import { toast } from "sonner";
 
 import { AppShell } from "@/components/AppShell";
@@ -83,6 +84,9 @@ export default function Standards() {
   const [editIsNew, setEditIsNew] = useState(false);
   const [draft, setDraft] = useState<AccessibilityRequirement>(emptyReq());
   const [savingDraft, setSavingDraft] = useState(false);
+  const [showUrlInput, setShowUrlInput] = useState(false);
+  const [urlInput, setUrlInput] = useState("");
+  const detailImgRef = useRef<HTMLInputElement>(null);
 
   const refresh = async () => {
     setLoading(true);
@@ -129,6 +133,8 @@ export default function Standards() {
   const openNew = () => {
     setDraft(emptyReq());
     setEditIsNew(true);
+    setShowUrlInput(false);
+    setUrlInput("");
     setEditOpen(true);
   };
 
@@ -140,6 +146,8 @@ export default function Standards() {
       internalCitation: req.internalCitation ?? "",
     });
     setEditIsNew(false);
+    setShowUrlInput(false);
+    setUrlInput("");
     setEditOpen(true);
   };
 
@@ -478,6 +486,88 @@ export default function Standards() {
                 onChange={(e) => updateDraft({ correctionText: e.target.value })}
                 rows={3}
                 placeholder="תאר את הפעולה הנדרשת לתיקון..."
+              />
+            </DraftField>
+
+            {/* Detail image */}
+            <DraftField label="תמונת פרט">
+              {draft.referencePhoto ? (
+                <div className="relative rounded-xl overflow-hidden border border-border">
+                  <img
+                    src={draft.referencePhoto}
+                    alt="תמונת פרט"
+                    className="w-full max-h-48 object-cover"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => { updateDraft({ referencePhoto: undefined }); setShowUrlInput(false); setUrlInput(""); }}
+                    className="absolute top-2 left-2 grid h-8 w-8 place-items-center rounded-full bg-background/90 text-foreground shadow"
+                    aria-label="הסר תמונה"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                </div>
+              ) : (
+                <div className="flex gap-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="flex-1 gap-1.5 text-xs"
+                    onClick={() => detailImgRef.current?.click()}
+                  >
+                    <Camera className="h-3.5 w-3.5" />
+                    צלם / העלה
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="flex-1 gap-1.5 text-xs"
+                    onClick={() => setShowUrlInput((v) => !v)}
+                  >
+                    <Link2 className="h-3.5 w-3.5" />
+                    הכנס URL
+                  </Button>
+                </div>
+              )}
+              {showUrlInput && !draft.referencePhoto && (
+                <div className="flex gap-2 mt-2">
+                  <Input
+                    className="text-xs flex-1"
+                    placeholder="https://..."
+                    value={urlInput}
+                    onChange={(e) => setUrlInput(e.target.value)}
+                    dir="ltr"
+                  />
+                  <Button
+                    type="button"
+                    size="sm"
+                    onClick={() => {
+                      const trimmed = urlInput.trim();
+                      if (trimmed) {
+                        updateDraft({ referencePhoto: trimmed });
+                        setUrlInput("");
+                        setShowUrlInput(false);
+                      }
+                    }}
+                  >
+                    אשר
+                  </Button>
+                </div>
+              )}
+              <input
+                ref={detailImgRef}
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={async (e) => {
+                  const file = e.target.files?.[0];
+                  if (file) {
+                    const url = await fileToCompressedDataUrl(file);
+                    updateDraft({ referencePhoto: url });
+                  }
+                }}
               />
             </DraftField>
           </div>
