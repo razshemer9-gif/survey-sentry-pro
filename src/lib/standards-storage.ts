@@ -72,7 +72,10 @@ function reqToRow(req: AccessibilityRequirement): DbRow {
 
 export async function seedRequirements(): Promise<void> {
   const rows = STANDARDS_DATA.map(reqToRow);
-  const { error } = await supabase.from(TABLE).upsert(rows, { onConflict: "id" });
+  // ignoreDuplicates: true — never overwrite rows that already exist (admin edits are safe)
+  const { error } = await supabase
+    .from(TABLE)
+    .upsert(rows, { onConflict: "id", ignoreDuplicates: true });
   if (error) throw error;
 }
 
@@ -100,4 +103,19 @@ export async function deleteRequirement(id: string): Promise<void> {
 
 export function isAdmin(): boolean {
   return localStorage.getItem("ans.admin") === "1";
+}
+
+// Async version: validates that the admin flag belongs to a real authenticated session.
+// Clears the flag and returns false if the user is not logged in.
+export async function validateAdminSession(): Promise<boolean> {
+  try {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      localStorage.removeItem("ans.admin");
+      return false;
+    }
+    return localStorage.getItem("ans.admin") === "1";
+  } catch {
+    return false;
+  }
 }

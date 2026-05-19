@@ -40,6 +40,7 @@ import {
   saveRequirement,
   deleteRequirement,
   isAdmin,
+  validateAdminSession,
 } from "@/lib/standards-storage";
 
 
@@ -71,7 +72,11 @@ export default function Standards() {
 
   const [items, setItems] = useState<AccessibilityRequirement[]>([]);
   const [loading, setLoading] = useState(true);
-  const admin = isAdmin();
+  const [admin, setAdmin] = useState(isAdmin()); // fast init from localStorage, verified below
+
+  useEffect(() => {
+    validateAdminSession().then(setAdmin);
+  }, []);
 
   // Add-to-report dialog state
   const [selectedReq, setSelectedReq] = useState<AccessibilityRequirement | null>(null);
@@ -152,6 +157,7 @@ export default function Standards() {
   };
 
   const handleDelete = async (req: AccessibilityRequirement) => {
+    if (!admin) return;
     if (!confirm(`למחוק את הדרישה "${req.requirementTitle}"?`)) return;
     try {
       await deleteRequirement(req.id);
@@ -166,6 +172,10 @@ export default function Standards() {
     setDraft((d) => ({ ...d, ...patch }));
 
   const handleSaveDraft = async () => {
+    if (!admin) {
+      toast.error("אין הרשאת מנהל");
+      return;
+    }
     if (!draft.requirementTitle.trim()) {
       toast.error("יש להזין כותרת דרישה");
       return;
