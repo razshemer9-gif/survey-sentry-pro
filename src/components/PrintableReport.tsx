@@ -338,7 +338,7 @@ export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, sett
                 </div>
               )}
 
-              {item.status === "non_compliant" && item.correctionApplied && item.suggestedCorrection && (
+              {item.status === "non_compliant" && item.suggestedCorrection && (
                 <div
                   style={{
                     marginTop: 10,

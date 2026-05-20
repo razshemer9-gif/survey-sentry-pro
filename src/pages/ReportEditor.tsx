@@ -134,12 +134,6 @@ export default function ReportEditor() {
       const items = r.items.map((it) => {
         if (it.id !== itemId) return it;
         const updated = { ...it, ...patch };
-        // Clear suggestion when status changes away from non_compliant
-        if (patch.status && patch.status !== "non_compliant") {
-          updated.suggestedCorrection = undefined;
-          updated.matchedRequirementId = undefined;
-          updated.correctionApplied = undefined;
-        }
         return updated;
       });
       return { ...r, items };
