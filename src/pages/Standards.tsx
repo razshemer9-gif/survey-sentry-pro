@@ -200,8 +200,10 @@ export default function Standards() {
       toast.success(editIsNew ? "הדרישה נוספה" : "הדרישה עודכנה");
       setEditOpen(false);
       await refresh();
-    } catch {
-      toast.error("שגיאה בשמירה");
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      console.error("saveRequirement error:", err);
+      toast.error(`שגיאה בשמירה: ${msg}`);
     } finally {
       setSavingDraft(false);
     }

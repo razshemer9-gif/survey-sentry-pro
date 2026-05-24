@@ -59,7 +59,7 @@ function reqToRow(req: AccessibilityRequirement): DbRow {
     practical_requirement: req.practicalRequirement,
     defect_text: req.defectText,
     correction_text: req.correctionText,
-    severity: req.severity,
+    severity: req.severity ?? "",
     measurement_fields: req.measurementFields ?? null,
     inspection_method: req.inspectionMethod,
     applies_to: req.appliesTo ?? [],
