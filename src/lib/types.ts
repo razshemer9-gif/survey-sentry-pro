@@ -49,6 +49,8 @@ export interface SurveyReport {
   signatureDataUrl?: string;
   signatureDate?: string;
   signatureConsultantName?: string;
+  // Opinion summary
+  accessibilityComplianceStatus?: "yes" | "no";
 }
 
 export interface ReferencePhotoEntry {

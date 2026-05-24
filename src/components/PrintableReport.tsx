@@ -412,6 +412,71 @@ export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, sett
           ))}
         </div>
 
+        {/* Opinion summary */}
+        {report.accessibilityComplianceStatus && (
+          <div
+            style={{
+              marginTop: 32,
+              border: "2px solid #1e3a8a",
+              borderRadius: 14,
+              padding: "20px 24px",
+              background: "#f0f4ff",
+              pageBreakInside: "avoid",
+            }}
+          >
+            <h3 style={{ margin: "0 0 12px", fontSize: 17, fontWeight: 800, color: "#1e3a8a" }}>
+              סיכום חוות הדעת של מורשה הנגישות:
+            </h3>
+            <p style={{ margin: 0, fontSize: 15, color: "#0f172a", lineHeight: 1.7 }}>
+              האם בוצעו בעסק כל התאמות הנגישות וההוראות החלות עליו לפי התקנות?
+            </p>
+            <div style={{ marginTop: 14, display: "flex", gap: 16 }}>
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 8,
+                  fontSize: 16,
+                  fontWeight: 700,
+                  color: report.accessibilityComplianceStatus === "yes" ? "#15803d" : "#6b7280",
+                }}
+              >
+                <span style={{
+                  display: "inline-block",
+                  width: 20,
+                  height: 20,
+                  borderRadius: "50%",
+                  border: `2px solid ${report.accessibilityComplianceStatus === "yes" ? "#15803d" : "#d1d5db"}`,
+                  background: report.accessibilityComplianceStatus === "yes" ? "#15803d" : "transparent",
+                  flexShrink: 0,
+                }} />
+                כן
+              </div>
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 8,
+                  fontSize: 16,
+                  fontWeight: 700,
+                  color: report.accessibilityComplianceStatus === "no" ? "#b91c1c" : "#6b7280",
+                }}
+              >
+                <span style={{
+                  display: "inline-block",
+                  width: 20,
+                  height: 20,
+                  borderRadius: "50%",
+                  border: `2px solid ${report.accessibilityComplianceStatus === "no" ? "#b91c1c" : "#d1d5db"}`,
+                  background: report.accessibilityComplianceStatus === "no" ? "#b91c1c" : "transparent",
+                  flexShrink: 0,
+                }} />
+                לא
+              </div>
+            </div>
+          </div>
+        )}
+
         <div
           style={{
             marginTop: 36,

@@ -168,6 +168,10 @@ export default function ReportEditor() {
 
   const handleGenerate = async () => {
     if (!printRef.current || !report) return;
+    if (!report.accessibilityComplianceStatus) {
+      toast.error("יש לבחור כן או לא בסיכום חוות הדעת לפני הפקת PDF");
+      return;
+    }
     setGenerating(true);
     try {
       await saveReport(report);
@@ -440,6 +444,41 @@ export default function ReportEditor() {
               <span className="text-sm opacity-90">אומדן תיקונים כולל</span>
               <strong className="text-xl">{formatCurrency(totalCost)}</strong>
             </div>
+          </div>
+
+          {/* Opinion summary section */}
+          <div dir="rtl" className="rounded-2xl border-2 border-primary/30 bg-card p-4 space-y-3">
+            <h3 className="font-bold text-sm text-primary">סיכום חוות הדעת של מורשה הנגישות:</h3>
+            <p className="text-sm text-foreground leading-relaxed">
+              האם בוצעו בעסק כל התאמות הנגישות וההוראות החלות עליו לפי התקנות?
+            </p>
+            <div className="flex gap-3">
+              <button
+                onClick={() => update({ accessibilityComplianceStatus: "yes" })}
+                className={cn(
+                  "flex-1 rounded-xl border-2 py-3 text-sm font-bold transition-colors",
+                  report.accessibilityComplianceStatus === "yes"
+                    ? "border-success bg-success/15 text-success ring-2 ring-success/40"
+                    : "border-border bg-background text-muted-foreground hover:border-success/50 hover:text-success"
+                )}
+              >
+                כן
+              </button>
+              <button
+                onClick={() => update({ accessibilityComplianceStatus: "no" })}
+                className={cn(
+                  "flex-1 rounded-xl border-2 py-3 text-sm font-bold transition-colors",
+                  report.accessibilityComplianceStatus === "no"
+                    ? "border-destructive bg-destructive/10 text-destructive ring-2 ring-destructive/30"
+                    : "border-border bg-background text-muted-foreground hover:border-destructive/50 hover:text-destructive"
+                )}
+              >
+                לא
+              </button>
+            </div>
+            {!report.accessibilityComplianceStatus && (
+              <p className="text-xs text-muted-foreground">* שדה חובה להפקת PDF</p>
+            )}
           </div>
         </TabsContent>
       </Tabs>
