@@ -168,10 +168,6 @@ export default function ReportEditor() {
 
   const handleGenerate = async () => {
     if (!printRef.current || !report) return;
-    if (!report.accessibilityComplianceStatus) {
-      toast.error("יש לבחור כן או לא בסיכום חוות הדעת לפני הפקת PDF");
-      return;
-    }
     setGenerating(true);
     try {
       await saveReport(report);
@@ -476,9 +472,6 @@ export default function ReportEditor() {
                 לא
               </button>
             </div>
-            {!report.accessibilityComplianceStatus && (
-              <p className="text-xs text-muted-foreground">* שדה חובה להפקת PDF</p>
-            )}
           </div>
         </TabsContent>
       </Tabs>
