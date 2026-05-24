@@ -14,6 +14,9 @@ export interface ChecklistItem {
   suggestedCorrection?: string; // הצעת תיקון מת"י 1918
   matchedRequirementId?: string; // ID של הדרישה
   correctionApplied?: boolean; // האם המשתמש אישר את ההצעה
+  // Standard reference (from accessibility_requirements) — shown in PDF
+  standardPart?: string; // למשל 'ת"י 1918 חלק 4'
+  clause?: string; // למשל '16.1'
 }
 
 export interface ChecklistTemplate {
@@ -56,7 +59,8 @@ export interface ReferencePhotoEntry {
 export interface ConsultantSettings {
   companyName: string;
   consultantName: string;
-  license: string;
+  license: string; // מספר רישוי שירות (מורשה נגישות)
+  idNumber?: string; // ת.ז. היועץ
   phone: string;
   email: string;
   address: string;

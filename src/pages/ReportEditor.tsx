@@ -541,6 +541,8 @@ export default function ReportEditor() {
                       referencePhoto: req.referencePhoto,
                       suggestedCorrection: req.correctionText,
                       matchedRequirementId: req.id,
+                      standardPart: req.standardPart,
+                      clause: req.clause,
                     };
                     setReport((r) => r ? { ...r, items: [...r.items, newItem] } : r);
                     setLibraryOpen(false);

@@ -88,7 +88,15 @@ export default function Settings() {
         <Field label="שם היועץ">
           <Input value={s.consultantName} onChange={(e) => update({ consultantName: e.target.value })} />
         </Field>
-        <Field label="מספר רישוי / הסמכה">
+        <Field label="מספר ת.ז.">
+          <Input
+            value={s.idNumber ?? ""}
+            onChange={(e) => update({ idNumber: e.target.value })}
+            inputMode="numeric"
+            dir="ltr"
+          />
+        </Field>
+        <Field label="מספר רישוי שירות / הסמכה">
           <Input value={s.license} onChange={(e) => update({ license: e.target.value })} />
         </Field>
         <Field label="טלפון">

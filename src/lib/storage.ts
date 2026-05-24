@@ -115,6 +115,8 @@ export async function addRequirementToReport(
     referencePhoto: req.referencePhoto,
     suggestedCorrection: req.correctionText || undefined,
     matchedRequirementId: req.id,
+    standardPart: req.standardPart,
+    clause: req.clause,
   };
   const updated: SurveyReport = { ...report, items: [...report.items, newItem] };
   await saveReport(updated);

@@ -171,7 +171,8 @@ export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, sett
         >
           <Field label="חברה" value={settings.companyName} dark />
           <Field label="שם היועץ" value={settings.consultantName} dark />
-          <Field label="מספר רישוי" value={settings.license} dark />
+          {settings.idNumber && <Field label="מספר ת.ז." value={settings.idNumber} dark />}
+          <Field label="מספר רישוי שירות" value={settings.license} dark />
           <Field label="טלפון" value={settings.phone} dark />
           <Field label='דוא"ל' value={settings.email} dark />
           <Field label="כתובת המשרד" value={settings.address} dark />
@@ -259,6 +260,16 @@ export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, sett
               {report.signatureConsultantName || settings.consultantName || "חתימת היועץ"}
               {report.signatureDate ? ` • ${report.signatureDate}` : ""}
             </div>
+            {settings.license && (
+              <div style={{ fontSize: 11, color: "#475569", marginTop: 2 }}>
+                מורשה נגישות מתו"ס · רישוי שירות {settings.license}
+              </div>
+            )}
+            {settings.idNumber && (
+              <div style={{ fontSize: 11, color: "#475569" }}>
+                ת.ז. {settings.idNumber}
+              </div>
+            )}
           </div>
         </div>
       </section>
@@ -283,6 +294,12 @@ export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, sett
                 <div style={{ flex: 1 }}>
                   <div style={{ fontSize: 12, color: "#64748b" }}>ממצא {idx + 1}</div>
                   <div style={{ fontSize: 17, fontWeight: 700, color: "#0f172a", marginTop: 2 }}>{item.title}</div>
+                  {(item.standardPart || item.clause) && (
+                    <div style={{ fontSize: 11, color: "#1e40af", marginTop: 4, fontWeight: 600 }}>
+                      {item.standardPart}
+                      {item.clause ? ` · סעיף ${item.clause}` : ""}
+                    </div>
+                  )}
                 </div>
                 <StatusPill status={item.status} />
               </div>
