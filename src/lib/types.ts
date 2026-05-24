@@ -24,7 +24,7 @@ export interface ChecklistTemplate {
   id: string;
   name: string;
   description?: string;
-  items: Omit<ChecklistItem, "id" | "status" | "notes" | "estimatedCost" | "photo">[];
+  items: (Omit<ChecklistItem, "id" | "status" | "notes" | "estimatedCost" | "photo"> & { notes?: string })[];
   builtIn?: boolean;
 }
 

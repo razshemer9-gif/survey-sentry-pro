@@ -1,7 +1,7 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { v4 as uuid } from "uuid";
-import { ArrowRight, Plus, Save, Trash2, X, BookOpen } from "lucide-react";
+import { ArrowRight, BookOpen, Check, Plus, Save, Trash2, X } from "lucide-react";
 import { toast } from "sonner";
 
 import { AppShell } from "@/components/AppShell";
@@ -11,9 +11,15 @@ import { Label } from "@/components/ui/label";
 import {
   Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+} from "@/components/ui/select";
 import { ChecklistTemplate } from "@/lib/types";
 import { deleteTemplate, listTemplates, saveTemplate } from "@/lib/storage";
 import { STANDARDS_DATA } from "@/lib/standards-data";
+import { listRequirements } from "@/lib/standards-storage";
+import { AccessibilityRequirement } from "@/lib/standards-types";
+import { cn } from "@/lib/utils";
 
 interface AccessibilityTemplate {
   id: string;
@@ -90,8 +96,84 @@ export default function Templates() {
   const [templates, setTemplates] = useState<ChecklistTemplate[]>([]);
   const [editing, setEditing] = useState<ChecklistTemplate | null>(null);
 
+  // Library picker state
+  const [libraryOpen, setLibraryOpen] = useState(false);
+  const [libraryItems, setLibraryItems] = useState<AccessibilityRequirement[]>([]);
+  const libraryItemsRef = useRef<AccessibilityRequirement[]>([]);
+  const [librarySearch, setLibrarySearch] = useState("");
+  const [libraryCategory, setLibraryCategory] = useState<string>("all");
+  const [selectedReqIds, setSelectedReqIds] = useState<Set<string>>(new Set());
+
   useEffect(() => refresh(), []);
   const refresh = () => setTemplates(listTemplates());
+
+  const openLibrary = async () => {
+    if (libraryItemsRef.current.length === 0) {
+      const items = await listRequirements();
+      setLibraryItems(items);
+      libraryItemsRef.current = items;
+    }
+    setSelectedReqIds(new Set());
+    setLibrarySearch("");
+    setLibraryCategory("all");
+    setLibraryOpen(true);
+  };
+
+  const toggleSelect = (id: string) =>
+    setSelectedReqIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+
+  const addSelectedToTemplate = () => {
+    if (!editing) return;
+    const existingIds = new Set(
+      editing.items.map((i) => i.matchedRequirementId).filter(Boolean) as string[],
+    );
+    const toAdd = libraryItems.filter(
+      (r) => selectedReqIds.has(r.id) && !existingIds.has(r.id),
+    );
+    if (toAdd.length === 0) {
+      toast.info("הממצאים שנבחרו כבר קיימים בתבנית");
+      setLibraryOpen(false);
+      return;
+    }
+    const newItems = toAdd.map((r) => {
+      const photos = r.referencePhotos && r.referencePhotos.length > 0
+        ? r.referencePhotos
+        : r.referencePhoto ? [r.referencePhoto] : undefined;
+      return {
+        title: r.requirementTitle,
+        notes: r.defectText || undefined,
+        suggestedCorrection: r.correctionText || undefined,
+        matchedRequirementId: r.id,
+        standardPart: r.standardPart,
+        clause: r.clause,
+        referencePhoto: photos?.[0],
+        referencePhotos: photos,
+      };
+    });
+    setEditing({ ...editing, items: [...editing.items, ...newItems] });
+    setLibraryOpen(false);
+    toast.success(`נוספו ${newItems.length} ממצאים לתבנית`);
+  };
+
+  const categories = Array.from(
+    new Set(libraryItems.map((r) => r.category).filter(Boolean)),
+  ).sort();
+
+  const filteredLibrary = libraryItems.filter((r) => {
+    if (libraryCategory !== "all" && r.category !== libraryCategory) return false;
+    if (!librarySearch) return true;
+    const q = librarySearch.trim();
+    return (
+      r.requirementTitle.includes(q) ||
+      (r.subCategory || "").includes(q) ||
+      (r.standardPart || "").includes(q) ||
+      (r.tags || []).some((t) => t.includes(q))
+    );
+  });
 
   const startNew = () =>
     setEditing({
@@ -267,37 +349,62 @@ export default function Templates() {
                 <Label className="text-xs">ממצאים</Label>
                 <div className="mt-2 space-y-2">
                   {editing.items.map((it, i) => (
-                    <div key={i} className="flex min-w-0 items-center gap-2">
-                      <Input
-                        className="min-w-0 flex-1"
-                        value={it.title}
-                        onChange={(e) => {
-                          const next = [...editing.items];
-                          next[i] = { title: e.target.value };
-                          setEditing({ ...editing, items: next });
-                        }}
-                      />
-                      <button
-                        onClick={() =>
-                          setEditing({ ...editing, items: editing.items.filter((_, idx) => idx !== i) })
-                        }
-                        className="grid h-9 w-9 place-items-center rounded-lg text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
-                        aria-label="הסר"
-                      >
-                        <X className="h-4 w-4" />
-                      </button>
+                    <div key={i} className="min-w-0 rounded-xl border border-border bg-background p-2">
+                      <div className="flex min-w-0 items-center gap-2">
+                        <Input
+                          className="min-w-0 flex-1"
+                          value={it.title}
+                          onChange={(e) => {
+                            const next = [...editing.items];
+                            next[i] = { ...next[i], title: e.target.value };
+                            setEditing({ ...editing, items: next });
+                          }}
+                        />
+                        <button
+                          onClick={() =>
+                            setEditing({ ...editing, items: editing.items.filter((_, idx) => idx !== i) })
+                          }
+                          className="grid h-9 w-9 place-items-center rounded-lg text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
+                          aria-label="הסר"
+                        >
+                          <X className="h-4 w-4" />
+                        </button>
+                      </div>
+                      {(it.matchedRequirementId || it.standardPart || it.clause) && (
+                        <div className="mt-1.5 flex flex-wrap items-center gap-1 px-1 text-[10px]">
+                          {it.matchedRequirementId && (
+                            <span className="rounded-full bg-primary-soft px-2 py-0.5 font-semibold text-primary">
+                              מהמאגר
+                            </span>
+                          )}
+                          {it.standardPart && (
+                            <span className="text-muted-foreground">
+                              {it.standardPart}{it.clause ? ` · סעיף ${it.clause}` : ""}
+                            </span>
+                          )}
+                        </div>
+                      )}
                     </div>
                   ))}
                 </div>
-                <Button
-                  variant="outline"
-                  className="mt-2 w-full gap-2"
-                  onClick={() =>
-                    setEditing({ ...editing, items: [...editing.items, { title: "ממצא חדש" }] })
-                  }
-                >
-                  <Plus className="h-4 w-4" /> הוסף ממצא
-                </Button>
+                <div className="mt-2 grid grid-cols-2 gap-2">
+                  <Button
+                    variant="outline"
+                    className="gap-2"
+                    onClick={() =>
+                      setEditing({ ...editing, items: [...editing.items, { title: "ממצא חדש" }] })
+                    }
+                  >
+                    <Plus className="h-4 w-4" /> הוסף ממצא
+                  </Button>
+                  <Button
+                    variant="outline"
+                    className="gap-2 border-dashed border-primary/40 text-primary hover:bg-primary-soft"
+                    onClick={openLibrary}
+                  >
+                    <BookOpen className="h-4 w-4" /> הוסף ממצא מהמאגר
+                  </Button>
+                </div>
               </div>
             </div>
           )}
@@ -305,6 +412,101 @@ export default function Templates() {
           <DialogFooter>
             <Button onClick={handleSave} className="w-full gap-2">
               <Save className="h-4 w-4" /> שמור תבנית
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Library picker — multi-select requirements from standards DB */}
+      <Dialog open={libraryOpen} onOpenChange={setLibraryOpen}>
+        <DialogContent className="flex max-h-[90vh] w-[95vw] max-w-lg flex-col gap-0 p-0" dir="rtl">
+          <DialogHeader className="px-4 pb-2 pt-4">
+            <DialogTitle>הוסף ממצאים מהמאגר</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-2 px-4 pb-2">
+            <Input
+              placeholder="חיפוש לפי כותרת, תת-קטגוריה או תגית..."
+              value={librarySearch}
+              onChange={(e) => setLibrarySearch(e.target.value)}
+              autoFocus
+            />
+            <Select value={libraryCategory} onValueChange={setLibraryCategory}>
+              <SelectTrigger>
+                <SelectValue placeholder="כל הקטגוריות" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">כל הקטגוריות</SelectItem>
+                {categories.map((c) => (
+                  <SelectItem key={c} value={c}>{c}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <div className="flex items-center justify-between text-xs text-muted-foreground">
+              <span>{filteredLibrary.length} ממצאים</span>
+              <span>{selectedReqIds.size} נבחרו</span>
+            </div>
+          </div>
+
+          <div className="flex-1 space-y-1.5 overflow-y-auto px-4 pb-3">
+            {filteredLibrary.length === 0 && (
+              <p className="py-8 text-center text-sm text-muted-foreground">לא נמצאו ממצאים</p>
+            )}
+            {filteredLibrary.map((req) => {
+              const selected = selectedReqIds.has(req.id);
+              const alreadyInTemplate = editing?.items.some(
+                (i) => i.matchedRequirementId === req.id,
+              );
+              return (
+                <button
+                  key={req.id}
+                  onClick={() => !alreadyInTemplate && toggleSelect(req.id)}
+                  disabled={alreadyInTemplate}
+                  className={cn(
+                    "w-full rounded-xl border p-3 text-right transition-colors",
+                    alreadyInTemplate
+                      ? "cursor-not-allowed border-border bg-muted/50 opacity-60"
+                      : selected
+                        ? "border-primary bg-primary-soft ring-2 ring-primary/30"
+                        : "border-border bg-card hover:bg-muted",
+                  )}
+                >
+                  <div className="flex items-start gap-2">
+                    <div
+                      className={cn(
+                        "mt-0.5 grid h-5 w-5 shrink-0 place-items-center rounded border-2 transition-colors",
+                        selected
+                          ? "border-primary bg-primary text-primary-foreground"
+                          : "border-border bg-background",
+                      )}
+                    >
+                      {selected && <Check className="h-3 w-3" />}
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-sm font-semibold">{req.requirementTitle}</p>
+                      <p className="mt-0.5 text-xs text-muted-foreground">
+                        {req.subCategory}{req.standardPart ? ` · ${req.standardPart}` : ""}
+                        {req.clause ? ` · סעיף ${req.clause}` : ""}
+                      </p>
+                      {alreadyInTemplate && (
+                        <p className="mt-1 text-[10px] font-semibold text-warning">
+                          כבר קיים בתבנית
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+
+          <DialogFooter className="border-t border-border px-4 py-3">
+            <Button
+              onClick={addSelectedToTemplate}
+              disabled={selectedReqIds.size === 0}
+              className="w-full gap-2"
+            >
+              <Plus className="h-4 w-4" />
+              הוסף לתבנית ({selectedReqIds.size})
             </Button>
           </DialogFooter>
         </DialogContent>

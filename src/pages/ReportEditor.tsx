@@ -670,8 +670,16 @@ function TemplateSwap({ onLoad }: { onLoad: (items: ChecklistItem[]) => void }) 
               id: uuid(),
               title: i.title,
               status: "pending",
-              notes: "",
+              notes: i.notes || "",
               estimatedCost: 0,
+              includeInCost: i.includeInCost,
+              referencePhoto: i.referencePhoto,
+              referencePhotos: i.referencePhotos,
+              referenceLabel: i.referenceLabel,
+              suggestedCorrection: i.suggestedCorrection,
+              matchedRequirementId: i.matchedRequirementId,
+              standardPart: i.standardPart,
+              clause: i.clause,
             })),
           );
           toast.success(`נטענה תבנית: ${t.name}`);
