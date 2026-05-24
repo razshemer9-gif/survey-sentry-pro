@@ -22,6 +22,7 @@ interface DbRow {
   tags: string[];
   internal_citation: string | null;
   reference_photo?: string | null; // SQL: ALTER TABLE accessibility_requirements ADD COLUMN reference_photo text;
+  reference_photos?: string[] | null; // SQL: ALTER TABLE accessibility_requirements ADD COLUMN reference_photos jsonb;
   updated_at: number;
 }
 
@@ -44,7 +45,15 @@ function rowToReq(r: DbRow): AccessibilityRequirement {
     tags: r.tags ?? [],
     internalCitation: r.internal_citation ?? undefined,
     referencePhoto: r.reference_photo ?? undefined,
+    referencePhotos: normalizePhotos(r.reference_photos, r.reference_photo),
   };
+}
+
+// Backwards-compat: prefer reference_photos array; fall back to single reference_photo
+function normalizePhotos(arr: string[] | null | undefined, single: string | null | undefined): string[] | undefined {
+  if (Array.isArray(arr) && arr.length > 0) return arr.filter(Boolean);
+  if (single) return [single];
+  return undefined;
 }
 
 function reqToRow(req: AccessibilityRequirement): DbRow {
@@ -65,7 +74,12 @@ function reqToRow(req: AccessibilityRequirement): DbRow {
     applies_to: req.appliesTo ?? [],
     tags: req.tags ?? [],
     internal_citation: req.internalCitation ?? null,
-    reference_photo: req.referencePhoto ?? null,
+    reference_photo: (req.referencePhotos && req.referencePhotos.length > 0)
+      ? req.referencePhotos[0]
+      : (req.referencePhoto ?? null),
+    reference_photos: (req.referencePhotos && req.referencePhotos.length > 0)
+      ? req.referencePhotos
+      : (req.referencePhoto ? [req.referencePhoto] : null),
     updated_at: Date.now(),
   };
 }

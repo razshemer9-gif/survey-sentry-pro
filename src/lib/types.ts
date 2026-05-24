@@ -8,7 +8,8 @@ export interface ChecklistItem {
   estimatedCost: number; // ILS
   includeInCost?: boolean;
   photo?: string; // dataURL — תמונת מצב קיים
-  referencePhoto?: string; // dataURL — תמונת דוגמה / פרט מבוקש
+  referencePhoto?: string; // legacy single photo — read for backwards compat
+  referencePhotos?: string[]; // multiple detail photos (preferred)
   referenceLabel?: string; // טקסט תיאור הפרט
   // Auto-recommendation fields
   suggestedCorrection?: string; // הצעת תיקון מת"י 1918

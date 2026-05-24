@@ -106,13 +106,17 @@ export async function addRequirementToReport(
 ): Promise<void> {
   const report = await getReport(reportId);
   if (!report) throw new Error("Report not found");
+  const photos = (req.referencePhotos && req.referencePhotos.length > 0)
+    ? req.referencePhotos
+    : (req.referencePhoto ? [req.referencePhoto] : undefined);
   const newItem = {
     id: uuid(),
     title: req.requirementTitle,
     status: "pending" as const,
     notes: req.defectText,
     estimatedCost: 0,
-    referencePhoto: req.referencePhoto,
+    referencePhoto: photos?.[0],
+    referencePhotos: photos,
     suggestedCorrection: req.correctionText || undefined,
     matchedRequirementId: req.id,
     standardPart: req.standardPart,

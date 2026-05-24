@@ -348,32 +348,46 @@ export default function ReportEditor() {
                   placeholder="פרט:"
                   className="mb-2 bg-card"
                 />
-                {item.referencePhoto ? (
-                  <div className="relative">
-                    <img src={item.referencePhoto} alt={item.referenceLabel || "פרט"} className="w-full max-h-28 object-contain rounded-lg border border-border bg-white" />
-                    <button
-                      onClick={() => updateItem(item.id, { referencePhoto: undefined })}
-                      className="absolute top-1 left-1 h-5 w-5 rounded-full bg-destructive/90 text-white flex items-center justify-center"
-                      aria-label="הסר תמונת פרט"
-                    >
-                      <X className="h-3 w-3" />
-                    </button>
-                    <button
-                      onClick={() => openRefPicker(item.id)}
-                      className="mt-1 w-full text-xs text-primary underline underline-offset-2"
-                    >
-                      החלף תמונה
-                    </button>
-                  </div>
-                ) : (
-                  <button
-                    onClick={() => openRefPicker(item.id)}
-                    className="w-full rounded-xl border-2 border-dashed border-primary/40 py-3 flex flex-col items-center gap-1 text-primary hover:bg-primary/5 transition-colors"
-                  >
-                    <Plus className="h-4 w-4" />
-                    <span className="text-xs">בחר תמונת פרט מהמאגר</span>
-                  </button>
-                )}
+                {(() => {
+                  const photos = item.referencePhotos && item.referencePhotos.length > 0
+                    ? item.referencePhotos
+                    : (item.referencePhoto ? [item.referencePhoto] : []);
+                  const updatePhotos = (next: string[]) => updateItem(item.id, {
+                    referencePhotos: next.length > 0 ? next : undefined,
+                    referencePhoto: next[0],
+                  });
+                  return (
+                    <div className="space-y-2">
+                      {photos.length > 0 && (
+                        <div className={photos.length > 1 ? "grid grid-cols-2 gap-2" : ""}>
+                          {photos.map((p, i) => (
+                            <div key={i} className="relative">
+                              <img
+                                src={p}
+                                alt={item.referenceLabel || `פרט ${i + 1}`}
+                                className="w-full max-h-28 object-contain rounded-lg border border-border bg-white"
+                              />
+                              <button
+                                onClick={() => updatePhotos(photos.filter((_, j) => j !== i))}
+                                className="absolute top-1 left-1 h-5 w-5 rounded-full bg-destructive/90 text-white flex items-center justify-center"
+                                aria-label="הסר תמונת פרט"
+                              >
+                                <X className="h-3 w-3" />
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                      <button
+                        onClick={() => openRefPicker(item.id)}
+                        className="w-full rounded-xl border-2 border-dashed border-primary/40 py-2 flex items-center justify-center gap-1 text-primary hover:bg-primary/5 transition-colors"
+                      >
+                        <Plus className="h-4 w-4" />
+                        <span className="text-xs">{photos.length > 0 ? "הוסף תמונת פרט נוספת" : "בחר תמונת פרט מהמאגר"}</span>
+                      </button>
+                    </div>
+                  );
+                })()}
               </div>
 
               <div className="flex flex-wrap items-center gap-2">
@@ -532,13 +546,17 @@ export default function ReportEditor() {
                   className="w-full text-right rounded-xl border border-border bg-card p-3 hover:bg-muted transition-colors"
                   onClick={() => {
                     const found = findMatch(req.requirementTitle);
+                    const photos = (req.referencePhotos && req.referencePhotos.length > 0)
+                      ? req.referencePhotos
+                      : (req.referencePhoto ? [req.referencePhoto] : undefined);
                     const newItem = {
                       id: uuid(),
                       title: req.requirementTitle,
                       status: "pending" as const,
                       notes: req.defectText,
                       estimatedCost: 0,
-                      referencePhoto: req.referencePhoto,
+                      referencePhoto: photos?.[0],
+                      referencePhotos: photos,
                       suggestedCorrection: req.correctionText,
                       matchedRequirementId: req.id,
                       standardPart: req.standardPart,
@@ -563,11 +581,27 @@ export default function ReportEditor() {
         onClose={() => setRefPickerItemId(null)}
         onSelect={(photo, label) => {
           if (!refPickerItemId) return;
-          updateItem(refPickerItemId, { referencePhoto: photo, referenceLabel: label });
+          const current = report?.items.find((it) => it.id === refPickerItemId);
+          const existing = current?.referencePhotos && current.referencePhotos.length > 0
+            ? current.referencePhotos
+            : (current?.referencePhoto ? [current.referencePhoto] : []);
+          const next = [...existing, photo];
+          updateItem(refPickerItemId, {
+            referencePhotos: next,
+            referencePhoto: next[0],
+            referenceLabel: label,
+          });
         }}
         globalPhotos={libraryItems
-          .filter((r) => r.referencePhoto)
-          .map((r) => ({ label: r.requirementTitle, photo: r.referencePhoto! }))}
+          .flatMap((r) => {
+            const photos = r.referencePhotos && r.referencePhotos.length > 0
+              ? r.referencePhotos
+              : (r.referencePhoto ? [r.referencePhoto] : []);
+            return photos.map((p, i) => ({
+              label: photos.length > 1 ? `${r.requirementTitle} (${i + 1})` : r.requirementTitle,
+              photo: p,
+            }));
+          })}
         personalPhotos={settings.referencePhotos ?? []}
         onAddPersonal={async (entry) => {
           const newSettings = { ...settings, referencePhotos: [...(settings.referencePhotos ?? []), entry] };

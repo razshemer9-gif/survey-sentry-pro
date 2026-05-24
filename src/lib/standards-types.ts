@@ -20,7 +20,8 @@ export interface AccessibilityRequirement {
   appliesTo: PlaceType[];
   tags: string[];
   internalCitation?: string;
-  referencePhoto?: string; // dataURL — תמונת פרט משותפת לכל המשתמשים
+  referencePhoto?: string; // legacy single photo — read for backwards compat
+  referencePhotos?: string[]; // multiple detail photos (preferred)
   // Source tracking — for items extracted from the Israeli Standard 1918 documents
   sourceFile?: string;       // original filename in src/empty-folder
   sourceConfidence?: SourceConfidence;

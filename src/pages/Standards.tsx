@@ -369,16 +369,29 @@ export default function Standards() {
                     </p>
                   </div>
                 )}
-                {req.referencePhoto && (
-                  <div className="pt-1">
-                    <p className="text-[10px] font-semibold text-primary mb-1">תמונת פרט</p>
-                    <img
-                      src={req.referencePhoto}
-                      alt="תמונת פרט"
-                      className="w-full rounded-xl object-cover border border-border max-h-48"
-                    />
-                  </div>
-                )}
+                {(() => {
+                  const photos = req.referencePhotos && req.referencePhotos.length > 0
+                    ? req.referencePhotos
+                    : (req.referencePhoto ? [req.referencePhoto] : []);
+                  if (photos.length === 0) return null;
+                  return (
+                    <div className="pt-1">
+                      <p className="text-[10px] font-semibold text-primary mb-1">
+                        תמונת פרט{photos.length > 1 ? ` (${photos.length})` : ""}
+                      </p>
+                      <div className={photos.length > 1 ? "grid grid-cols-2 gap-2" : ""}>
+                        {photos.map((p, i) => (
+                          <img
+                            key={i}
+                            src={p}
+                            alt={`תמונת פרט ${i + 1}`}
+                            className="w-full rounded-xl object-cover border border-border max-h-48"
+                          />
+                        ))}
+                      </div>
+                    </div>
+                  );
+                })()}
                 {req.tags.length > 0 && (
                   <div className="flex flex-wrap gap-1 pt-1">
                     {req.tags.map((tag) => (
@@ -501,86 +514,99 @@ export default function Standards() {
               />
             </DraftField>
 
-            {/* Detail image */}
-            <DraftField label="תמונת פרט">
-              {draft.referencePhoto ? (
-                <div className="relative rounded-xl overflow-hidden border border-border">
-                  <img
-                    src={draft.referencePhoto}
-                    alt="תמונת פרט"
-                    className="w-full max-h-48 object-cover"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => { updateDraft({ referencePhoto: undefined }); setShowUrlInput(false); setUrlInput(""); }}
-                    className="absolute top-2 left-2 grid h-8 w-8 place-items-center rounded-full bg-background/90 text-foreground shadow"
-                    aria-label="הסר תמונה"
-                  >
-                    <X className="h-4 w-4" />
-                  </button>
-                </div>
-              ) : (
-                <div className="flex gap-2">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    className="flex-1 gap-1.5 text-xs"
-                    onClick={() => detailImgRef.current?.click()}
-                  >
-                    <Camera className="h-3.5 w-3.5" />
-                    צלם / העלה
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    className="flex-1 gap-1.5 text-xs"
-                    onClick={() => setShowUrlInput((v) => !v)}
-                  >
-                    <Link2 className="h-3.5 w-3.5" />
-                    הכנס URL
-                  </Button>
-                </div>
-              )}
-              {showUrlInput && !draft.referencePhoto && (
-                <div className="flex gap-2 mt-2">
-                  <Input
-                    className="text-xs flex-1"
-                    placeholder="https://..."
-                    value={urlInput}
-                    onChange={(e) => setUrlInput(e.target.value)}
-                    dir="ltr"
-                  />
-                  <Button
-                    type="button"
-                    size="sm"
-                    onClick={() => {
-                      const trimmed = urlInput.trim();
-                      if (trimmed) {
-                        updateDraft({ referencePhoto: trimmed });
-                        setUrlInput("");
-                        setShowUrlInput(false);
-                      }
-                    }}
-                  >
-                    אשר
-                  </Button>
-                </div>
-              )}
-              <input
-                ref={detailImgRef}
-                type="file"
-                accept="image/*"
-                className="hidden"
-                onChange={async (e) => {
-                  const file = e.target.files?.[0];
-                  if (file) {
-                    const url = await fileToCompressedDataUrl(file);
-                    updateDraft({ referencePhoto: url });
-                  }
-                }}
-              />
+            {/* Detail images (multiple) */}
+            <DraftField label="תמונות פרט">
+              {(() => {
+                const photos = draft.referencePhotos && draft.referencePhotos.length > 0
+                  ? draft.referencePhotos
+                  : (draft.referencePhoto ? [draft.referencePhoto] : []);
+                const updatePhotos = (next: string[]) => updateDraft({
+                  referencePhotos: next.length > 0 ? next : undefined,
+                  referencePhoto: next[0],
+                });
+                return (
+                  <div className="space-y-2">
+                    {photos.length > 0 && (
+                      <div className="grid grid-cols-2 gap-2">
+                        {photos.map((p, i) => (
+                          <div key={i} className="relative rounded-xl overflow-hidden border border-border">
+                            <img src={p} alt={`תמונת פרט ${i + 1}`} className="w-full h-28 object-cover" />
+                            <button
+                              type="button"
+                              onClick={() => updatePhotos(photos.filter((_, j) => j !== i))}
+                              className="absolute top-1 left-1 grid h-6 w-6 place-items-center rounded-full bg-background/90 text-foreground shadow"
+                              aria-label="הסר תמונה"
+                            >
+                              <X className="h-3 w-3" />
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                    <div className="flex gap-2">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        className="flex-1 gap-1.5 text-xs"
+                        onClick={() => detailImgRef.current?.click()}
+                      >
+                        <Camera className="h-3.5 w-3.5" />
+                        {photos.length > 0 ? "הוסף תמונה" : "צלם / העלה"}
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        className="flex-1 gap-1.5 text-xs"
+                        onClick={() => setShowUrlInput((v) => !v)}
+                      >
+                        <Link2 className="h-3.5 w-3.5" />
+                        הכנס URL
+                      </Button>
+                    </div>
+                    {showUrlInput && (
+                      <div className="flex gap-2">
+                        <Input
+                          className="text-xs flex-1"
+                          placeholder="https://..."
+                          value={urlInput}
+                          onChange={(e) => setUrlInput(e.target.value)}
+                          dir="ltr"
+                        />
+                        <Button
+                          type="button"
+                          size="sm"
+                          onClick={() => {
+                            const trimmed = urlInput.trim();
+                            if (trimmed) {
+                              updatePhotos([...photos, trimmed]);
+                              setUrlInput("");
+                              setShowUrlInput(false);
+                            }
+                          }}
+                        >
+                          אשר
+                        </Button>
+                      </div>
+                    )}
+                    <input
+                      ref={detailImgRef}
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      onChange={async (e) => {
+                        const file = e.target.files?.[0];
+                        if (file) {
+                          const url = await fileToCompressedDataUrl(file);
+                          updatePhotos([...photos, url]);
+                        }
+                        e.target.value = "";
+                      }}
+                    />
+                  </div>
+                );
+              })()}
             </DraftField>
           </div>
           <DialogFooter className="flex-row gap-2">

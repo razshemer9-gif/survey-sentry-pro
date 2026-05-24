@@ -304,39 +304,57 @@ export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, sett
                 <StatusPill status={item.status} />
               </div>
 
-              {(item.photo || item.referencePhoto) && (
-                <div
-                  style={{
-                    marginTop: 10,
-                    display: "grid",
-                    gridTemplateColumns: item.photo && item.referencePhoto ? "1fr 1fr" : "1fr",
-                    gap: 10,
-                  }}
-                >
-                  {item.photo && (
-                    <div>
-                      <div style={{ fontSize: 11, color: "#64748b", marginBottom: 4 }}>מצב קיים</div>
-                      <img
-                        src={item.photo}
-                        alt={item.title}
-                        style={{ width: "100%", maxHeight: 260, objectFit: "cover", borderRadius: 10, border: "1px solid #e2e8f0" }}
-                      />
-                    </div>
-                  )}
-                  {item.referencePhoto && (
-                    <div>
-                      <div style={{ fontSize: 11, color: "#1e3a8a", marginBottom: 4, fontWeight: 600 }}>
-                        פרט מבוקש{item.referenceLabel ? `: ${item.referenceLabel}` : ""}
+              {(() => {
+                const refPhotos = item.referencePhotos && item.referencePhotos.length > 0
+                  ? item.referencePhotos
+                  : (item.referencePhoto ? [item.referencePhoto] : []);
+                const hasCurrent = !!item.photo;
+                const hasRefs = refPhotos.length > 0;
+                if (!hasCurrent && !hasRefs) return null;
+                return (
+                  <div
+                    style={{
+                      marginTop: 10,
+                      display: "grid",
+                      gridTemplateColumns: hasCurrent && hasRefs ? "1fr 1fr" : "1fr",
+                      gap: 10,
+                    }}
+                  >
+                    {hasCurrent && (
+                      <div>
+                        <div style={{ fontSize: 11, color: "#64748b", marginBottom: 4 }}>מצב קיים</div>
+                        <img
+                          src={item.photo}
+                          alt={item.title}
+                          style={{ width: "100%", maxHeight: 260, objectFit: "cover", borderRadius: 10, border: "1px solid #e2e8f0" }}
+                        />
                       </div>
-                      <img
-                        src={item.referencePhoto}
-                        alt={item.referenceLabel || "פרט"}
-                        style={{ width: "100%", maxHeight: 260, objectFit: "contain", background: "#f8fafc", borderRadius: 10, border: "1px solid #bfdbfe" }}
-                      />
-                    </div>
-                  )}
-                </div>
-              )}
+                    )}
+                    {hasRefs && (
+                      <div>
+                        <div style={{ fontSize: 11, color: "#1e3a8a", marginBottom: 4, fontWeight: 600 }}>
+                          פרט מבוקש{item.referenceLabel ? `: ${item.referenceLabel}` : ""}
+                          {refPhotos.length > 1 ? ` (${refPhotos.length})` : ""}
+                        </div>
+                        <div style={{
+                          display: "grid",
+                          gridTemplateColumns: refPhotos.length > 1 ? "1fr 1fr" : "1fr",
+                          gap: 6,
+                        }}>
+                          {refPhotos.map((p, i) => (
+                            <img
+                              key={i}
+                              src={p}
+                              alt={item.referenceLabel || `פרט ${i + 1}`}
+                              style={{ width: "100%", maxHeight: 260, objectFit: "contain", background: "#f8fafc", borderRadius: 10, border: "1px solid #bfdbfe" }}
+                            />
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                );
+              })()}
 
               {item.notes && (
                 <div
