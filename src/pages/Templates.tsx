@@ -193,10 +193,14 @@ export default function Templates() {
   const handleSave = () => {
     if (!editing) return;
     if (!editing.name.trim()) return toast.error("חסר שם");
-    saveTemplate(editing);
-    setEditing(null);
-    refresh();
-    toast.success("נשמר");
+    try {
+      saveTemplate(editing);
+      setEditing(null);
+      refresh();
+      toast.success("נשמר");
+    } catch (err) {
+      toast.error(`שגיאה בשמירה: ${err instanceof Error ? err.message : String(err)}`);
+    }
   };
 
   return (

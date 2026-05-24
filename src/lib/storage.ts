@@ -143,10 +143,16 @@ export function listTemplates(): ChecklistTemplate[] {
 }
 export function saveTemplate(t: ChecklistTemplate) {
   if (t.builtIn) return;
+  // Strip base64 photos from template items — they're too large for localStorage.
+  // matchedRequirementId is preserved so photos can be re-fetched on report load.
+  const safe: ChecklistTemplate = {
+    ...t,
+    items: t.items.map(({ referencePhoto, referencePhotos, ...rest }) => rest),
+  };
   const all = read<ChecklistTemplate[]>(K_TEMPLATES, []);
-  const idx = all.findIndex((x) => x.id === t.id);
-  if (idx >= 0) all[idx] = t;
-  else all.push(t);
+  const idx = all.findIndex((x) => x.id === safe.id);
+  if (idx >= 0) all[idx] = safe;
+  else all.push(safe);
   write(K_TEMPLATES, all);
 }
 export function deleteTemplate(id: string) {
