@@ -29,7 +29,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 
-import { ChecklistItem, ComplianceStatus, ConsultantSettings, DEFAULT_SETTINGS, ReferencePhotoEntry, SurveyReport } from "@/lib/types";
+import { ChecklistItem, ChecklistTemplate, ComplianceStatus, ConsultantSettings, DEFAULT_SETTINGS, ReferencePhotoEntry, SurveyReport } from "@/lib/types";
 import { getReport, listTemplates, loadUserSettings, saveReport, saveUserSettings } from "@/lib/storage";
 import { useAuth } from "@/contexts/AuthContext";
 import { buildPdfFileName, generateReportPdf, statusLabel } from "@/lib/pdf";
@@ -656,7 +656,10 @@ export default function ReportEditor() {
 }
 
 function TemplateSwap({ onLoad }: { onLoad: (items: ChecklistItem[]) => void }) {
-  const templates = listTemplates();
+  const [templates, setTemplates] = useState<ChecklistTemplate[]>([]);
+  useEffect(() => {
+    listTemplates().then(setTemplates).catch(() => setTemplates([]));
+  }, []);
   return (
     <div className="rounded-2xl border border-border bg-primary-soft/40 p-3">
       <Label className="mb-2 block text-xs font-semibold text-primary">טען רשימת ממצאים מתבנית</Label>

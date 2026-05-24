@@ -15,7 +15,7 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
 import { ChecklistTemplate } from "@/lib/types";
-import { deleteTemplate, listTemplates, saveTemplate } from "@/lib/storage";
+import { deleteTemplate, listTemplates, migrateLocalTemplates, saveTemplate } from "@/lib/storage";
 import { STANDARDS_DATA } from "@/lib/standards-data";
 import { listRequirements } from "@/lib/standards-storage";
 import { AccessibilityRequirement } from "@/lib/standards-types";
@@ -104,8 +104,19 @@ export default function Templates() {
   const [libraryCategory, setLibraryCategory] = useState<string>("all");
   const [selectedReqIds, setSelectedReqIds] = useState<Set<string>>(new Set());
 
-  useEffect(() => refresh(), []);
-  const refresh = () => setTemplates(listTemplates());
+  useEffect(() => {
+    (async () => {
+      try {
+        const migrated = await migrateLocalTemplates();
+        if (migrated > 0) toast.success(`הועברו ${migrated} תבניות לחשבון`);
+        await refresh();
+      } catch (err) {
+        toast.error(`שגיאה בטעינת תבניות: ${err instanceof Error ? err.message : String(err)}`);
+      }
+    })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+  const refresh = async () => setTemplates(await listTemplates());
 
   const openLibrary = async () => {
     if (libraryItemsRef.current.length === 0) {
@@ -183,20 +194,24 @@ export default function Templates() {
       items: [{ title: "ממצא ראשון" }],
     });
 
-  const remove = (id: string) => {
+  const remove = async (id: string) => {
     if (!confirm("למחוק את התבנית?")) return;
-    deleteTemplate(id);
-    refresh();
-    toast.success("נמחק");
+    try {
+      await deleteTemplate(id);
+      await refresh();
+      toast.success("נמחק");
+    } catch (err) {
+      toast.error(`שגיאה במחיקה: ${err instanceof Error ? err.message : String(err)}`);
+    }
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!editing) return;
     if (!editing.name.trim()) return toast.error("חסר שם");
     try {
-      saveTemplate(editing);
+      await saveTemplate(editing);
       setEditing(null);
-      refresh();
+      await refresh();
       toast.success("נשמר");
     } catch (err) {
       toast.error(`שגיאה בשמירה: ${err instanceof Error ? err.message : String(err)}`);

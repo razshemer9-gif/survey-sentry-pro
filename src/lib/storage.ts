@@ -126,7 +126,7 @@ export async function addRequirementToReport(
   await saveReport(updated);
 }
 
-// ---------- Templates (localStorage) ----------
+// ---------- Templates (Supabase) ----------
 const BUILT_IN_TEMPLATES: ChecklistTemplate[] = [
   {
     id: "builtin-default",
@@ -137,29 +137,78 @@ const BUILT_IN_TEMPLATES: ChecklistTemplate[] = [
   },
 ];
 
-export function listTemplates(): ChecklistTemplate[] {
-  const custom = read<ChecklistTemplate[]>(K_TEMPLATES, []);
+function rowToTemplate(row: {
+  id: string;
+  name: string;
+  description: string | null;
+  items: unknown;
+}): ChecklistTemplate {
+  return {
+    id: row.id,
+    name: row.name,
+    description: row.description ?? "",
+    items: Array.isArray(row.items) ? (row.items as ChecklistTemplate["items"]) : [],
+  };
+}
+
+export async function listTemplates(): Promise<ChecklistTemplate[]> {
+  const userId = await getUserId();
+  const { data, error } = await supabase
+    .from("user_templates")
+    .select("id, name, description, items")
+    .eq("user_id", userId)
+    .order("updated_at", { ascending: false });
+  if (error) throw error;
+  const custom = (data ?? []).map(rowToTemplate);
   return [...BUILT_IN_TEMPLATES, ...custom];
 }
-export function saveTemplate(t: ChecklistTemplate) {
+
+export async function saveTemplate(t: ChecklistTemplate): Promise<void> {
   if (t.builtIn) return;
-  // Strip base64 photos from template items — they're too large for localStorage.
-  // matchedRequirementId is preserved so photos can be re-fetched on report load.
-  const safe: ChecklistTemplate = {
-    ...t,
-    items: t.items.map(({ referencePhoto, referencePhotos, ...rest }) => rest),
-  };
-  const all = read<ChecklistTemplate[]>(K_TEMPLATES, []);
-  const idx = all.findIndex((x) => x.id === safe.id);
-  if (idx >= 0) all[idx] = safe;
-  else all.push(safe);
-  write(K_TEMPLATES, all);
+  const userId = await getUserId();
+  // Strip base64 photos from items — too large to store inline.
+  // matchedRequirementId is preserved so photos can be re-fetched from the standards DB.
+  const safeItems = t.items.map(({ referencePhoto, referencePhotos, ...rest }) => rest);
+  const now = Date.now();
+  const { error } = await supabase.from("user_templates").upsert({
+    id: t.id,
+    user_id: userId,
+    name: t.name,
+    description: t.description ?? null,
+    items: safeItems,
+    updated_at: now,
+  });
+  if (error) throw error;
 }
-export function deleteTemplate(id: string) {
-  write(
-    K_TEMPLATES,
-    read<ChecklistTemplate[]>(K_TEMPLATES, []).filter((t) => t.id !== id),
-  );
+
+export async function deleteTemplate(id: string): Promise<void> {
+  const userId = await getUserId();
+  const { error } = await supabase
+    .from("user_templates")
+    .delete()
+    .eq("id", id)
+    .eq("user_id", userId);
+  if (error) throw error;
+}
+
+// One-time migration: push any local-only templates up to Supabase, then clear.
+export async function migrateLocalTemplates(): Promise<number> {
+  const raw = localStorage.getItem(K_TEMPLATES);
+  if (!raw) return 0;
+  try {
+    const local = JSON.parse(raw) as ChecklistTemplate[];
+    if (!Array.isArray(local) || local.length === 0) {
+      localStorage.removeItem(K_TEMPLATES);
+      return 0;
+    }
+    for (const t of local) {
+      if (!t.builtIn) await saveTemplate(t);
+    }
+    localStorage.removeItem(K_TEMPLATES);
+    return local.length;
+  } catch {
+    return 0;
+  }
 }
 
 // ---------- Settings (localStorage) ----------
