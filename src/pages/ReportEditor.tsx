@@ -29,27 +29,14 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 
-import { ChecklistItem, ChecklistTemplate, ComplianceStatus, ConsultantSettings, DEFAULT_SETTINGS, ReferencePhotoEntry, SurveyReport } from "@/lib/types";
+import { ChecklistItem, ChecklistTemplate, ConsultantSettings, DEFAULT_SETTINGS, ReferencePhotoEntry, SurveyReport } from "@/lib/types";
 import { getReport, listTemplates, loadUserSettings, saveReport, saveUserSettings } from "@/lib/storage";
 import { useAuth } from "@/contexts/AuthContext";
-import { buildPdfFileName, generateReportPdf, statusLabel } from "@/lib/pdf";
+import { buildPdfFileName, generateReportPdf } from "@/lib/pdf";
 import { formatCurrency } from "@/lib/image";
 import { cn } from "@/lib/utils";
 import { SignaturePad } from "@/components/SignaturePad";
 
-const STATUS_COLOR: Record<ComplianceStatus, string> = {
-  compliant: "bg-success/15 text-success border-success/30",
-  non_compliant: "bg-destructive/10 text-destructive border-destructive/30",
-  not_applicable: "bg-muted text-muted-foreground border-border",
-  pending: "bg-warning/15 text-warning border-warning/30",
-};
-
-const ITEM_BORDER: Record<ComplianceStatus, string> = {
-  compliant: "border-r-success",
-  non_compliant: "border-r-destructive",
-  not_applicable: "border-r-border",
-  pending: "border-r-warning",
-};
 
 export default function ReportEditor() {
   const { id } = useParams();
@@ -128,7 +115,7 @@ export default function ReportEditor() {
             ...r,
             items: [
               ...r.items,
-              { id: uuid(), title: "ממצא חדש", status: "pending", notes: "", estimatedCost: 0 },
+              { id: uuid(), title: "ממצא חדש", status: "non_compliant", notes: "", estimatedCost: 0 },
             ],
           }
         : r,
@@ -254,7 +241,7 @@ export default function ReportEditor() {
           <TemplateSwap onLoad={(items) => setReport((r) => (r ? { ...r, items } : r))} surveyType={report.surveyType} />
 
           {report.items.map((item, idx) => (
-            <div key={item.id} className={cn("rounded-2xl border border-border bg-card p-4 shadow-soft animate-fade-in transition-colors border-r-4", ITEM_BORDER[item.status])}>
+            <div key={item.id} className="rounded-2xl border border-border border-r-4 border-r-destructive bg-card p-4 shadow-soft animate-fade-in">
               <div className="mb-2 flex items-center justify-between">
                 <span className="text-xs font-semibold text-muted-foreground">ממצא {idx + 1}</span>
                 <button onClick={() => removeItem(item.id)} className="text-muted-foreground hover:text-destructive" aria-label="מחק">
@@ -267,21 +254,6 @@ export default function ReportEditor() {
                 onChange={(e) => updateItem(item.id, { title: e.target.value })}
                 className="mb-3 font-bold"
               />
-
-              <div className="mb-3 grid grid-cols-2 gap-2">
-                {(["compliant", "non_compliant", "not_applicable", "pending"] as ComplianceStatus[]).map((s) => (
-                  <button
-                    key={s}
-                    onClick={() => updateItem(item.id, { status: s })}
-                    className={cn(
-                      "rounded-xl border px-3 py-2 text-xs font-semibold transition",
-                      item.status === s ? STATUS_COLOR[s] + " ring-2 ring-offset-1 ring-current" : "border-border bg-background text-muted-foreground",
-                    )}
-                  >
-                    {statusLabel(s)}
-                  </button>
-                ))}
-              </div>
 
               <Textarea
                 value={item.notes}
@@ -548,7 +520,7 @@ function TemplateSwap({ onLoad, surveyType }: { onLoad: (items: ChecklistItem[])
             t.items.map((i) => ({
               id: uuid(),
               title: i.title,
-              status: "pending",
+              status: "non_compliant",
               notes: i.notes || "",
               estimatedCost: 0,
               includeInCost: i.includeInCost,
