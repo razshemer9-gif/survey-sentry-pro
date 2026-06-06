@@ -263,7 +263,7 @@ export default function ReportEditor() {
                   )}
                   {item.notes && (
                     <div className="mt-2 rounded-lg bg-background/70 px-2.5 py-1.5 text-xs text-foreground/80 leading-relaxed">
-                      <span className="font-semibold text-foreground">בעיה: </span>{item.notes}
+                      <span className="font-semibold text-foreground">ממצא: </span>{item.notes}
                     </div>
                   )}
                   {item.suggestedCorrection && (

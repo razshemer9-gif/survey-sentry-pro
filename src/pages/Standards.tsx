@@ -538,7 +538,7 @@ export default function Standards() {
                 />
               </DraftField>
             </div>
-            <DraftField label="בעיה">
+            <DraftField label="ממצא">
               <Textarea
                 value={draft.defectText}
                 onChange={(e) => updateDraft({ defectText: e.target.value })}

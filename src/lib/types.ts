@@ -49,7 +49,7 @@ export interface ChecklistItem {
   id: string;
   title: string;
   status: ComplianceStatus;
-  notes: string;           // בעיה/ממצא — מגיע מתבנית, read-only בדוח
+  notes: string;           // ממצא — מגיע מתבנית, read-only בדוח
   fieldNotes?: string;     // פירוט מצב קיים — נמלא בשטח, ייעודי לדוח
   estimatedCost: number; // ILS
   includeInCost?: boolean;

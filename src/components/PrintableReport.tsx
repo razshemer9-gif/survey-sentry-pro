@@ -213,7 +213,7 @@ export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, sett
                   )}
                   {item.notes && (
                     <div style={{ marginTop: 8, fontSize: 13, color: "#334155", lineHeight: 1.6, whiteSpace: "pre-wrap" }}>
-                      <span style={{ fontWeight: 700 }}>בעיה: </span>{item.notes}
+                      <span style={{ fontWeight: 700 }}>ממצא: </span>{item.notes}
                     </div>
                   )}
                   {item.suggestedCorrection && (
