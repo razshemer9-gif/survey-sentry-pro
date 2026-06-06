@@ -137,12 +137,14 @@ function rowToTemplate(row: {
   name: string;
   description: string | null;
   items: unknown;
+  survey_type: string | null;
 }): ChecklistTemplate {
   return {
     id: row.id,
     name: row.name,
     description: row.description ?? "",
     items: Array.isArray(row.items) ? (row.items as ChecklistTemplate["items"]) : [],
+    ...(row.survey_type ? { surveyType: row.survey_type as ChecklistTemplate["surveyType"] } : {}),
   };
 }
 
@@ -150,7 +152,7 @@ export async function listTemplates(): Promise<ChecklistTemplate[]> {
   const userId = await getUserId();
   const { data, error } = await supabase
     .from("user_templates")
-    .select("id, name, description, items")
+    .select("id, name, description, items, survey_type")
     .eq("user_id", userId)
     .order("updated_at", { ascending: false });
   if (error) throw error;
@@ -168,6 +170,7 @@ export async function saveTemplate(t: ChecklistTemplate): Promise<void> {
     name: t.name,
     description: t.description ?? null,
     items: t.items,
+    survey_type: t.surveyType ?? null,
     updated_at: now,
   });
   if (error) throw error;
