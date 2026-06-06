@@ -1,4 +1,4 @@
-import { ConsultantSettings, SurveyReport } from "@/lib/types";
+import { ConsultantSettings, getSurveyType, SurveyReport } from "@/lib/types";
 import { formatCurrency, formatHebrewDate, statusLabel } from "@/lib/pdf";
 import { forwardRef } from "react";
 
@@ -12,6 +12,7 @@ interface Props {
  * Width is fixed in px to give html2canvas a stable canvas to rasterize.
  */
 export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, settings }, ref) => {
+  const surveyConfig = getSurveyType(report.surveyType);
   const totalCost = report.items
     .filter((i) => i.includeInCost)
     .reduce((sum, i) => sum + (Number(i.estimatedCost) || 0), 0);
@@ -99,7 +100,7 @@ export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, sett
 
         <div style={{ padding: "10px 48px 24px" }}>
           <h1 style={{ fontSize: 46, fontWeight: 800, lineHeight: 1.05, margin: 0 }}>
-            סקר נגישות מתו״ס ושירות
+            {surveyConfig.pdfTitle}
           </h1>
           <div style={{ fontSize: 22, marginTop: 14, opacity: 0.95 }}>{report.placeName || "ללא שם"}</div>
         </div>

@@ -1,6 +1,6 @@
 import jsPDF from "jspdf";
 import html2canvas from "html2canvas";
-import { ConsultantSettings, SurveyReport } from "./types";
+import { ConsultantSettings, getSurveyType, SurveyReport } from "./types";
 import { formatCurrency, formatHebrewDate } from "./image";
 
 /**
@@ -91,7 +91,8 @@ export async function generateReportPdf(
 export function buildPdfFileName(report: SurveyReport): string {
   const safe = (report.placeName || "report").replace(/[^\u0590-\u05FFa-zA-Z0-9 _-]/g, "").trim() || "report";
   const date = report.surveyDate || new Date().toISOString().slice(0, 10);
-  return `סקר-נגישות-${safe}-${date}.pdf`;
+  const prefix = getSurveyType(report.surveyType).filePrefix;
+  return `${prefix}-${safe}-${date}.pdf`;
 }
 
 export function statusLabel(s: string): string {

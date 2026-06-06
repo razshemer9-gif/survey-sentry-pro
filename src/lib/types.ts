@@ -1,5 +1,50 @@
 export type ComplianceStatus = "compliant" | "non_compliant" | "not_applicable" | "pending";
 
+// ── Survey types registry ──────────────────────────────────────────────────
+export type SurveyType = "accessibility" | "education_safety" | "general_safety";
+
+export interface SurveyTypeConfig {
+  id: SurveyType;
+  label: string;       // Hebrew full name shown in dialogs
+  shortLabel: string;  // Badge label on report cards
+  pdfTitle: string;    // Cover page H1
+  filePrefix: string;  // PDF filename prefix
+  color: string;       // Accent hex for badges / cover
+}
+
+export const SURVEY_TYPES: SurveyTypeConfig[] = [
+  {
+    id: "accessibility",
+    label: "סקר נגישות נכים",
+    shortLabel: "נגישות",
+    pdfTitle: 'סקר נגישות מתו״ס ושירות',
+    filePrefix: "סקר-נגישות",
+    color: "#2563eb",
+  },
+  {
+    id: "education_safety",
+    label: "סקר בטיחות מוסדות חינוך",
+    shortLabel: "בטיחות חינוך",
+    pdfTitle: "סקר בטיחות מוסדות חינוך",
+    filePrefix: "סקר-בטיחות-חינוך",
+    color: "#16a34a",
+  },
+  {
+    id: "general_safety",
+    label: "סקר בטיחות כללי",
+    shortLabel: "בטיחות כללית",
+    pdfTitle: "סקר בטיחות כללי",
+    filePrefix: "סקר-בטיחות",
+    color: "#d97706",
+  },
+];
+
+// Returns the config for a type, defaulting to accessibility for old reports.
+export function getSurveyType(id?: SurveyType): SurveyTypeConfig {
+  return SURVEY_TYPES.find((t) => t.id === id) ?? SURVEY_TYPES[0];
+}
+// ──────────────────────────────────────────────────────────────────────────
+
 export interface ChecklistItem {
   id: string;
   title: string;
@@ -24,6 +69,7 @@ export interface ChecklistTemplate {
   id: string;
   name: string;
   description?: string;
+  surveyType?: SurveyType;
   items: (Omit<ChecklistItem, "id" | "status" | "notes" | "estimatedCost" | "photo"> & { notes?: string })[];
   builtIn?: boolean;
 }
@@ -43,6 +89,8 @@ export interface SurveyReport {
   // Building type
   buildingType?: "existing_public" | "new_public" | "other";
   buildingTypeOther?: string;
+  // Survey type — undefined means legacy report, treated as "accessibility"
+  surveyType?: SurveyType;
   // Optional notes
   generalNotes?: string;
   // Digital signature

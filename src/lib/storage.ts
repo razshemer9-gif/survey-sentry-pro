@@ -5,6 +5,7 @@ import {
   DEFAULT_CHECKLIST,
   DEFAULT_SETTINGS,
   SurveyReport,
+  SurveyType,
 } from "./types";
 import { AccessibilityRequirement } from "./standards-types";
 import { supabase } from "./supabase";
@@ -79,11 +80,12 @@ export async function deleteReport(id: string): Promise<void> {
   if (error) throw error;
 }
 
-export function newReport(): SurveyReport {
+export function newReport(surveyType: SurveyType = "accessibility"): SurveyReport {
   return {
     id: uuid(),
     createdAt: Date.now(),
     updatedAt: Date.now(),
+    surveyType,
     placeName: "",
     clientName: "",
     address: "",
