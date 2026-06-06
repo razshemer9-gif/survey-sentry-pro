@@ -1,3 +1,5 @@
+import { SurveyType } from "./types";
+
 export type Severity = 'critical' | 'medium' | 'low';
 export type PlaceType = 'exterior' | 'interior' | 'restroom' | 'parking' | 'accessible-route' | 'apartment' | 'signage' | 'vision' | 'communication';
 
@@ -5,6 +7,8 @@ export type SourceConfidence = 'high' | 'needs-review';
 
 export interface AccessibilityRequirement {
   id: string;
+  // Which survey type this finding belongs to. undefined = backward compat → treated as "accessibility".
+  surveyType?: SurveyType;
   standardPart: string; // e.g. "ת\"י 1918 חלק 2"
   clause?: string;
   category: string; // e.g. "A. דרך נגישה"

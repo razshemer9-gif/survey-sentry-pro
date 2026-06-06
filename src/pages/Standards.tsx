@@ -33,7 +33,7 @@ import {
 
 import { CATEGORIES, PLACE_TYPE_LABELS } from "@/lib/standards-data";
 import { AccessibilityRequirement, PlaceType } from "@/lib/standards-types";
-import { SurveyReport } from "@/lib/types";
+import { getSurveyType, SURVEY_TYPES, SurveyReport, SurveyType } from "@/lib/types";
 import { listReports, addRequirementToReport } from "@/lib/storage";
 import {
   listRequirements,
@@ -47,6 +47,7 @@ import {
 function emptyReq(): AccessibilityRequirement {
   return {
     id: `req-custom-${Date.now()}`,
+    surveyType: "accessibility",
     standardPart: 'ת"י 1918',
     clause: "",
     category: CATEGORIES[0].label,
@@ -69,6 +70,7 @@ export default function Standards() {
   const [search, setSearch] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("all");
   const [placeFilter, setPlaceFilter] = useState("all");
+  const [surveyTypeFilter, setSurveyTypeFilter] = useState<string>("all");
 
   const [items, setItems] = useState<AccessibilityRequirement[]>([]);
   const [loading, setLoading] = useState(true);
@@ -221,7 +223,9 @@ export default function Standards() {
     const matchCategory = categoryFilter === "all" || req.categoryCode === categoryFilter;
     const matchPlace =
       placeFilter === "all" || req.appliesTo.includes(placeFilter as PlaceType);
-    return matchSearch && matchCategory && matchPlace;
+    const matchSurveyType =
+      surveyTypeFilter === "all" || (req.surveyType ?? "accessibility") === surveyTypeFilter;
+    return matchSearch && matchCategory && matchPlace && matchSurveyType;
   });
 
   return (
@@ -237,12 +241,12 @@ export default function Standards() {
           </button>
           <div className="flex items-center gap-2 text-sm font-semibold opacity-90">
             <BookOpen className="h-4 w-4" />
-            מאגר דרישות נגישות
+            מאגר ממצאים
           </div>
           <div className="w-10" />
         </div>
-        <h1 className="mt-3 text-xl font-extrabold">מאגר דרישות נגישות</h1>
-        <p className="mt-0.5 text-xs opacity-90">ת&quot;י 1918 – כל הקטגוריות A עד O</p>
+        <h1 className="mt-3 text-xl font-extrabold">מאגר ממצאים מקצועי</h1>
+        <p className="mt-0.5 text-xs opacity-90">נגישות · בטיחות חינוך · בטיחות כללית</p>
         <p className="mt-0.5 text-xs opacity-75">
           {items.length} דרישות · {filtered.length} מוצגות
         </p>
@@ -268,7 +272,18 @@ export default function Standards() {
           />
         </div>
 
-        {/* Category + Place filters */}
+        {/* Survey type + Category + Place filters */}
+        <Select value={surveyTypeFilter} onValueChange={setSurveyTypeFilter}>
+          <SelectTrigger className="w-full text-xs" dir="rtl">
+            <SelectValue placeholder="כל סוגי הסקרים" />
+          </SelectTrigger>
+          <SelectContent dir="rtl">
+            <SelectItem value="all">כל סוגי הסקרים</SelectItem>
+            {SURVEY_TYPES.map((t) => (
+              <SelectItem key={t.id} value={t.id}>{t.label}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
         <div className="flex flex-col gap-2 sm:flex-row">
           <Select value={categoryFilter} onValueChange={setCategoryFilter}>
             <SelectTrigger className="w-full text-xs sm:flex-1" dir="rtl">
@@ -348,6 +363,17 @@ export default function Standards() {
                   <Badge variant="secondary" className="text-[10px] rounded-full">
                     {req.category}
                   </Badge>
+                  {(() => {
+                    const cfg = getSurveyType(req.surveyType);
+                    return (
+                      <span
+                        className="inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-semibold text-white"
+                        style={{ background: cfg.color }}
+                      >
+                        {cfg.shortLabel}
+                      </span>
+                    );
+                  })()}
                 </div>
               </CardHeader>
               <CardContent className="px-4 pb-4 space-y-2">
@@ -476,6 +502,21 @@ export default function Standards() {
             </DialogTitle>
           </DialogHeader>
           <div className="space-y-3">
+            <DraftField label="סוג סקר">
+              <Select
+                value={draft.surveyType ?? "accessibility"}
+                onValueChange={(v) => updateDraft({ surveyType: v as SurveyType })}
+              >
+                <SelectTrigger dir="rtl">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent dir="rtl">
+                  {SURVEY_TYPES.map((t) => (
+                    <SelectItem key={t.id} value={t.id}>{t.label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </DraftField>
             <DraftField label="כותרת הדרישה">
               <Input
                 value={draft.requirementTitle}

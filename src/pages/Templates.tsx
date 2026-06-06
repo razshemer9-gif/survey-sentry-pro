@@ -14,7 +14,7 @@ import {
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
-import { ChecklistTemplate } from "@/lib/types";
+import { ChecklistTemplate, SURVEY_TYPES, SurveyType } from "@/lib/types";
 import { deleteTemplate, listTemplates, migrateLocalTemplates, saveTemplate } from "@/lib/storage";
 import { STANDARDS_DATA } from "@/lib/standards-data";
 import { listRequirements } from "@/lib/standards-storage";
@@ -175,6 +175,9 @@ export default function Templates() {
   ).sort();
 
   const filteredLibrary = libraryItems.filter((r) => {
+    // Filter by template's surveyType — only show matching findings
+    const tplType = editing?.surveyType ?? "accessibility";
+    if ((r.surveyType ?? "accessibility") !== tplType) return false;
     if (libraryCategory !== "all" && r.category !== libraryCategory) return false;
     if (!librarySearch) return true;
     const q = librarySearch.trim();
@@ -352,6 +355,22 @@ export default function Templates() {
 
           {editing && (
             <div className="space-y-3">
+              <div className="space-y-1.5">
+                <Label className="text-xs">סוג סקר</Label>
+                <Select
+                  value={editing.surveyType ?? "accessibility"}
+                  onValueChange={(v) => setEditing({ ...editing, surveyType: v as SurveyType })}
+                >
+                  <SelectTrigger dir="rtl">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent dir="rtl">
+                    {SURVEY_TYPES.map((t) => (
+                      <SelectItem key={t.id} value={t.id}>{t.label}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
               <div className="space-y-1.5">
                 <Label className="text-xs">שם התבנית</Label>
                 <Input value={editing.name} onChange={(e) => setEditing({ ...editing, name: e.target.value })} />

@@ -1,5 +1,6 @@
 import { STANDARDS_DATA } from "./standards-data";
 import { AccessibilityRequirement } from "./standards-types";
+import { SurveyType } from "./types";
 const STOP_WORDS = new Set([
   "את", "של", "עם", "על", "אל", "לא", "יש", "כי", "הם", "הן", "אם",
   "כל", "זה", "זו", "הוא", "היא", "לפי", "בין", "עד", "גם", "רק",
@@ -112,13 +113,18 @@ function scoreRequirement(req: AccessibilityRequirement, queryTokens: string[]):
 export function findMatchingRequirement(
   itemTitle: string,
   source: AccessibilityRequirement[] = STANDARDS_DATA,
+  surveyType?: SurveyType,
 ): AccessibilityRequirement | null {
   if (!itemTitle || itemTitle.trim().length < 3) return null;
 
   const queryTokens = tokenize(itemTitle);
   if (queryTokens.length === 0) return null;
 
-  const scored = source
+  const pool = surveyType
+    ? source.filter((r) => (r.surveyType ?? "accessibility") === surveyType)
+    : source;
+
+  const scored = pool
     .map((req) => ({ req, score: scoreRequirement(req, queryTokens) }))
     .filter(({ score }) => score >= 8)
     .sort((a, b) => b.score - a.score);

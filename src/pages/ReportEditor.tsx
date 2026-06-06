@@ -79,7 +79,11 @@ export default function ReportEditor() {
   };
 
   const findMatch = (title: string) =>
-    findMatchingRequirement(title, libraryItemsRef.current.length > 0 ? libraryItemsRef.current : undefined);
+    findMatchingRequirement(
+      title,
+      libraryItemsRef.current.length > 0 ? libraryItemsRef.current : undefined,
+      report?.surveyType ?? "accessibility",
+    );
   const printRef = useRef<HTMLDivElement>(null);
   const autoSaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const isFirstLoad = useRef(true);
@@ -270,7 +274,7 @@ export default function ReportEditor() {
 
         {/* CHECKLIST TAB */}
         <TabsContent value="checklist" className="mt-4 space-y-3 pb-20">
-          <TemplateSwap onLoad={(items) => setReport((r) => (r ? { ...r, items } : r))} />
+          <TemplateSwap onLoad={(items) => setReport((r) => (r ? { ...r, items } : r))} surveyType={report.surveyType} />
 
           {report.items.map((item, idx) => (
             <div key={item.id} className={cn("rounded-2xl border border-border bg-card p-4 shadow-soft animate-fade-in transition-colors border-r-4", ITEM_BORDER[item.status])}>
@@ -566,6 +570,7 @@ export default function ReportEditor() {
           </div>
           <div className="overflow-y-auto flex-1 px-4 pb-4 space-y-2">
             {libraryItems
+              .filter((r) => (r.surveyType ?? "accessibility") === (report.surveyType ?? "accessibility"))
               .filter((r) =>
                 !librarySearch ||
                 r.requirementTitle.includes(librarySearch) ||
@@ -655,17 +660,19 @@ export default function ReportEditor() {
   );
 }
 
-function TemplateSwap({ onLoad }: { onLoad: (items: ChecklistItem[]) => void }) {
+function TemplateSwap({ onLoad, surveyType }: { onLoad: (items: ChecklistItem[]) => void; surveyType?: import("@/lib/types").SurveyType }) {
   const [templates, setTemplates] = useState<ChecklistTemplate[]>([]);
   useEffect(() => {
     listTemplates().then(setTemplates).catch(() => setTemplates([]));
   }, []);
+  // Show templates that match the report's surveyType, or templates without a type (legacy)
+  const visibleTemplates = templates.filter((t) => !t.surveyType || !surveyType || t.surveyType === surveyType);
   return (
     <div className="rounded-2xl border border-border bg-primary-soft/40 p-3">
       <Label className="mb-2 block text-xs font-semibold text-primary">טען רשימת ממצאים מתבנית</Label>
       <Select
         onValueChange={(val) => {
-          const t = templates.find((x) => x.id === val);
+          const t = visibleTemplates.find((x) => x.id === val);
           if (!t) return;
           if (!confirm("לטעון את הממצאים מהתבנית? ממצאים קיימים יוחלפו.")) return;
           onLoad(
@@ -692,7 +699,7 @@ function TemplateSwap({ onLoad }: { onLoad: (items: ChecklistItem[]) => void }) 
           <SelectValue placeholder="בחר תבנית..." />
         </SelectTrigger>
         <SelectContent>
-          {templates.map((t) => (
+          {visibleTemplates.map((t) => (
             <SelectItem key={t.id} value={t.id}>
               {t.name}
             </SelectItem>

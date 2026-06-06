@@ -1,6 +1,7 @@
 import { supabase } from "./supabase";
 import { STANDARDS_DATA } from "./standards-data";
 import { AccessibilityRequirement, Severity, PlaceType } from "./standards-types";
+import { SurveyType } from "./types";
 
 const TABLE = "accessibility_requirements";
 
@@ -21,8 +22,9 @@ interface DbRow {
   applies_to: string[];
   tags: string[];
   internal_citation: string | null;
-  reference_photo?: string | null; // SQL: ALTER TABLE accessibility_requirements ADD COLUMN reference_photo text;
-  reference_photos?: string[] | null; // SQL: ALTER TABLE accessibility_requirements ADD COLUMN reference_photos jsonb;
+  reference_photo?: string | null;
+  reference_photos?: string[] | null;
+  survey_type?: string | null; // SQL: add-survey-type-column.sql
   updated_at: number;
 }
 
@@ -46,6 +48,7 @@ function rowToReq(r: DbRow): AccessibilityRequirement {
     internalCitation: r.internal_citation ?? undefined,
     referencePhoto: r.reference_photo ?? undefined,
     referencePhotos: normalizePhotos(r.reference_photos, r.reference_photo),
+    surveyType: (r.survey_type as SurveyType | null) ?? "accessibility",
   };
 }
 
@@ -80,6 +83,7 @@ function reqToRow(req: AccessibilityRequirement): DbRow {
     reference_photos: (req.referencePhotos && req.referencePhotos.length > 0)
       ? req.referencePhotos
       : (req.referencePhoto ? [req.referencePhoto] : null),
+    survey_type: req.surveyType ?? "accessibility",
     updated_at: Date.now(),
   };
 }
