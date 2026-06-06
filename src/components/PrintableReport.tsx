@@ -186,52 +186,6 @@ export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, sett
           <strong style={{ fontSize: 22 }}>{formatCurrency(totalCost)}</strong>
         </div>
 
-        {report.generalNotes && (
-          <>
-            <h3 style={{ marginTop: 36, fontSize: 18, color: "#1e3a8a" }}>הערות כלליות</h3>
-            <div style={{ marginTop: 8, whiteSpace: "pre-wrap", lineHeight: 1.7, background: "#f8fafc", border: "1px solid #e2e8f0", borderRadius: 12, padding: 16, fontSize: 14 }}>
-              {report.generalNotes}
-            </div>
-          </>
-        )}
-
-        {/* Signature + stamp */}
-        <div style={{ marginTop: 32, display: "flex", justifyContent: "flex-start", gap: 48, alignItems: "flex-end" }}>
-          <div>
-            {(fmt.signatureImage || report.signatureDataUrl) ? (
-              <img
-                src={fmt.signatureImage || report.signatureDataUrl}
-                alt="חתימה"
-                style={{ height: 64, maxWidth: 200, objectFit: "contain", display: "block" }}
-                crossOrigin="anonymous"
-              />
-            ) : (
-              <div style={{ height: 64, width: 200, borderBottom: "1px solid #94a3b8" }} />
-            )}
-            <div style={{ fontSize: 12, color: "#64748b", marginTop: 4 }}>
-              {sigName || "חתימת בעל המקצוע"}
-              {report.signatureDate ? ` • ${report.signatureDate}` : ""}
-            </div>
-            {licNum && (
-              <div style={{ fontSize: 11, color: "#475569", marginTop: 2 }}>רישיון {licNum}</div>
-            )}
-            {settings.idNumber && (
-              <div style={{ fontSize: 11, color: "#475569" }}>ת.ז. {settings.idNumber}</div>
-            )}
-          </div>
-
-          {fmt.stampImage && (
-            <div style={{ textAlign: "center" }}>
-              <img
-                src={fmt.stampImage}
-                alt="חותמת"
-                style={{ height: 80, maxWidth: 120, objectFit: "contain", display: "block" }}
-                crossOrigin="anonymous"
-              />
-              <div style={{ fontSize: 11, color: "#64748b", marginTop: 2 }}>חותמת</div>
-            </div>
-          )}
-        </div>
       </section>
 
       {/* CHECKLIST PAGE(S) */}
@@ -336,6 +290,67 @@ export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, sett
                 <span style={{ display: "inline-block", width: 20, height: 20, borderRadius: "50%", border: `2px solid ${report.accessibilityComplianceStatus === "no" ? "#b91c1c" : "#d1d5db"}`, background: report.accessibilityComplianceStatus === "no" ? "#b91c1c" : "transparent", flexShrink: 0 }} />
                 לא
               </div>
+            </div>
+          </div>
+        )}
+
+        {/* CLOSING: general notes + professional sign-off */}
+        {(report.generalNotes || fmt.professionalName || settings.consultantName || fmt.signatureImage || report.signatureDataUrl || fmt.stampImage) && (
+          <div style={{ marginTop: 40, pageBreakInside: "avoid" }}>
+            {report.generalNotes && (
+              <>
+                <h3 style={{ margin: "0 0 8px", fontSize: 18, color: "#1e3a8a" }}>הערות כלליות</h3>
+                <div style={{ whiteSpace: "pre-wrap", lineHeight: 1.7, background: "#f8fafc", border: "1px solid #e2e8f0", borderRadius: 12, padding: 16, fontSize: 14, marginBottom: 32 }}>
+                  {report.generalNotes}
+                </div>
+              </>
+            )}
+
+            <h3 style={{ margin: "0 0 12px", fontSize: 18, color: "#1e3a8a" }}>פרטי עורך הדוח</h3>
+            <div style={{ fontSize: 14, color: "#334155", lineHeight: 2 }}>
+              {(fmt.professionalName || settings.consultantName) && (
+                <div><strong>שם:</strong> {fmt.professionalName || settings.consultantName}</div>
+              )}
+              {fmt.professionalRole && (
+                <div><strong>תפקיד / הסמכה:</strong> {fmt.professionalRole}</div>
+              )}
+              {licNum && (
+                <div><strong>מספר רישיון:</strong> {licNum}</div>
+              )}
+              {settings.idNumber && (
+                <div><strong>מספר ת.ז.:</strong> {settings.idNumber}</div>
+              )}
+            </div>
+
+            <div style={{ marginTop: 28, display: "flex", justifyContent: "flex-start", gap: 48, alignItems: "flex-end" }}>
+              <div>
+                {(fmt.signatureImage || report.signatureDataUrl) ? (
+                  <img
+                    src={fmt.signatureImage || report.signatureDataUrl}
+                    alt="חתימה"
+                    style={{ height: 64, maxWidth: 200, objectFit: "contain", display: "block" }}
+                    crossOrigin="anonymous"
+                  />
+                ) : (
+                  <div style={{ height: 64, width: 200, borderBottom: "1px solid #94a3b8" }} />
+                )}
+                <div style={{ fontSize: 12, color: "#64748b", marginTop: 4 }}>
+                  {sigName || "חתימת בעל המקצוע"}
+                  {report.signatureDate ? ` • ${report.signatureDate}` : ""}
+                </div>
+              </div>
+
+              {fmt.stampImage && (
+                <div style={{ textAlign: "center" }}>
+                  <img
+                    src={fmt.stampImage}
+                    alt="חותמת"
+                    style={{ height: 80, maxWidth: 120, objectFit: "contain", display: "block" }}
+                    crossOrigin="anonymous"
+                  />
+                  <div style={{ fontSize: 11, color: "#64748b", marginTop: 2 }}>חותמת</div>
+                </div>
+              )}
             </div>
           </div>
         )}
