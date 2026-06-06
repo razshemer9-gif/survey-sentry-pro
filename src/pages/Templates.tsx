@@ -339,7 +339,7 @@ export default function Templates() {
               </div>
 
               <div className="space-y-1.5">
-                <Label className="text-xs">בעיה / ממצא</Label>
+                <Label className="text-xs">ממצא</Label>
                 <Textarea
                   value={editingItem.item.notes || ""}
                   onChange={(e) =>
