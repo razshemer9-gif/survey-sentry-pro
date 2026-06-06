@@ -31,16 +31,8 @@ export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, sett
   };
 
   const coverLogo = fmt.companyLogo || settings.logo;
-  const checklistTitle = fmt.checklistPageTitle || "חוות דעת מקצועית";
-  const opinionTitle = fmt.opinionSectionTitle || "סיכום חוות הדעת:";
-  const opinionQ = fmt.opinionQuestion || "האם בוצעו כל ההוראות החלות לפי התקנות?";
-  const corrLabel = fmt.correctionLabel || "הצעת תיקון:";
-  const certText = fmt.certificationText || "";
   const licNum = fmt.licenseNumber || settings.license;
   const sigName = fmt.professionalName || report.signatureConsultantName || settings.consultantName;
-  const legalText = fmt.legalNotes ||
-    'הסקר בוצע למיטב ידיעתי והדרישות לטיפול הן למיטב שיקול דעתי, באחריות המזמין/ הבעלות לפעול ע"פ הדרישות בסקר וכל סטייה בביצוע מהדרישות תהיה באחריות המבצע/מזמין העבודה.\n\nהערה: בעת צירוף אומדנים יש לקחת בחשבון 15% סטייה בעלויות.';
-  const closingText = fmt.closingText || "";
 
   return (
     <div
@@ -161,14 +153,6 @@ export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, sett
           </div>
         )}
 
-        {/* Survey purpose */}
-        {fmt.surveyPurposeText && (
-          <div style={{ marginTop: 16, padding: "14px 18px", background: "#f8fafc", border: "1px solid #e2e8f0", borderRadius: 10, fontSize: 14, lineHeight: 1.7, color: "#374151" }}>
-            <strong style={{ display: "block", marginBottom: 4 }}>מטרת הסקר:</strong>
-            {fmt.surveyPurposeText}
-          </div>
-        )}
-
         <div
           style={{
             marginTop: 24,
@@ -226,25 +210,6 @@ export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, sett
           </>
         )}
 
-        {/* Professional declaration */}
-        {fmt.professionalDeclarationText && (
-          <div style={{ marginTop: 24, padding: "16px 20px", background: "#f0f4ff", border: "1px solid #bfdbfe", borderRadius: 12, fontSize: 13, lineHeight: 1.9, color: "#1e40af" }}>
-            {fmt.professionalDeclarationText}
-          </div>
-        )}
-
-        {/* Legal notes */}
-        <div style={{ marginTop: 24, padding: "18px 22px", background: "#f8fafc", border: "1px solid #e2e8f0", borderRadius: 12, fontSize: 13, lineHeight: 1.9, color: "#374151" }}>
-          {legalText}
-        </div>
-
-        {/* Closing text */}
-        {closingText && (
-          <div style={{ marginTop: 16, fontSize: 13, lineHeight: 1.8, color: "#374151", whiteSpace: "pre-wrap" }}>
-            {closingText}
-          </div>
-        )}
-
         {/* Signature + stamp */}
         <div style={{ marginTop: 32, display: "flex", justifyContent: "flex-start", gap: 48, alignItems: "flex-end" }}>
           <div>
@@ -262,10 +227,7 @@ export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, sett
               {sigName || "חתימת בעל המקצוע"}
               {report.signatureDate ? ` • ${report.signatureDate}` : ""}
             </div>
-            {certText && (
-              <div style={{ fontSize: 11, color: "#475569", marginTop: 2 }}>{certText}</div>
-            )}
-            {licNum && !certText && (
+            {licNum && (
               <div style={{ fontSize: 11, color: "#475569", marginTop: 2 }}>רישיון {licNum}</div>
             )}
             {settings.idNumber && (
@@ -289,7 +251,7 @@ export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, sett
 
       {/* CHECKLIST PAGE(S) */}
       <section style={{ padding: "48px", background: "#fff" }}>
-        <PageHeader title={checklistTitle} company={settings.companyName} accentColor={surveyConfig.color} />
+        <PageHeader title="חוות דעת מקצועית" company={settings.companyName} accentColor={surveyConfig.color} />
 
         <div style={{ marginTop: 24, display: "flex", flexDirection: "column", gap: 14 }}>
           {report.items.map((item, idx) => (
@@ -350,7 +312,7 @@ export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, sett
 
               {item.status === "non_compliant" && item.suggestedCorrection && (
                 <div style={{ marginTop: 10, background: "#eff6ff", border: "1px solid #bfdbfe", borderRadius: 10, padding: "10px 12px", fontSize: 13, color: "#1e40af", lineHeight: 1.6 }}>
-                  <span style={{ fontWeight: 700, display: "block", marginBottom: 2 }}>📋 {corrLabel}</span>
+                  <span style={{ fontWeight: 700, display: "block", marginBottom: 2 }}>📋 הצעת תיקון:</span>
                   {item.suggestedCorrection}
                 </div>
               )}
@@ -368,10 +330,10 @@ export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, sett
         {report.accessibilityComplianceStatus && (
           <div style={{ marginTop: 32, border: "2px solid #1e3a8a", borderRadius: 14, padding: "20px 24px", background: "#f0f4ff", pageBreakInside: "avoid" }}>
             <h3 style={{ margin: "0 0 12px", fontSize: 17, fontWeight: 800, color: "#1e3a8a" }}>
-              {opinionTitle}
+              סיכום חוות הדעת:
             </h3>
             <p style={{ margin: 0, fontSize: 15, color: "#0f172a", lineHeight: 1.7 }}>
-              {opinionQ}
+              האם בוצעו כל ההוראות החלות לפי התקנות?
             </p>
             <div style={{ marginTop: 14, display: "flex", gap: 16 }}>
               <div style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 16, fontWeight: 700, color: report.accessibilityComplianceStatus === "yes" ? "#15803d" : "#6b7280" }}>

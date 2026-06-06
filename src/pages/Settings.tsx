@@ -189,14 +189,6 @@ export default function Settings() {
                           dir="ltr"
                         />
                       </Field>
-                      <Field label="שורת הסמכה / אישור מקצועי">
-                        <Input
-                          placeholder='למשל: מורשה נגישות מתו"ס ושירות'
-                          value={fmt.certificationText ?? ""}
-                          onChange={(e) => upd({ certificationText: e.target.value || undefined })}
-                        />
-                      </Field>
-
                       {/* Textual sections */}
                       <Field label="מבוא קבוע (הקדמה לדוח)">
                         <Textarea
@@ -205,72 +197,6 @@ export default function Settings() {
                           onChange={(e) => upd({ fixedIntroduction: e.target.value || undefined })}
                           rows={4}
                           className="text-sm"
-                        />
-                      </Field>
-                      <Field label="מטרת הסקר">
-                        <Textarea
-                          placeholder="תיאור מטרת הסקר"
-                          value={fmt.surveyPurposeText ?? ""}
-                          onChange={(e) => upd({ surveyPurposeText: e.target.value || undefined })}
-                          rows={3}
-                          className="text-sm"
-                        />
-                      </Field>
-                      <Field label="הצהרת מקצועיות">
-                        <Textarea
-                          placeholder="הצהרה מקצועית של הסוקר"
-                          value={fmt.professionalDeclarationText ?? ""}
-                          onChange={(e) => upd({ professionalDeclarationText: e.target.value || undefined })}
-                          rows={3}
-                          className="text-sm"
-                        />
-                      </Field>
-                      <Field label="טקסט סיום / מכתב סיום">
-                        <Textarea
-                          placeholder="טקסט שיופיע בסוף הדוח"
-                          value={fmt.closingText ?? ""}
-                          onChange={(e) => upd({ closingText: e.target.value || undefined })}
-                          rows={3}
-                          className="text-sm"
-                        />
-                      </Field>
-                      <Field label="הערות משפטיות / כתב ויתור">
-                        <Textarea
-                          placeholder="הערות משפטיות שיופיעו בדוח"
-                          value={fmt.legalNotes ?? ""}
-                          onChange={(e) => upd({ legalNotes: e.target.value || undefined })}
-                          rows={3}
-                          className="text-sm"
-                        />
-                      </Field>
-
-                      {/* Checklist/opinion labels */}
-                      <Field label='כותרת עמוד הממצאים'>
-                        <Input
-                          placeholder='למשל: חוות דעת מקצועית'
-                          value={fmt.checklistPageTitle ?? ""}
-                          onChange={(e) => upd({ checklistPageTitle: e.target.value || undefined })}
-                        />
-                      </Field>
-                      <Field label="כותרת סעיף הסיכום">
-                        <Input
-                          placeholder="למשל: סיכום חוות הדעת:"
-                          value={fmt.opinionSectionTitle ?? ""}
-                          onChange={(e) => upd({ opinionSectionTitle: e.target.value || undefined })}
-                        />
-                      </Field>
-                      <Field label="שאלת סיכום (כן/לא)">
-                        <Input
-                          placeholder="למשל: האם בוצעו כל ההוראות החלות לפי התקנות?"
-                          value={fmt.opinionQuestion ?? ""}
-                          onChange={(e) => upd({ opinionQuestion: e.target.value || undefined })}
-                        />
-                      </Field>
-                      <Field label="תווית הצעת תיקון">
-                        <Input
-                          placeholder="למשל: הצעת תיקון:"
-                          value={fmt.correctionLabel ?? ""}
-                          onChange={(e) => upd({ correctionLabel: e.target.value || undefined })}
                         />
                       </Field>
 
