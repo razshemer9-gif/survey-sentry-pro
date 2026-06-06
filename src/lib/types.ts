@@ -15,7 +15,7 @@ export interface SurveyTypeConfig {
 export const SURVEY_TYPES: SurveyTypeConfig[] = [
   {
     id: "accessibility",
-    label: "סקר נגישות נכים",
+    label: 'סקר נגישות מתו״ס ושירות',
     shortLabel: "נגישות",
     pdfTitle: 'סקר נגישות מתו״ס ושירות',
     filePrefix: "סקר-נגישות",
