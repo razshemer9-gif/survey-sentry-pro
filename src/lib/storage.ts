@@ -140,14 +140,13 @@ export async function listTemplates(): Promise<ChecklistTemplate[]> {
 export async function saveTemplate(t: ChecklistTemplate): Promise<void> {
   if (t.builtIn) return;
   const userId = await getUserId();
-  const safeItems = t.items.map(({ referencePhoto, referencePhotos, ...rest }) => rest);
   const now = Date.now();
   const { error } = await supabase.from("user_templates").upsert({
     id: t.id,
     user_id: userId,
     name: t.name,
     description: t.description ?? null,
-    items: safeItems,
+    items: t.items,
     updated_at: now,
   });
   if (error) throw error;
