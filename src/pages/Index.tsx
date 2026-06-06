@@ -38,7 +38,14 @@ const Index = () => {
     setCreating(true);
     try {
       const templates = await listTemplates();
-      const matched = templates.find((t) => !t.builtIn && t.surveyType === selectedType);
+      const surveyLabel = SURVEY_TYPES.find((t) => t.id === selectedType)?.label ?? "";
+      const normalize = (s: string) =>
+        s.trim().replace(/[״"]/g, '"').replace(/[׳']/g, "'");
+
+      const matched =
+        templates.find((t) => !t.builtIn && t.surveyType === selectedType) ??
+        templates.find((t) => !t.builtIn && normalize(t.name) === normalize(surveyLabel));
+
       if (!matched) {
         toast.error("לא הוגדרה תבנית עבור סוג סקר זה. יש ליצור תבנית מתאימה בדף התבניות.");
         return;
