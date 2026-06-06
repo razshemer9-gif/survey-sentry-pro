@@ -102,10 +102,23 @@ export default function Templates() {
     setEditingItem({ item: { ...item }, index });
   };
 
-  const saveEditingItem = () => {
+  const saveEditingItem = async () => {
     if (!editingItem || !editing) return;
-    updateItemInEditing(editingItem.index, editingItem.item);
+
+    // Compute updated template immediately (can't rely on async state update)
+    const nextItems = [...editing.items];
+    nextItems[editingItem.index] = { ...nextItems[editingItem.index], ...editingItem.item };
+    const updatedEditing = { ...editing, items: nextItems };
+
+    setEditing(updatedEditing);
     setEditingItem(null);
+
+    // Persist to Supabase immediately — no need to click "שמור תבנית" separately
+    try {
+      await saveTemplate(updatedEditing);
+    } catch (err) {
+      toast.error(`שגיאה בשמירת הממצא: ${err instanceof Error ? err.message : String(err)}`);
+    }
   };
 
   return (
