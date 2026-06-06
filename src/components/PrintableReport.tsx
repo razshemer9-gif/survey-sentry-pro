@@ -239,75 +239,83 @@ export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, sett
         <PageHeader title="חוות דעת מקצועית" company={settings.companyName} accentColor={surveyConfig.color} />
 
         <div style={{ marginTop: 24, display: "flex", flexDirection: "column", gap: 14 }}>
-          {report.items.map((item, idx) => (
-            <div
-              key={item.id}
-              style={{ border: "1px solid #e2e8f0", borderRadius: 14, padding: "16px 18px", background: "#fff", pageBreakInside: "avoid" }}
-            >
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 12 }}>
-                <div style={{ flex: 1 }}>
-                  <div style={{ fontSize: 12, color: "#64748b" }}>ממצא {idx + 1}</div>
-                  <div style={{ fontSize: 17, fontWeight: 700, color: "#0f172a", marginTop: 2 }}>{item.title}</div>
+          {report.items.map((item, idx) => {
+            const refPhotos = item.referencePhotos && item.referencePhotos.length > 0
+              ? item.referencePhotos
+              : (item.referencePhoto ? [item.referencePhoto] : []);
+            return (
+              <div
+                key={item.id}
+                style={{ border: "1px solid #e2e8f0", borderRadius: 14, overflow: "hidden", background: "#fff", pageBreakInside: "avoid" }}
+              >
+                {/* ── Section 1: Template / professional data ── */}
+                <div style={{ padding: "14px 18px 12px", background: "#f8fafc", borderBottom: "1px solid #e2e8f0" }}>
+                  <div style={{ fontSize: 11, color: "#64748b", marginBottom: 2 }}>ממצא {idx + 1}</div>
+                  <div style={{ fontSize: 17, fontWeight: 700, color: "#0f172a" }}>{item.title}</div>
                   {(item.standardPart || item.clause) && (
-                    <div style={{ fontSize: 11, color: "#1e40af", marginTop: 4, fontWeight: 600 }}>
+                    <div style={{ fontSize: 11, color: "#1e40af", marginTop: 3, fontWeight: 600 }}>
                       {item.standardPart}{item.clause ? ` · סעיף ${item.clause}` : ""}
                     </div>
                   )}
+                  {item.notes && (
+                    <div style={{ marginTop: 8, fontSize: 13, color: "#334155", lineHeight: 1.6, whiteSpace: "pre-wrap" }}>
+                      <span style={{ fontWeight: 700 }}>בעיה: </span>{item.notes}
+                    </div>
+                  )}
+                  {item.suggestedCorrection && (
+                    <div style={{ marginTop: 6, fontSize: 13, color: "#1e40af", lineHeight: 1.6, whiteSpace: "pre-wrap" }}>
+                      <span style={{ fontWeight: 700 }}>פתרון: </span>{item.suggestedCorrection}
+                    </div>
+                  )}
+                  {refPhotos.length > 0 && (
+                    <div style={{ marginTop: 10, display: "grid", gridTemplateColumns: refPhotos.length > 1 ? "1fr 1fr" : "200px", gap: 8 }}>
+                      {refPhotos.map((p, i) => (
+                        <img
+                          key={i}
+                          src={p}
+                          alt={item.referenceLabel || `פרט ${i + 1}`}
+                          style={{ width: "100%", maxHeight: 200, objectFit: "contain", background: "#fff", borderRadius: 8, border: "1px solid #bfdbfe" }}
+                        />
+                      ))}
+                    </div>
+                  )}
                 </div>
-              </div>
 
-              {(() => {
-                const refPhotos = item.referencePhotos && item.referencePhotos.length > 0
-                  ? item.referencePhotos
-                  : (item.referencePhoto ? [item.referencePhoto] : []);
-                const hasCurrent = !!item.photo;
-                const hasRefs = refPhotos.length > 0;
-                if (!hasCurrent && !hasRefs) return null;
-                return (
-                  <div style={{ marginTop: 10, display: "grid", gridTemplateColumns: hasCurrent && hasRefs ? "1fr 1fr" : "1fr", gap: 10 }}>
-                    {hasCurrent && (
-                      <div>
-                        <div style={{ fontSize: 11, color: "#64748b", marginBottom: 4 }}>מצב קיים</div>
-                        <img src={item.photo} alt={item.title} style={{ width: "100%", maxHeight: 260, objectFit: "cover", borderRadius: 10, border: "1px solid #e2e8f0" }} />
+                {/* ── Section 2: Client / field data ── */}
+                {(item.photo || item.fieldNotes || (item.estimatedCost || 0) > 0) && (
+                  <div style={{ padding: "12px 18px" }}>
+                    {(item.photo || item.fieldNotes) && (
+                      <div style={{ display: "grid", gridTemplateColumns: item.photo && item.fieldNotes ? "1fr 1fr" : "1fr", gap: 12, alignItems: "start" }}>
+                        {item.photo && (
+                          <div>
+                            <div style={{ fontSize: 11, color: "#64748b", marginBottom: 4, fontWeight: 600 }}>מצב קיים</div>
+                            <img
+                              src={item.photo}
+                              alt="מצב קיים"
+                              style={{ width: "100%", maxHeight: 220, objectFit: "cover", borderRadius: 8, border: "1px solid #e2e8f0" }}
+                            />
+                          </div>
+                        )}
+                        {item.fieldNotes && (
+                          <div>
+                            <div style={{ fontSize: 11, color: "#64748b", marginBottom: 4, fontWeight: 600 }}>פירוט מצב קיים</div>
+                            <div style={{ fontSize: 13, color: "#334155", lineHeight: 1.7, whiteSpace: "pre-wrap", background: "#f8fafc", borderRadius: 8, padding: "10px 12px", border: "1px solid #e2e8f0" }}>
+                              {item.fieldNotes}
+                            </div>
+                          </div>
+                        )}
                       </div>
                     )}
-                    {hasRefs && (
-                      <div>
-                        <div style={{ fontSize: 11, color: "#1e3a8a", marginBottom: 4, fontWeight: 600 }}>
-                          פרט מבוקש{item.referenceLabel ? `: ${item.referenceLabel}` : ""}
-                          {refPhotos.length > 1 ? ` (${refPhotos.length})` : ""}
-                        </div>
-                        <div style={{ display: "grid", gridTemplateColumns: refPhotos.length > 1 ? "1fr 1fr" : "1fr", gap: 6 }}>
-                          {refPhotos.map((p, i) => (
-                            <img key={i} src={p} alt={item.referenceLabel || `פרט ${i + 1}`} style={{ width: "100%", maxHeight: 260, objectFit: "contain", background: "#f8fafc", borderRadius: 10, border: "1px solid #bfdbfe" }} />
-                          ))}
-                        </div>
+                    {(item.estimatedCost || 0) > 0 && (
+                      <div style={{ marginTop: 10, display: "inline-block", background: "#fef2f2", color: "#991b1b", border: "1px solid #fecaca", fontSize: 13, padding: "5px 10px", borderRadius: 999, fontWeight: 600 }}>
+                        אומדן עלות תיקון: {formatCurrency(item.estimatedCost)}
                       </div>
                     )}
                   </div>
-                );
-              })()}
-
-              {item.notes && (
-                <div style={{ marginTop: 10, fontSize: 14, color: "#334155", background: "#f8fafc", borderRadius: 10, padding: "10px 12px", whiteSpace: "pre-wrap", lineHeight: 1.6 }}>
-                  {item.notes}
-                </div>
-              )}
-
-              {item.suggestedCorrection && (
-                <div style={{ marginTop: 10, background: "#eff6ff", border: "1px solid #bfdbfe", borderRadius: 10, padding: "10px 12px", fontSize: 13, color: "#1e40af", lineHeight: 1.6 }}>
-                  <span style={{ fontWeight: 700, display: "block", marginBottom: 2 }}>📋 הצעת תיקון:</span>
-                  {item.suggestedCorrection}
-                </div>
-              )}
-
-              {(item.estimatedCost || 0) > 0 && (
-                <div style={{ marginTop: 10, display: "inline-block", background: "#fef2f2", color: "#991b1b", border: "1px solid #fecaca", fontSize: 13, padding: "6px 10px", borderRadius: 999, fontWeight: 600 }}>
-                  אומדן עלות תיקון: {formatCurrency(item.estimatedCost)}
-                </div>
-              )}
-            </div>
-          ))}
+                )}
+              </div>
+            );
+          })}
         </div>
 
         {/* Opinion summary */}

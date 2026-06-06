@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { ArrowRight, Download, Eye, FileDown, Loader2, PenLine, Plus, Save, Trash2, X } from "lucide-react";
+import { ArrowRight, Download, Eye, FileDown, Loader2, PenLine, Plus, Save, Trash2 } from "lucide-react";
 import { v4 as uuid } from "uuid";
 import { toast } from "sonner";
 
@@ -240,110 +240,97 @@ export default function ReportEditor() {
         <TabsContent value="checklist" className="mt-4 space-y-3 pb-20">
           <TemplateSwap onLoad={(items) => setReport((r) => (r ? { ...r, items } : r))} surveyType={report.surveyType} />
 
-          {report.items.map((item, idx) => (
-            <div key={item.id} className="rounded-2xl border border-border border-r-4 border-r-destructive bg-card p-4 shadow-soft animate-fade-in">
-              <div className="mb-2 flex items-center justify-between">
-                <span className="text-xs font-semibold text-muted-foreground">ממצא {idx + 1}</span>
-                <button onClick={() => removeItem(item.id)} className="text-muted-foreground hover:text-destructive" aria-label="מחק">
-                  <Trash2 className="h-4 w-4" />
-                </button>
-              </div>
+          {report.items.map((item, idx) => {
+            const refPhotos = item.referencePhotos && item.referencePhotos.length > 0
+              ? item.referencePhotos
+              : (item.referencePhoto ? [item.referencePhoto] : []);
+            return (
+              <div key={item.id} className="rounded-2xl border border-border border-r-4 border-r-destructive bg-card shadow-soft animate-fade-in overflow-hidden">
 
-              <Input
-                value={item.title}
-                onChange={(e) => updateItem(item.id, { title: e.target.value })}
-                className="mb-3 font-bold"
-              />
-
-              <Textarea
-                value={item.notes}
-                onChange={(e) => updateItem(item.id, { notes: e.target.value })}
-                placeholder="ממצאים והערות"
-                rows={2}
-                className="mb-2"
-              />
-
-              <div className="mb-2">
-                <Label className="mb-1 block text-xs text-muted-foreground">תמונה (מצב קיים)</Label>
-                <PhotoPicker
-                  value={item.photo}
-                  onChange={(u) => updateItem(item.id, { photo: u })}
-                  label="צרף תמונה לממצא"
-                />
-              </div>
-
-              <div className="mb-2 rounded-xl border border-dashed border-primary/40 bg-primary-soft/30 p-3">
-                <Label className="mb-1 block text-xs font-semibold text-primary">פרט / דוגמה (אופציונלי)</Label>
-                <Input
-                  value={item.referenceLabel || ""}
-                  onChange={(e) => updateItem(item.id, { referenceLabel: e.target.value })}
-                  placeholder="פרט:"
-                  className="mb-2 bg-card"
-                />
-                {(() => {
-                  const photos = item.referencePhotos && item.referencePhotos.length > 0
-                    ? item.referencePhotos
-                    : (item.referencePhoto ? [item.referencePhoto] : []);
-                  const updatePhotos = (next: string[]) => updateItem(item.id, {
-                    referencePhotos: next.length > 0 ? next : undefined,
-                    referencePhoto: next[0],
-                  });
-                  return (
-                    <div className="space-y-2">
-                      {photos.length > 0 && (
-                        <div className={photos.length > 1 ? "grid grid-cols-2 gap-2" : ""}>
-                          {photos.map((p, i) => (
-                            <div key={i} className="relative">
-                              <img
-                                src={p}
-                                alt={item.referenceLabel || `פרט ${i + 1}`}
-                                className="w-full max-h-28 object-contain rounded-lg border border-border bg-white"
-                              />
-                              <button
-                                onClick={() => updatePhotos(photos.filter((_, j) => j !== i))}
-                                className="absolute top-1 left-1 h-5 w-5 rounded-full bg-destructive/90 text-white flex items-center justify-center"
-                                aria-label="הסר תמונת פרט"
-                              >
-                                <X className="h-3 w-3" />
-                              </button>
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                      <button
-                        onClick={() => setRefPickerItemId(item.id)}
-                        className="w-full rounded-xl border-2 border-dashed border-primary/40 py-2 flex items-center justify-center gap-1 text-primary hover:bg-primary/5 transition-colors"
-                      >
-                        <Plus className="h-4 w-4" />
-                        <span className="text-xs">{photos.length > 0 ? "הוסף תמונת פרט נוספת" : "הוסף תמונת פרט"}</span>
-                      </button>
+                {/* ── Template data (read-only) ── */}
+                <div className="px-4 pt-3 pb-3 bg-muted/30 border-b border-border/60">
+                  <div className="flex items-start justify-between gap-2 mb-1">
+                    <span className="text-xs font-semibold text-muted-foreground">ממצא {idx + 1}</span>
+                    <button onClick={() => removeItem(item.id)} className="text-muted-foreground hover:text-destructive -mt-0.5" aria-label="מחק">
+                      <Trash2 className="h-4 w-4" />
+                    </button>
+                  </div>
+                  <p className="font-bold text-sm text-foreground leading-snug">{item.title || "ממצא ללא כותרת"}</p>
+                  {(item.standardPart || item.clause) && (
+                    <p className="mt-0.5 text-xs text-primary font-medium">
+                      {item.standardPart}{item.clause ? ` · סעיף ${item.clause}` : ""}
+                    </p>
+                  )}
+                  {item.notes && (
+                    <div className="mt-2 rounded-lg bg-background/70 px-2.5 py-1.5 text-xs text-foreground/80 leading-relaxed">
+                      <span className="font-semibold text-foreground">בעיה: </span>{item.notes}
                     </div>
-                  );
-                })()}
-              </div>
+                  )}
+                  {item.suggestedCorrection && (
+                    <div className="mt-1.5 rounded-lg bg-primary/5 border border-primary/15 px-2.5 py-1.5 text-xs text-foreground/80 leading-relaxed">
+                      <span className="font-semibold text-primary">פתרון: </span>{item.suggestedCorrection}
+                    </div>
+                  )}
+                  {refPhotos.length > 0 && (
+                    <div className={cn("mt-2", refPhotos.length > 1 ? "grid grid-cols-2 gap-1.5" : "")}>
+                      {refPhotos.map((p, i) => (
+                        <img
+                          key={i}
+                          src={p}
+                          alt={item.referenceLabel || `פרט ${i + 1}`}
+                          className="w-full max-h-24 object-contain rounded-lg border border-border bg-white"
+                        />
+                      ))}
+                    </div>
+                  )}
+                </div>
 
-              <div className="flex flex-wrap items-center gap-2">
-                <Label className="shrink-0 text-xs text-muted-foreground">אומדן עלות (₪)</Label>
-                <Input
-                  type="number"
-                  inputMode="numeric"
-                  value={item.estimatedCost || ""}
-                  onChange={(e) => updateItem(item.id, { estimatedCost: Number(e.target.value) || 0 })}
-                  className="h-9 w-28 min-w-0"
-                  placeholder="0"
-                />
-                <label className="flex shrink-0 items-center gap-1.5 text-xs text-muted-foreground cursor-pointer select-none min-h-[44px]">
-                  <input
-                    type="checkbox"
-                    checked={!!item.includeInCost}
-                    onChange={(e) => updateItem(item.id, { includeInCost: e.target.checked })}
-                    className="h-4 w-4 accent-primary"
-                  />
-                  כלול באומדן
-                </label>
+                {/* ── Client-specific (editable) ── */}
+                <div className="px-4 py-3 space-y-3">
+                  <div>
+                    <Label className="mb-1 block text-xs font-semibold text-foreground">תמונת מצב קיים</Label>
+                    <PhotoPicker
+                      value={item.photo}
+                      onChange={(u) => updateItem(item.id, { photo: u })}
+                      label="צרף תמונה מהשטח"
+                    />
+                  </div>
+
+                  <div>
+                    <Label className="mb-1 block text-xs font-semibold text-foreground">פירוט מצב קיים</Label>
+                    <Textarea
+                      value={item.fieldNotes || ""}
+                      onChange={(e) => updateItem(item.id, { fieldNotes: e.target.value })}
+                      placeholder="תאר את הממצא שנצפה בשטח..."
+                      rows={2}
+                    />
+                  </div>
+
+                  <div className="flex flex-wrap items-center gap-2">
+                    <Label className="shrink-0 text-xs text-muted-foreground">אומדן עלות (₪)</Label>
+                    <Input
+                      type="number"
+                      inputMode="numeric"
+                      value={item.estimatedCost || ""}
+                      onChange={(e) => updateItem(item.id, { estimatedCost: Number(e.target.value) || 0 })}
+                      className="h-9 w-28 min-w-0"
+                      placeholder="0"
+                    />
+                    <label className="flex shrink-0 items-center gap-1.5 text-xs text-muted-foreground cursor-pointer select-none min-h-[44px]">
+                      <input
+                        type="checkbox"
+                        checked={!!item.includeInCost}
+                        onChange={(e) => updateItem(item.id, { includeInCost: e.target.checked })}
+                        className="h-4 w-4 accent-primary"
+                      />
+                      כלול באומדן
+                    </label>
+                  </div>
+                </div>
+
               </div>
-            </div>
-          ))}
+            );
+          })}
 
           <Button onClick={addItem} variant="outline" className="w-full gap-2 rounded-2xl border-dashed">
             <Plus className="h-4 w-4" /> ממצא חדש
