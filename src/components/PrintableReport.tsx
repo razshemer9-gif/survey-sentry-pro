@@ -1,5 +1,5 @@
 import { ConsultantSettings, getSurveyType, SurveyReport, SurveyReportFormat } from "@/lib/types";
-import { formatCurrency, formatHebrewDate, statusLabel } from "@/lib/pdf";
+import { formatCurrency, formatHebrewDate } from "@/lib/pdf";
 import { forwardRef } from "react";
 
 interface Props {
@@ -22,13 +22,6 @@ export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, sett
   const totalCost = report.items
     .filter((i) => i.includeInCost)
     .reduce((sum, i) => sum + (Number(i.estimatedCost) || 0), 0);
-
-  const counts = {
-    compliant: report.items.filter((i) => i.status === "compliant").length,
-    non_compliant: report.items.filter((i) => i.status === "non_compliant").length,
-    not_applicable: report.items.filter((i) => i.status === "not_applicable").length,
-    pending: report.items.filter((i) => i.status === "pending").length,
-  };
 
   const coverLogo = fmt.companyLogo || settings.logo;
   const licNum = fmt.licenseNumber || settings.license;
@@ -176,14 +169,6 @@ export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, sett
           <Field label="כתובת המשרד" value={settings.address} dark />
         </div>
 
-        <h3 style={{ marginTop: 36, fontSize: 18, color: "#1e3a8a" }}>תקציר ממצאים</h3>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 12, marginTop: 12 }}>
-          <SummaryCard color="#16a34a" label="תקין" value={counts.compliant} />
-          <SummaryCard color="#dc2626" label="לא תקין" value={counts.non_compliant} />
-          <SummaryCard color="#64748b" label="לא רלוונטי" value={counts.not_applicable} />
-          <SummaryCard color="#f59e0b" label="ממתין" value={counts.pending} />
-        </div>
-
         <div
           style={{
             marginTop: 18,
@@ -269,7 +254,6 @@ export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, sett
                     </div>
                   )}
                 </div>
-                <StatusPill status={item.status} />
               </div>
 
               {(() => {
@@ -310,14 +294,14 @@ export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, sett
                 </div>
               )}
 
-              {item.status === "non_compliant" && item.suggestedCorrection && (
+              {item.suggestedCorrection && (
                 <div style={{ marginTop: 10, background: "#eff6ff", border: "1px solid #bfdbfe", borderRadius: 10, padding: "10px 12px", fontSize: 13, color: "#1e40af", lineHeight: 1.6 }}>
                   <span style={{ fontWeight: 700, display: "block", marginBottom: 2 }}>📋 הצעת תיקון:</span>
                   {item.suggestedCorrection}
                 </div>
               )}
 
-              {item.status === "non_compliant" && (item.estimatedCost || 0) > 0 && (
+              {(item.estimatedCost || 0) > 0 && (
                 <div style={{ marginTop: 10, display: "inline-block", background: "#fef2f2", color: "#991b1b", border: "1px solid #fecaca", fontSize: 13, padding: "6px 10px", borderRadius: 999, fontWeight: 600 }}>
                   אומדן עלות תיקון: {formatCurrency(item.estimatedCost)}
                 </div>
@@ -377,26 +361,3 @@ function PageHeader({ title, company, accentColor }: { title: string; company: s
   );
 }
 
-function SummaryCard({ label, value, color }: { label: string; value: number; color: string }) {
-  return (
-    <div style={{ background: "#f8fafc", border: "1px solid #e2e8f0", borderRadius: 12, padding: "14px 16px" }}>
-      <div style={{ fontSize: 12, color: "#64748b" }}>{label}</div>
-      <div style={{ fontSize: 28, fontWeight: 800, color, marginTop: 4 }}>{value}</div>
-    </div>
-  );
-}
-
-function StatusPill({ status }: { status: string }) {
-  const map: Record<string, { bg: string; fg: string }> = {
-    compliant: { bg: "#dcfce7", fg: "#166534" },
-    non_compliant: { bg: "#fee2e2", fg: "#991b1b" },
-    not_applicable: { bg: "#e2e8f0", fg: "#334155" },
-    pending: { bg: "#fef3c7", fg: "#92400e" },
-  };
-  const c = map[status] || map.pending;
-  return (
-    <span style={{ background: c.bg, color: c.fg, fontSize: 13, fontWeight: 700, padding: "6px 12px", borderRadius: 999, whiteSpace: "nowrap" }}>
-      {statusLabel(status)}
-    </span>
-  );
-}
