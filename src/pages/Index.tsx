@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle,
 } from "@/components/ui/dialog";
-import { deleteReport, listReports, newReport, saveReport } from "@/lib/storage";
+import { deleteReport, listReports, listTemplates, newReport, saveReport } from "@/lib/storage";
 import { getSurveyType, SURVEY_TYPES, SurveyReport, SurveyType } from "@/lib/types";
 import { formatHebrewDate } from "@/lib/image";
 import { toast } from "sonner";
@@ -37,7 +37,13 @@ const Index = () => {
     if (!selectedType) return;
     setCreating(true);
     try {
-      const r = await saveReport(newReport(selectedType));
+      const templates = await listTemplates();
+      const matched = templates.find((t) => !t.builtIn && t.surveyType === selectedType);
+      if (!matched) {
+        toast.error("לא הוגדרה תבנית עבור סוג סקר זה. יש ליצור תבנית מתאימה בדף התבניות.");
+        return;
+      }
+      const r = await saveReport(newReport(selectedType, matched.items));
       setTypeDialogOpen(false);
       navigate(`/report/${r.id}`);
     } catch {

@@ -79,7 +79,34 @@ export async function deleteReport(id: string): Promise<void> {
   if (error) throw error;
 }
 
-export function newReport(surveyType: SurveyType = "accessibility"): SurveyReport {
+export function newReport(
+  surveyType: SurveyType = "accessibility",
+  templateItems?: ChecklistTemplate["items"]
+): SurveyReport {
+  const items = templateItems
+    ? templateItems.map((i) => ({
+        id: uuid(),
+        title: i.title,
+        status: "non_compliant" as const,
+        notes: i.notes || "",
+        estimatedCost: 0,
+        ...(i.includeInCost !== undefined && { includeInCost: i.includeInCost }),
+        ...(i.referencePhoto && { referencePhoto: i.referencePhoto }),
+        ...(i.referencePhotos?.length && { referencePhotos: i.referencePhotos }),
+        ...(i.referenceLabel && { referenceLabel: i.referenceLabel }),
+        ...(i.suggestedCorrection && { suggestedCorrection: i.suggestedCorrection }),
+        ...(i.matchedRequirementId && { matchedRequirementId: i.matchedRequirementId }),
+        ...(i.standardPart && { standardPart: i.standardPart }),
+        ...(i.clause && { clause: i.clause }),
+      }))
+    : DEFAULT_CHECKLIST.map((i) => ({
+        id: uuid(),
+        title: i.title,
+        status: "non_compliant" as const,
+        notes: "",
+        estimatedCost: 0,
+      }));
+
   return {
     id: uuid(),
     createdAt: Date.now(),
@@ -89,13 +116,7 @@ export function newReport(surveyType: SurveyType = "accessibility"): SurveyRepor
     clientName: "",
     address: "",
     surveyDate: new Date().toISOString().slice(0, 10),
-    items: DEFAULT_CHECKLIST.map((i) => ({
-      id: uuid(),
-      title: i.title,
-      status: "pending",
-      notes: "",
-      estimatedCost: 0,
-    })),
+    items,
     generalNotes: "",
   };
 }

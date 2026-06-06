@@ -29,8 +29,8 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 
-import { ChecklistItem, ChecklistTemplate, ConsultantSettings, DEFAULT_SETTINGS, ReferencePhotoEntry, SurveyReport } from "@/lib/types";
-import { getReport, listTemplates, loadUserSettings, saveReport, saveUserSettings } from "@/lib/storage";
+import { ChecklistItem, ConsultantSettings, DEFAULT_SETTINGS, ReferencePhotoEntry, SurveyReport } from "@/lib/types";
+import { getReport, loadUserSettings, saveReport, saveUserSettings } from "@/lib/storage";
 import { useAuth } from "@/contexts/AuthContext";
 import { buildPdfFileName, generateReportPdf } from "@/lib/pdf";
 import { formatCurrency } from "@/lib/image";
@@ -238,8 +238,6 @@ export default function ReportEditor() {
 
         {/* CHECKLIST TAB */}
         <TabsContent value="checklist" className="mt-4 space-y-3 pb-20">
-          <TemplateSwap onLoad={(items) => setReport((r) => (r ? { ...r, items } : r))} surveyType={report.surveyType} />
-
           {report.items.map((item, idx) => {
             const refPhotos = item.referencePhotos && item.referencePhotos.length > 0
               ? item.referencePhotos
@@ -489,51 +487,3 @@ export default function ReportEditor() {
   );
 }
 
-function TemplateSwap({ onLoad, surveyType }: { onLoad: (items: ChecklistItem[]) => void; surveyType?: import("@/lib/types").SurveyType }) {
-  const [templates, setTemplates] = useState<ChecklistTemplate[]>([]);
-  useEffect(() => {
-    listTemplates().then(setTemplates).catch(() => setTemplates([]));
-  }, []);
-  const visibleTemplates = templates.filter((t) => !t.surveyType || !surveyType || t.surveyType === surveyType);
-  return (
-    <div className="rounded-2xl border border-border bg-primary-soft/40 p-3">
-      <Label className="mb-2 block text-xs font-semibold text-primary">טען רשימת ממצאים מתבנית</Label>
-      <Select
-        onValueChange={(val) => {
-          const t = visibleTemplates.find((x) => x.id === val);
-          if (!t) return;
-          if (!confirm("לטעון את הממצאים מהתבנית? ממצאים קיימים יוחלפו.")) return;
-          onLoad(
-            t.items.map((i) => ({
-              id: uuid(),
-              title: i.title,
-              status: "non_compliant",
-              notes: i.notes || "",
-              estimatedCost: 0,
-              includeInCost: i.includeInCost,
-              referencePhoto: i.referencePhoto,
-              referencePhotos: i.referencePhotos,
-              referenceLabel: i.referenceLabel,
-              suggestedCorrection: i.suggestedCorrection,
-              matchedRequirementId: i.matchedRequirementId,
-              standardPart: i.standardPart,
-              clause: i.clause,
-            })),
-          );
-          toast.success(`נטענה תבנית: ${t.name}`);
-        }}
-      >
-        <SelectTrigger className="rounded-xl bg-card">
-          <SelectValue placeholder="בחר תבנית..." />
-        </SelectTrigger>
-        <SelectContent>
-          {visibleTemplates.map((t) => (
-            <SelectItem key={t.id} value={t.id}>
-              {t.name}
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
-    </div>
-  );
-}
