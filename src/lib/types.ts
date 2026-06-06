@@ -107,6 +107,28 @@ export interface ReferencePhotoEntry {
   photo: string; // dataURL
 }
 
+// ── Per-survey-type report format ─────────────────────────────────────────
+export interface SurveyReportFormat {
+  surveyType: SurveyType;
+  reportTitle?: string;
+  fixedIntroduction?: string;
+  surveyPurposeText?: string;
+  professionalDeclarationText?: string;
+  professionalName?: string;
+  professionalRole?: string;
+  licenseNumber?: string;
+  certificationText?: string;
+  signatureImage?: string; // dataURL
+  stampImage?: string; // dataURL
+  companyLogo?: string; // dataURL — overrides global logo for this survey type
+  closingText?: string;
+  legalNotes?: string;
+  checklistPageTitle?: string;
+  opinionSectionTitle?: string;
+  opinionQuestion?: string;
+  correctionLabel?: string;
+}
+
 export interface ConsultantSettings {
   companyName: string;
   consultantName: string;
@@ -117,6 +139,7 @@ export interface ConsultantSettings {
   address: string;
   logo?: string; // dataURL
   referencePhotos?: ReferencePhotoEntry[]; // personal photo library
+  reportFormats?: Partial<Record<SurveyType, SurveyReportFormat>>;
 }
 
 export const DEFAULT_SETTINGS: ConsultantSettings = {

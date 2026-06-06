@@ -1,4 +1,4 @@
-import { ConsultantSettings, getSurveyType, SurveyReport } from "@/lib/types";
+import { ConsultantSettings, getSurveyType, SurveyReport, SurveyReportFormat } from "@/lib/types";
 import { formatCurrency, formatHebrewDate, statusLabel } from "@/lib/pdf";
 import { forwardRef } from "react";
 
@@ -7,12 +7,18 @@ interface Props {
   settings: ConsultantSettings;
 }
 
+function getFormat(settings: ConsultantSettings, report: SurveyReport): SurveyReportFormat {
+  return settings.reportFormats?.[report.surveyType ?? "accessibility"] ?? { surveyType: report.surveyType ?? "accessibility" };
+}
+
 /**
  * Printable A4 (210mm) layout — RTL Hebrew, blue/white themed.
  * Width is fixed in px to give html2canvas a stable canvas to rasterize.
  */
 export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, settings }, ref) => {
   const surveyConfig = getSurveyType(report.surveyType);
+  const fmt = getFormat(settings, report);
+
   const totalCost = report.items
     .filter((i) => i.includeInCost)
     .reduce((sum, i) => sum + (Number(i.estimatedCost) || 0), 0);
@@ -24,13 +30,25 @@ export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, sett
     pending: report.items.filter((i) => i.status === "pending").length,
   };
 
+  const coverLogo = fmt.companyLogo || settings.logo;
+  const checklistTitle = fmt.checklistPageTitle || "חוות דעת מקצועית";
+  const opinionTitle = fmt.opinionSectionTitle || "סיכום חוות הדעת:";
+  const opinionQ = fmt.opinionQuestion || "האם בוצעו כל ההוראות החלות לפי התקנות?";
+  const corrLabel = fmt.correctionLabel || "הצעת תיקון:";
+  const certText = fmt.certificationText || "";
+  const licNum = fmt.licenseNumber || settings.license;
+  const sigName = fmt.professionalName || report.signatureConsultantName || settings.consultantName;
+  const legalText = fmt.legalNotes ||
+    'הסקר בוצע למיטב ידיעתי והדרישות לטיפול הן למיטב שיקול דעתי, באחריות המזמין/ הבעלות לפעול ע"פ הדרישות בסקר וכל סטייה בביצוע מהדרישות תהיה באחריות המבצע/מזמין העבודה.\n\nהערה: בעת צירוף אומדנים יש לקחת בחשבון 15% סטייה בעלויות.';
+  const closingText = fmt.closingText || "";
+
   return (
     <div
       ref={ref}
       dir="rtl"
       lang="he"
       style={{
-        width: "794px", // ~A4 at 96dpi
+        width: "794px",
         background: "#ffffff",
         color: "#0f172a",
         fontFamily: "Heebo, Assistant, sans-serif",
@@ -42,13 +60,13 @@ export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, sett
           minHeight: "1100px",
           padding: "0",
           position: "relative",
-          background: "linear-gradient(160deg,#1e3a8a 0%,#2563eb 55%,#0ea5e9 100%)",
+          background: `linear-gradient(160deg,${surveyConfig.color}dd 0%,${surveyConfig.color} 55%,${surveyConfig.color}99 100%)`,
           color: "#ffffff",
           display: "flex",
           flexDirection: "column",
         }}
       >
-        {/* White band header — logo sits on white that bleeds to both edges */}
+        {/* White band header */}
         <div
           style={{
             background: "#ffffff",
@@ -61,24 +79,16 @@ export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, sett
             boxShadow: "0 8px 24px rgba(0,0,0,0.12)",
           }}
         >
-          {settings.logo && (
+          {coverLogo && (
             <img
-              src={settings.logo}
+              src={coverLogo}
               alt={settings.companyName || "לוגו"}
               style={{ height: 140, objectFit: "contain" }}
               crossOrigin="anonymous"
             />
           )}
           {settings.companyName && (
-            <div
-              style={{
-                marginTop: 10,
-                fontSize: 24,
-                fontWeight: 800,
-                letterSpacing: 1,
-                color: "#1e3a8a",
-              }}
-            >
+            <div style={{ marginTop: 10, fontSize: 24, fontWeight: 800, letterSpacing: 1, color: "#1e3a8a" }}>
               {settings.companyName}
             </div>
           )}
@@ -87,20 +97,13 @@ export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, sett
               {settings.consultantName}
             </div>
           )}
-
         </div>
-        {/* Smooth gradient transition from white band into blue cover */}
-        <div
-          style={{
-            height: 40,
-            background: "linear-gradient(to bottom, #ffffff 0%, rgba(255,255,255,0) 100%)",
-            marginTop: -8,
-          }}
-        />
+
+        <div style={{ height: 40, background: "linear-gradient(to bottom, #ffffff 0%, rgba(255,255,255,0) 100%)", marginTop: -8 }} />
 
         <div style={{ padding: "10px 48px 24px" }}>
           <h1 style={{ fontSize: 46, fontWeight: 800, lineHeight: 1.05, margin: 0 }}>
-            {surveyConfig.pdfTitle}
+            {fmt.reportTitle || surveyConfig.pdfTitle}
           </h1>
           <div style={{ fontSize: 22, marginTop: 14, opacity: 0.95 }}>{report.placeName || "ללא שם"}</div>
         </div>
@@ -110,13 +113,7 @@ export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, sett
             <img
               src={report.coverPhoto}
               alt="cover"
-              style={{
-                width: "100%",
-                height: 380,
-                objectFit: "cover",
-                borderRadius: 16,
-                boxShadow: "0 20px 40px rgba(0,0,0,0.25)",
-              }}
+              style={{ width: "100%", height: 380, objectFit: "cover", borderRadius: 16, boxShadow: "0 20px 40px rgba(0,0,0,0.25)" }}
             />
           </div>
         )}
@@ -155,7 +152,22 @@ export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, sett
 
       {/* CONSULTANT PAGE */}
       <section style={{ padding: "48px", background: "#fff" }}>
-        <PageHeader title="פרטי היועץ" company={settings.companyName} />
+        <PageHeader title="פרטי בעל המקצוע" company={settings.companyName} accentColor={surveyConfig.color} />
+
+        {/* Fixed introduction */}
+        {fmt.fixedIntroduction && (
+          <div style={{ marginTop: 20, fontSize: 14, lineHeight: 1.8, color: "#334155", whiteSpace: "pre-wrap" }}>
+            {fmt.fixedIntroduction}
+          </div>
+        )}
+
+        {/* Survey purpose */}
+        {fmt.surveyPurposeText && (
+          <div style={{ marginTop: 16, padding: "14px 18px", background: "#f8fafc", border: "1px solid #e2e8f0", borderRadius: 10, fontSize: 14, lineHeight: 1.7, color: "#374151" }}>
+            <strong style={{ display: "block", marginBottom: 4 }}>מטרת הסקר:</strong>
+            {fmt.surveyPurposeText}
+          </div>
+        )}
 
         <div
           style={{
@@ -171,9 +183,10 @@ export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, sett
           }}
         >
           <Field label="חברה" value={settings.companyName} dark />
-          <Field label="שם היועץ" value={settings.consultantName} dark />
+          <Field label="שם בעל המקצוע" value={fmt.professionalName || settings.consultantName} dark />
+          {(fmt.professionalRole) && <Field label="תפקיד / הסמכה" value={fmt.professionalRole} dark />}
           {settings.idNumber && <Field label="מספר ת.ז." value={settings.idNumber} dark />}
-          <Field label="מספר רישוי שירות" value={settings.license} dark />
+          {licNum && <Field label="מספר רישיון" value={licNum} dark />}
           <Field label="טלפון" value={settings.phone} dark />
           <Field label='דוא"ל' value={settings.email} dark />
           <Field label="כתובת המשרד" value={settings.address} dark />
@@ -190,7 +203,7 @@ export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, sett
         <div
           style={{
             marginTop: 18,
-            background: "#1e3a8a",
+            background: surveyConfig.color,
             color: "#fff",
             borderRadius: 14,
             padding: "16px 20px",
@@ -207,49 +220,37 @@ export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, sett
         {report.generalNotes && (
           <>
             <h3 style={{ marginTop: 36, fontSize: 18, color: "#1e3a8a" }}>הערות כלליות</h3>
-            <div
-              style={{
-                marginTop: 8,
-                whiteSpace: "pre-wrap",
-                lineHeight: 1.7,
-                background: "#f8fafc",
-                border: "1px solid #e2e8f0",
-                borderRadius: 12,
-                padding: 16,
-                fontSize: 14,
-              }}
-            >
+            <div style={{ marginTop: 8, whiteSpace: "pre-wrap", lineHeight: 1.7, background: "#f8fafc", border: "1px solid #e2e8f0", borderRadius: 12, padding: 16, fontSize: 14 }}>
               {report.generalNotes}
             </div>
           </>
         )}
 
-        <div
-          style={{
-            marginTop: 32,
-            padding: "18px 22px",
-            background: "#f8fafc",
-            border: "1px solid #e2e8f0",
-            borderRadius: 12,
-            fontSize: 13,
-            lineHeight: 1.9,
-            color: "#374151",
-            direction: "rtl",
-          }}
-        >
-          הסקר בוצע למיטב ידיעתי והדרישות לטיפול הן למיטב שיקול דעתי,
-          באחריות המזמין/ הבעלות לפעול ע"פ הדרישות בסקר וכל סטייה בביצוע מהדרישות תהיה
-          באחריות המבצע/מזמין העבודה.
-          <br /><br />
-          <strong>הערה:</strong> בעת צירוף אומדנים יש לקחת בחשבון 15% סטייה בעלויות.
+        {/* Professional declaration */}
+        {fmt.professionalDeclarationText && (
+          <div style={{ marginTop: 24, padding: "16px 20px", background: "#f0f4ff", border: "1px solid #bfdbfe", borderRadius: 12, fontSize: 13, lineHeight: 1.9, color: "#1e40af" }}>
+            {fmt.professionalDeclarationText}
+          </div>
+        )}
+
+        {/* Legal notes */}
+        <div style={{ marginTop: 24, padding: "18px 22px", background: "#f8fafc", border: "1px solid #e2e8f0", borderRadius: 12, fontSize: 13, lineHeight: 1.9, color: "#374151" }}>
+          {legalText}
         </div>
 
-        {/* Digital signature */}
-        <div style={{ marginTop: 32, display: "flex", justifyContent: "flex-start", gap: 48 }}>
+        {/* Closing text */}
+        {closingText && (
+          <div style={{ marginTop: 16, fontSize: 13, lineHeight: 1.8, color: "#374151", whiteSpace: "pre-wrap" }}>
+            {closingText}
+          </div>
+        )}
+
+        {/* Signature + stamp */}
+        <div style={{ marginTop: 32, display: "flex", justifyContent: "flex-start", gap: 48, alignItems: "flex-end" }}>
           <div>
-            {report.signatureDataUrl ? (
+            {(fmt.signatureImage || report.signatureDataUrl) ? (
               <img
-                src={report.signatureDataUrl}
+                src={fmt.signatureImage || report.signatureDataUrl}
                 alt="חתימה"
                 style={{ height: 64, maxWidth: 200, objectFit: "contain", display: "block" }}
                 crossOrigin="anonymous"
@@ -258,38 +259,43 @@ export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, sett
               <div style={{ height: 64, width: 200, borderBottom: "1px solid #94a3b8" }} />
             )}
             <div style={{ fontSize: 12, color: "#64748b", marginTop: 4 }}>
-              {report.signatureConsultantName || settings.consultantName || "חתימת היועץ"}
+              {sigName || "חתימת בעל המקצוע"}
               {report.signatureDate ? ` • ${report.signatureDate}` : ""}
             </div>
-            {settings.license && (
-              <div style={{ fontSize: 11, color: "#475569", marginTop: 2 }}>
-                מורשה נגישות מתו"ס · רישוי שירות {settings.license}
-              </div>
+            {certText && (
+              <div style={{ fontSize: 11, color: "#475569", marginTop: 2 }}>{certText}</div>
+            )}
+            {licNum && !certText && (
+              <div style={{ fontSize: 11, color: "#475569", marginTop: 2 }}>רישיון {licNum}</div>
             )}
             {settings.idNumber && (
-              <div style={{ fontSize: 11, color: "#475569" }}>
-                ת.ז. {settings.idNumber}
-              </div>
+              <div style={{ fontSize: 11, color: "#475569" }}>ת.ז. {settings.idNumber}</div>
             )}
           </div>
+
+          {fmt.stampImage && (
+            <div style={{ textAlign: "center" }}>
+              <img
+                src={fmt.stampImage}
+                alt="חותמת"
+                style={{ height: 80, maxWidth: 120, objectFit: "contain", display: "block" }}
+                crossOrigin="anonymous"
+              />
+              <div style={{ fontSize: 11, color: "#64748b", marginTop: 2 }}>חותמת</div>
+            </div>
+          )}
         </div>
       </section>
 
       {/* CHECKLIST PAGE(S) */}
       <section style={{ padding: "48px", background: "#fff" }}>
-        <PageHeader title="חוות דעת מורשה הנגישות" company={settings.companyName} />
+        <PageHeader title={checklistTitle} company={settings.companyName} accentColor={surveyConfig.color} />
 
         <div style={{ marginTop: 24, display: "flex", flexDirection: "column", gap: 14 }}>
           {report.items.map((item, idx) => (
             <div
               key={item.id}
-              style={{
-                border: "1px solid #e2e8f0",
-                borderRadius: 14,
-                padding: "16px 18px",
-                background: "#fff",
-                pageBreakInside: "avoid",
-              }}
+              style={{ border: "1px solid #e2e8f0", borderRadius: 14, padding: "16px 18px", background: "#fff", pageBreakInside: "avoid" }}
             >
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 12 }}>
                 <div style={{ flex: 1 }}>
@@ -297,8 +303,7 @@ export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, sett
                   <div style={{ fontSize: 17, fontWeight: 700, color: "#0f172a", marginTop: 2 }}>{item.title}</div>
                   {(item.standardPart || item.clause) && (
                     <div style={{ fontSize: 11, color: "#1e40af", marginTop: 4, fontWeight: 600 }}>
-                      {item.standardPart}
-                      {item.clause ? ` · סעיף ${item.clause}` : ""}
+                      {item.standardPart}{item.clause ? ` · סעיף ${item.clause}` : ""}
                     </div>
                   )}
                 </div>
@@ -313,22 +318,11 @@ export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, sett
                 const hasRefs = refPhotos.length > 0;
                 if (!hasCurrent && !hasRefs) return null;
                 return (
-                  <div
-                    style={{
-                      marginTop: 10,
-                      display: "grid",
-                      gridTemplateColumns: hasCurrent && hasRefs ? "1fr 1fr" : "1fr",
-                      gap: 10,
-                    }}
-                  >
+                  <div style={{ marginTop: 10, display: "grid", gridTemplateColumns: hasCurrent && hasRefs ? "1fr 1fr" : "1fr", gap: 10 }}>
                     {hasCurrent && (
                       <div>
                         <div style={{ fontSize: 11, color: "#64748b", marginBottom: 4 }}>מצב קיים</div>
-                        <img
-                          src={item.photo}
-                          alt={item.title}
-                          style={{ width: "100%", maxHeight: 260, objectFit: "cover", borderRadius: 10, border: "1px solid #e2e8f0" }}
-                        />
+                        <img src={item.photo} alt={item.title} style={{ width: "100%", maxHeight: 260, objectFit: "cover", borderRadius: 10, border: "1px solid #e2e8f0" }} />
                       </div>
                     )}
                     {hasRefs && (
@@ -337,18 +331,9 @@ export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, sett
                           פרט מבוקש{item.referenceLabel ? `: ${item.referenceLabel}` : ""}
                           {refPhotos.length > 1 ? ` (${refPhotos.length})` : ""}
                         </div>
-                        <div style={{
-                          display: "grid",
-                          gridTemplateColumns: refPhotos.length > 1 ? "1fr 1fr" : "1fr",
-                          gap: 6,
-                        }}>
+                        <div style={{ display: "grid", gridTemplateColumns: refPhotos.length > 1 ? "1fr 1fr" : "1fr", gap: 6 }}>
                           {refPhotos.map((p, i) => (
-                            <img
-                              key={i}
-                              src={p}
-                              alt={item.referenceLabel || `פרט ${i + 1}`}
-                              style={{ width: "100%", maxHeight: 260, objectFit: "contain", background: "#f8fafc", borderRadius: 10, border: "1px solid #bfdbfe" }}
-                            />
+                            <img key={i} src={p} alt={item.referenceLabel || `פרט ${i + 1}`} style={{ width: "100%", maxHeight: 260, objectFit: "contain", background: "#f8fafc", borderRadius: 10, border: "1px solid #bfdbfe" }} />
                           ))}
                         </div>
                       </div>
@@ -358,54 +343,20 @@ export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, sett
               })()}
 
               {item.notes && (
-                <div
-                  style={{
-                    marginTop: 10,
-                    fontSize: 14,
-                    color: "#334155",
-                    background: "#f8fafc",
-                    borderRadius: 10,
-                    padding: "10px 12px",
-                    whiteSpace: "pre-wrap",
-                    lineHeight: 1.6,
-                  }}
-                >
+                <div style={{ marginTop: 10, fontSize: 14, color: "#334155", background: "#f8fafc", borderRadius: 10, padding: "10px 12px", whiteSpace: "pre-wrap", lineHeight: 1.6 }}>
                   {item.notes}
                 </div>
               )}
 
               {item.status === "non_compliant" && item.suggestedCorrection && (
-                <div
-                  style={{
-                    marginTop: 10,
-                    background: "#eff6ff",
-                    border: "1px solid #bfdbfe",
-                    borderRadius: 10,
-                    padding: "10px 12px",
-                    fontSize: 13,
-                    color: "#1e40af",
-                    lineHeight: 1.6,
-                  }}
-                >
-                  <span style={{ fontWeight: 700, display: "block", marginBottom: 2 }}>📋 הצעת תיקון ע"פ ת"י 1918:</span>
+                <div style={{ marginTop: 10, background: "#eff6ff", border: "1px solid #bfdbfe", borderRadius: 10, padding: "10px 12px", fontSize: 13, color: "#1e40af", lineHeight: 1.6 }}>
+                  <span style={{ fontWeight: 700, display: "block", marginBottom: 2 }}>📋 {corrLabel}</span>
                   {item.suggestedCorrection}
                 </div>
               )}
 
               {item.status === "non_compliant" && (item.estimatedCost || 0) > 0 && (
-                <div
-                  style={{
-                    marginTop: 10,
-                    display: "inline-block",
-                    background: "#fef2f2",
-                    color: "#991b1b",
-                    border: "1px solid #fecaca",
-                    fontSize: 13,
-                    padding: "6px 10px",
-                    borderRadius: 999,
-                    fontWeight: 600,
-                  }}
-                >
+                <div style={{ marginTop: 10, display: "inline-block", background: "#fef2f2", color: "#991b1b", border: "1px solid #fecaca", fontSize: 13, padding: "6px 10px", borderRadius: 999, fontWeight: 600 }}>
                   אומדן עלות תיקון: {formatCurrency(item.estimatedCost)}
                 </div>
               )}
@@ -415,80 +366,27 @@ export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, sett
 
         {/* Opinion summary */}
         {report.accessibilityComplianceStatus && (
-          <div
-            style={{
-              marginTop: 32,
-              border: "2px solid #1e3a8a",
-              borderRadius: 14,
-              padding: "20px 24px",
-              background: "#f0f4ff",
-              pageBreakInside: "avoid",
-            }}
-          >
+          <div style={{ marginTop: 32, border: "2px solid #1e3a8a", borderRadius: 14, padding: "20px 24px", background: "#f0f4ff", pageBreakInside: "avoid" }}>
             <h3 style={{ margin: "0 0 12px", fontSize: 17, fontWeight: 800, color: "#1e3a8a" }}>
-              סיכום חוות הדעת של מורשה הנגישות:
+              {opinionTitle}
             </h3>
             <p style={{ margin: 0, fontSize: 15, color: "#0f172a", lineHeight: 1.7 }}>
-              האם בוצעו בעסק כל התאמות הנגישות וההוראות החלות עליו לפי התקנות?
+              {opinionQ}
             </p>
             <div style={{ marginTop: 14, display: "flex", gap: 16 }}>
-              <div
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 8,
-                  fontSize: 16,
-                  fontWeight: 700,
-                  color: report.accessibilityComplianceStatus === "yes" ? "#15803d" : "#6b7280",
-                }}
-              >
-                <span style={{
-                  display: "inline-block",
-                  width: 20,
-                  height: 20,
-                  borderRadius: "50%",
-                  border: `2px solid ${report.accessibilityComplianceStatus === "yes" ? "#15803d" : "#d1d5db"}`,
-                  background: report.accessibilityComplianceStatus === "yes" ? "#15803d" : "transparent",
-                  flexShrink: 0,
-                }} />
+              <div style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 16, fontWeight: 700, color: report.accessibilityComplianceStatus === "yes" ? "#15803d" : "#6b7280" }}>
+                <span style={{ display: "inline-block", width: 20, height: 20, borderRadius: "50%", border: `2px solid ${report.accessibilityComplianceStatus === "yes" ? "#15803d" : "#d1d5db"}`, background: report.accessibilityComplianceStatus === "yes" ? "#15803d" : "transparent", flexShrink: 0 }} />
                 כן
               </div>
-              <div
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 8,
-                  fontSize: 16,
-                  fontWeight: 700,
-                  color: report.accessibilityComplianceStatus === "no" ? "#b91c1c" : "#6b7280",
-                }}
-              >
-                <span style={{
-                  display: "inline-block",
-                  width: 20,
-                  height: 20,
-                  borderRadius: "50%",
-                  border: `2px solid ${report.accessibilityComplianceStatus === "no" ? "#b91c1c" : "#d1d5db"}`,
-                  background: report.accessibilityComplianceStatus === "no" ? "#b91c1c" : "transparent",
-                  flexShrink: 0,
-                }} />
+              <div style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 16, fontWeight: 700, color: report.accessibilityComplianceStatus === "no" ? "#b91c1c" : "#6b7280" }}>
+                <span style={{ display: "inline-block", width: 20, height: 20, borderRadius: "50%", border: `2px solid ${report.accessibilityComplianceStatus === "no" ? "#b91c1c" : "#d1d5db"}`, background: report.accessibilityComplianceStatus === "no" ? "#b91c1c" : "transparent", flexShrink: 0 }} />
                 לא
               </div>
             </div>
           </div>
         )}
 
-        <div
-          style={{
-            marginTop: 36,
-            paddingTop: 16,
-            borderTop: "1px solid #e2e8f0",
-            display: "flex",
-            justifyContent: "space-between",
-            fontSize: 12,
-            color: "#64748b",
-          }}
-        >
+        <div style={{ marginTop: 36, paddingTop: 16, borderTop: "1px solid #e2e8f0", display: "flex", justifyContent: "space-between", fontSize: 12, color: "#64748b" }}>
           <span>{settings.companyName}</span>
           <span>הופק בתאריך {formatHebrewDate(new Date().toISOString().slice(0, 10))}</span>
         </div>
@@ -508,9 +406,9 @@ function Field({ label, value, dark }: { label: string; value?: string; dark?: b
   );
 }
 
-function PageHeader({ title, company }: { title: string; company: string }) {
+function PageHeader({ title, company, accentColor }: { title: string; company: string; accentColor?: string }) {
   return (
-    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: "3px solid #2563eb", paddingBottom: 12 }}>
+    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: `3px solid ${accentColor ?? "#2563eb"}`, paddingBottom: 12 }}>
       <h2 style={{ margin: 0, fontSize: 28, color: "#1e3a8a", fontWeight: 800 }}>{title}</h2>
       <div style={{ fontSize: 13, color: "#64748b" }}>{company}</div>
     </div>
@@ -535,17 +433,7 @@ function StatusPill({ status }: { status: string }) {
   };
   const c = map[status] || map.pending;
   return (
-    <span
-      style={{
-        background: c.bg,
-        color: c.fg,
-        fontSize: 13,
-        fontWeight: 700,
-        padding: "6px 12px",
-        borderRadius: 999,
-        whiteSpace: "nowrap",
-      }}
-    >
+    <span style={{ background: c.bg, color: c.fg, fontSize: 13, fontWeight: 700, padding: "6px 12px", borderRadius: 999, whiteSpace: "nowrap" }}>
       {statusLabel(status)}
     </span>
   );
