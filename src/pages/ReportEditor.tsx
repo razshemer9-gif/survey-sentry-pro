@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { BookOpen, ArrowRight, Download, Eye, FileDown, Loader2, PenLine, Plus, Save, Trash2, X } from "lucide-react";
+import { ArrowRight, Download, Eye, FileDown, Loader2, PenLine, Plus, Save, Trash2, X } from "lucide-react";
 import { v4 as uuid } from "uuid";
 import { toast } from "sonner";
 
@@ -35,10 +35,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { buildPdfFileName, generateReportPdf, statusLabel } from "@/lib/pdf";
 import { formatCurrency } from "@/lib/image";
 import { cn } from "@/lib/utils";
-import { findMatchingRequirement } from "@/lib/matching";
 import { SignaturePad } from "@/components/SignaturePad";
-import { listRequirements } from "@/lib/standards-storage";
-import { AccessibilityRequirement } from "@/lib/standards-types";
 
 const STATUS_COLOR: Record<ComplianceStatus, string> = {
   compliant: "bg-success/15 text-success border-success/30",
@@ -63,27 +60,7 @@ export default function ReportEditor() {
   const [generating, setGenerating] = useState(false);
   const [settings, setSettings] = useState<ConsultantSettings>({ ...DEFAULT_SETTINGS });
   const [signatureOpen, setSignatureOpen] = useState(false);
-  const [libraryOpen, setLibraryOpen] = useState(false);
-  const [libraryItems, setLibraryItems] = useState<AccessibilityRequirement[]>([]);
-  const libraryItemsRef = useRef<AccessibilityRequirement[]>([]);
-  const [librarySearch, setLibrarySearch] = useState("");
   const [refPickerItemId, setRefPickerItemId] = useState<string | null>(null);
-
-  const openRefPicker = async (itemId: string) => {
-    if (libraryItemsRef.current.length === 0) {
-      const items = await listRequirements();
-      setLibraryItems(items);
-      libraryItemsRef.current = items;
-    }
-    setRefPickerItemId(itemId);
-  };
-
-  const findMatch = (title: string) =>
-    findMatchingRequirement(
-      title,
-      libraryItemsRef.current.length > 0 ? libraryItemsRef.current : undefined,
-      report?.surveyType ?? "accessibility",
-    );
   const printRef = useRef<HTMLDivElement>(null);
   const autoSaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const isFirstLoad = useRef(true);
@@ -306,26 +283,6 @@ export default function ReportEditor() {
                 ))}
               </div>
 
-              {/* Suggested defect text from matched standard requirement */}
-              {item.status === "non_compliant" && (() => {
-                const req = findMatch(item.title);
-                if (!req) return null;
-                return (
-                  <div className="mb-2 rounded-xl border border-amber-200 bg-amber-50 p-3 animate-fade-in">
-                    <p className="text-[10px] font-semibold text-amber-700 mb-1">הצעה לתיאור הממצא (מת"י 1918)</p>
-                    <p className="text-xs text-amber-900 leading-relaxed mb-2">{req.defectText}</p>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      className="h-7 text-xs border-amber-300 text-amber-800 hover:bg-amber-100"
-                      onClick={() => updateItem(item.id, { notes: item.notes ? `${item.notes}\n${req.defectText}` : req.defectText })}
-                    >
-                      הכנס לממצאים
-                    </Button>
-                  </div>
-                );
-              })()}
-
               <Textarea
                 value={item.notes}
                 onChange={(e) => updateItem(item.id, { notes: e.target.value })}
@@ -333,7 +290,6 @@ export default function ReportEditor() {
                 rows={2}
                 className="mb-2"
               />
-
 
               <div className="mb-2">
                 <Label className="mb-1 block text-xs text-muted-foreground">תמונה (מצב קיים)</Label>
@@ -383,11 +339,11 @@ export default function ReportEditor() {
                         </div>
                       )}
                       <button
-                        onClick={() => openRefPicker(item.id)}
+                        onClick={() => setRefPickerItemId(item.id)}
                         className="w-full rounded-xl border-2 border-dashed border-primary/40 py-2 flex items-center justify-center gap-1 text-primary hover:bg-primary/5 transition-colors"
                       >
                         <Plus className="h-4 w-4" />
-                        <span className="text-xs">{photos.length > 0 ? "הוסף תמונת פרט נוספת" : "בחר תמונת פרט מהמאגר"}</span>
+                        <span className="text-xs">{photos.length > 0 ? "הוסף תמונת פרט נוספת" : "הוסף תמונת פרט"}</span>
                       </button>
                     </div>
                   );
@@ -395,49 +351,31 @@ export default function ReportEditor() {
               </div>
 
               <div className="flex flex-wrap items-center gap-2">
-                  <Label className="shrink-0 text-xs text-muted-foreground">אומדן עלות (₪)</Label>
-                  <Input
-                    type="number"
-                    inputMode="numeric"
-                    value={item.estimatedCost || ""}
-                    onChange={(e) => updateItem(item.id, { estimatedCost: Number(e.target.value) || 0 })}
-                    className="h-9 w-28 min-w-0"
-                    placeholder="0"
+                <Label className="shrink-0 text-xs text-muted-foreground">אומדן עלות (₪)</Label>
+                <Input
+                  type="number"
+                  inputMode="numeric"
+                  value={item.estimatedCost || ""}
+                  onChange={(e) => updateItem(item.id, { estimatedCost: Number(e.target.value) || 0 })}
+                  className="h-9 w-28 min-w-0"
+                  placeholder="0"
+                />
+                <label className="flex shrink-0 items-center gap-1.5 text-xs text-muted-foreground cursor-pointer select-none min-h-[44px]">
+                  <input
+                    type="checkbox"
+                    checked={!!item.includeInCost}
+                    onChange={(e) => updateItem(item.id, { includeInCost: e.target.checked })}
+                    className="h-4 w-4 accent-primary"
                   />
-                  <label className="flex shrink-0 items-center gap-1.5 text-xs text-muted-foreground cursor-pointer select-none min-h-[44px]">
-                    <input
-                      type="checkbox"
-                      checked={!!item.includeInCost}
-                      onChange={(e) => updateItem(item.id, { includeInCost: e.target.checked })}
-                      className="h-4 w-4 accent-primary"
-                    />
-                    כלול באומדן
-                  </label>
-                </div>
-
+                  כלול באומדן
+                </label>
+              </div>
             </div>
           ))}
 
-          <div className="grid grid-cols-2 gap-2">
-            <Button onClick={addItem} variant="outline" className="gap-2 rounded-2xl border-dashed">
-              <Plus className="h-4 w-4" /> ממצא חדש
-            </Button>
-            <Button
-              variant="outline"
-              className="gap-2 rounded-2xl border-dashed"
-              onClick={async () => {
-                if (libraryItemsRef.current.length === 0) {
-                  const items = await listRequirements();
-                  setLibraryItems(items);
-                  libraryItemsRef.current = items;
-                }
-                setLibrarySearch("");
-                setLibraryOpen(true);
-              }}
-            >
-              <BookOpen className="h-4 w-4" /> מהמאגר
-            </Button>
-          </div>
+          <Button onClick={addItem} variant="outline" className="w-full gap-2 rounded-2xl border-dashed">
+            <Plus className="h-4 w-4" /> ממצא חדש
+          </Button>
 
           <div className="rounded-2xl bg-primary text-primary-foreground p-4 shadow-glow">
             <div className="flex items-center justify-between">
@@ -480,7 +418,7 @@ export default function ReportEditor() {
         </TabsContent>
       </Tabs>
 
-      {/* Bottom action bar — sits above BottomNav, accounts for safe-area */}
+      {/* Bottom action bar */}
       <div className="fixed inset-x-0 z-30 mx-auto max-w-lg px-4" style={{ bottom: 'calc(3.5rem + env(safe-area-inset-bottom, 0px))' }}>
         <div className="grid grid-cols-3 gap-2 rounded-2xl bg-card/95 p-2 shadow-pop backdrop-blur-md border border-border">
           <Button variant="outline" onClick={() => setPreviewOpen(true)} className="gap-1.5 rounded-xl text-xs">
@@ -497,7 +435,7 @@ export default function ReportEditor() {
         </div>
       </div>
 
-      {/* Preview dialog (uses a non-ref scaled clone) */}
+      {/* Preview dialog */}
       <Dialog open={previewOpen} onOpenChange={setPreviewOpen}>
         <DialogContent className="max-h-[92vh] max-w-[95vw] overflow-auto p-2 sm:max-w-2xl" dir="rtl">
           <DialogHeader className="px-2">
@@ -554,65 +492,7 @@ export default function ReportEditor() {
         </DialogContent>
       </Dialog>
 
-      {/* Library picker dialog */}
-      <Dialog open={libraryOpen} onOpenChange={setLibraryOpen}>
-        <DialogContent className="max-h-[85vh] max-w-lg flex flex-col gap-0 p-0" dir="rtl">
-          <DialogHeader className="px-4 pt-4 pb-2">
-            <DialogTitle>הוסף ממצא מהמאגר</DialogTitle>
-          </DialogHeader>
-          <div className="px-4 pb-2">
-            <Input
-              placeholder="חיפוש..."
-              value={librarySearch}
-              onChange={(e) => setLibrarySearch(e.target.value)}
-              autoFocus
-            />
-          </div>
-          <div className="overflow-y-auto flex-1 px-4 pb-4 space-y-2">
-            {libraryItems
-              .filter((r) => (r.surveyType ?? "accessibility") === (report.surveyType ?? "accessibility"))
-              .filter((r) =>
-                !librarySearch ||
-                r.requirementTitle.includes(librarySearch) ||
-                r.subCategory.includes(librarySearch) ||
-                r.tags.some((t) => t.includes(librarySearch))
-              )
-              .map((req) => (
-                <button
-                  key={req.id}
-                  className="w-full text-right rounded-xl border border-border bg-card p-3 hover:bg-muted transition-colors"
-                  onClick={() => {
-                    const found = findMatch(req.requirementTitle);
-                    const photos = (req.referencePhotos && req.referencePhotos.length > 0)
-                      ? req.referencePhotos
-                      : (req.referencePhoto ? [req.referencePhoto] : undefined);
-                    const newItem = {
-                      id: uuid(),
-                      title: req.requirementTitle,
-                      status: "pending" as const,
-                      notes: req.defectText,
-                      estimatedCost: 0,
-                      referencePhoto: photos?.[0],
-                      referencePhotos: photos,
-                      suggestedCorrection: req.correctionText,
-                      matchedRequirementId: req.id,
-                      standardPart: req.standardPart,
-                      clause: req.clause,
-                    };
-                    setReport((r) => r ? { ...r, items: [...r.items, newItem] } : r);
-                    setLibraryOpen(false);
-                    toast.success(`נוסף: ${req.requirementTitle}`);
-                  }}
-                >
-                  <p className="text-sm font-semibold">{req.requirementTitle}</p>
-                  <p className="text-xs text-muted-foreground mt-0.5">{req.subCategory} · {req.standardPart}</p>
-                </button>
-              ))}
-          </div>
-        </DialogContent>
-      </Dialog>
-
-      {/* Reference photo library picker */}
+      {/* Reference photo picker */}
       <ReferencePhotoPicker
         open={refPickerItemId !== null}
         onClose={() => setRefPickerItemId(null)}
@@ -629,16 +509,6 @@ export default function ReportEditor() {
             referenceLabel: label,
           });
         }}
-        globalPhotos={libraryItems
-          .flatMap((r) => {
-            const photos = r.referencePhotos && r.referencePhotos.length > 0
-              ? r.referencePhotos
-              : (r.referencePhoto ? [r.referencePhoto] : []);
-            return photos.map((p, i) => ({
-              label: photos.length > 1 ? `${r.requirementTitle} (${i + 1})` : r.requirementTitle,
-              photo: p,
-            }));
-          })}
         personalPhotos={settings.referencePhotos ?? []}
         onAddPersonal={async (entry) => {
           const newSettings = { ...settings, referencePhotos: [...(settings.referencePhotos ?? []), entry] };
@@ -665,7 +535,6 @@ function TemplateSwap({ onLoad, surveyType }: { onLoad: (items: ChecklistItem[])
   useEffect(() => {
     listTemplates().then(setTemplates).catch(() => setTemplates([]));
   }, []);
-  // Show templates that match the report's surveyType, or templates without a type (legacy)
   const visibleTemplates = templates.filter((t) => !t.surveyType || !surveyType || t.surveyType === surveyType);
   return (
     <div className="rounded-2xl border border-border bg-primary-soft/40 p-3">

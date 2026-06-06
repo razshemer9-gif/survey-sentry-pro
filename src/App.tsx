@@ -9,7 +9,6 @@ import NotFound from "./pages/NotFound.tsx";
 import ReportEditor from "./pages/ReportEditor.tsx";
 import Settings from "./pages/Settings.tsx";
 import Templates from "./pages/Templates.tsx";
-import Standards from "./pages/Standards.tsx";
 import AuthPage from "./pages/AuthPage.tsx";
 
 const queryClient = new QueryClient();
@@ -45,7 +44,6 @@ const App = () => (
             <Route path="/report/:id" element={<ProtectedRoute><ReportEditor /></ProtectedRoute>} />
             <Route path="/templates" element={<ProtectedRoute><Templates /></ProtectedRoute>} />
             <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
-            <Route path="/standards" element={<ProtectedRoute><Standards /></ProtectedRoute>} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
