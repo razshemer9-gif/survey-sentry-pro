@@ -7,7 +7,6 @@ import {
   SurveyReport,
   SurveyType,
 } from "./types";
-import { AccessibilityRequirement } from "./standards-types";
 import { supabase } from "./supabase";
 
 const K_TEMPLATES = "ans.templates.v1";
@@ -101,33 +100,6 @@ export function newReport(surveyType: SurveyType = "accessibility"): SurveyRepor
   };
 }
 
-// ---------- Requirements → Report ----------
-export async function addRequirementToReport(
-  reportId: string,
-  req: AccessibilityRequirement,
-): Promise<void> {
-  const report = await getReport(reportId);
-  if (!report) throw new Error("Report not found");
-  const photos = (req.referencePhotos && req.referencePhotos.length > 0)
-    ? req.referencePhotos
-    : (req.referencePhoto ? [req.referencePhoto] : undefined);
-  const newItem = {
-    id: uuid(),
-    title: req.requirementTitle,
-    status: "pending" as const,
-    notes: req.defectText,
-    estimatedCost: 0,
-    referencePhoto: photos?.[0],
-    referencePhotos: photos,
-    suggestedCorrection: req.correctionText || undefined,
-    matchedRequirementId: req.id,
-    standardPart: req.standardPart,
-    clause: req.clause,
-  };
-  const updated: SurveyReport = { ...report, items: [...report.items, newItem] };
-  await saveReport(updated);
-}
-
 // ---------- Templates (Supabase) ----------
 const BUILT_IN_TEMPLATES: ChecklistTemplate[] = [
   {
@@ -168,8 +140,6 @@ export async function listTemplates(): Promise<ChecklistTemplate[]> {
 export async function saveTemplate(t: ChecklistTemplate): Promise<void> {
   if (t.builtIn) return;
   const userId = await getUserId();
-  // Strip base64 photos from items — too large to store inline.
-  // matchedRequirementId is preserved so photos can be re-fetched from the standards DB.
   const safeItems = t.items.map(({ referencePhoto, referencePhotos, ...rest }) => rest);
   const now = Date.now();
   const { error } = await supabase.from("user_templates").upsert({
@@ -193,7 +163,6 @@ export async function deleteTemplate(id: string): Promise<void> {
   if (error) throw error;
 }
 
-// One-time migration: push any local-only templates up to Supabase, then clear.
 export async function migrateLocalTemplates(): Promise<number> {
   const raw = localStorage.getItem(K_TEMPLATES);
   if (!raw) return 0;

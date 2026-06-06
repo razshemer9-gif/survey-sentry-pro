@@ -117,7 +117,7 @@ export default function Settings() {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-semibold">מצב מנהל</p>
-              <p className="text-xs text-muted-foreground">מאפשר עריכה, הוספה ומחיקה של דרישות במאגר וצפייה במקור הפנימי</p>
+              <p className="text-xs text-muted-foreground">מאפשר עריכה, הוספה ומחיקה של דרישות נגישות וצפייה במקור הפנימי</p>
             </div>
             <Switch checked={admin} onCheckedChange={toggleAdmin} />
           </div>

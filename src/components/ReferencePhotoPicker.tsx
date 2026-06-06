@@ -11,25 +11,19 @@ interface Props {
   open: boolean;
   onClose: () => void;
   onSelect: (photo: string, label: string) => void;
-  // Global photos from standards library
-  globalPhotos: { label: string; photo: string }[];
-  // User's personal library
   personalPhotos: ReferencePhotoEntry[];
   onAddPersonal: (entry: ReferencePhotoEntry) => void;
   onDeletePersonal: (id: string) => void;
 }
 
 export function ReferencePhotoPicker({
-  open, onClose, onSelect, globalPhotos, personalPhotos, onAddPersonal, onDeletePersonal,
+  open, onClose, onSelect, personalPhotos, onAddPersonal, onDeletePersonal,
 }: Props) {
   const [search, setSearch] = useState("");
   const [addingLabel, setAddingLabel] = useState("");
   const [addingPhoto, setAddingPhoto] = useState<string | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
 
-  const filteredGlobal = globalPhotos.filter((p) =>
-    !search || p.label.includes(search)
-  );
   const filteredPersonal = personalPhotos.filter((p) =>
     !search || p.label.includes(search)
   );
@@ -72,7 +66,6 @@ export function ReferencePhotoPicker({
         </div>
 
         <div className="overflow-y-auto flex-1 px-4 pb-4 space-y-4">
-          {/* Personal library */}
           <div>
             <p className="text-xs font-semibold text-primary mb-2">הספרייה שלי</p>
             <div className="grid grid-cols-3 gap-2">
@@ -95,7 +88,6 @@ export function ReferencePhotoPicker({
                 </div>
               ))}
 
-              {/* Add new personal photo */}
               {!addingPhoto ? (
                 <button
                   onClick={() => fileRef.current?.click()}
@@ -122,27 +114,8 @@ export function ReferencePhotoPicker({
             </div>
           </div>
 
-          {/* Global photos from standards library */}
-          {filteredGlobal.length > 0 && (
-            <div>
-              <p className="text-xs font-semibold text-muted-foreground mb-2">מאגר ת"י 1918</p>
-              <div className="grid grid-cols-3 gap-2">
-                {filteredGlobal.map((p, i) => (
-                  <button
-                    key={i}
-                    className="w-full rounded-xl overflow-hidden border-2 border-transparent hover:border-primary transition-all"
-                    onClick={() => { onSelect(p.photo, p.label); onClose(); }}
-                  >
-                    <img src={p.photo} alt={p.label} className="w-full aspect-square object-cover" />
-                    <p className="text-[10px] text-center py-1 truncate px-1">{p.label}</p>
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {filteredGlobal.length === 0 && filteredPersonal.length === 0 && !addingPhoto && (
-            <p className="text-center text-sm text-muted-foreground py-8">אין תמונות פרט זמינות עדיין</p>
+          {filteredPersonal.length === 0 && !addingPhoto && (
+            <p className="text-center text-sm text-muted-foreground py-8">אין תמונות פרט בספרייה עדיין</p>
           )}
         </div>
 
