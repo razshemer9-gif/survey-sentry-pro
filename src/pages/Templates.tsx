@@ -26,6 +26,7 @@ export default function Templates() {
   const [templates, setTemplates] = useState<ChecklistTemplate[]>([]);
   const [editing, setEditing] = useState<ChecklistTemplate | null>(null);
   const [editingItem, setEditingItem] = useState<{ item: TemplateItem; index: number } | null>(null);
+  const [addPhotoKey, setAddPhotoKey] = useState(0);
 
   useEffect(() => {
     (async () => {
@@ -362,15 +363,82 @@ export default function Templates() {
                 />
               </div>
 
-              <div className="space-y-1.5">
-                <Label className="text-xs">תמונת פרט</Label>
-                <PhotoPicker
-                  value={editingItem.item.referencePhoto}
-                  onChange={(u) =>
-                    setEditingItem({ ...editingItem, item: { ...editingItem.item, referencePhoto: u || undefined } })
-                  }
-                  label="צרף תמונת פרט"
-                />
+              <div className="space-y-2">
+                <Label className="text-xs">תמונות פרט</Label>
+                {(() => {
+                  const photos = editingItem.item.referencePhotos?.length
+                    ? editingItem.item.referencePhotos
+                    : editingItem.item.referencePhoto
+                    ? [editingItem.item.referencePhoto]
+                    : [];
+
+                  const setPhotos = (next: string[]) =>
+                    setEditingItem({
+                      ...editingItem,
+                      item: {
+                        ...editingItem.item,
+                        referencePhotos: next.length > 0 ? next : undefined,
+                        referencePhoto: next[0] ?? undefined,
+                      },
+                    });
+
+                  return (
+                    <>
+                      {photos.map((photo, i) => (
+                        <div key={i} className="flex items-center gap-2 rounded-xl border border-border bg-muted/30 p-2">
+                          <img
+                            src={photo}
+                            alt={`פרט ${i + 1}`}
+                            className="h-16 w-24 shrink-0 rounded-lg object-contain border border-border bg-white"
+                          />
+                          <div className="flex flex-col gap-0.5 mr-auto">
+                            <button
+                              onClick={() => {
+                                const next = [...photos];
+                                [next[i - 1], next[i]] = [next[i], next[i - 1]];
+                                setPhotos(next);
+                              }}
+                              disabled={i === 0}
+                              className="h-6 w-6 rounded text-muted-foreground hover:bg-muted disabled:opacity-30"
+                              aria-label="העלה"
+                            >
+                              <ChevronUp className="h-3.5 w-3.5 mx-auto" />
+                            </button>
+                            <button
+                              onClick={() => {
+                                const next = [...photos];
+                                [next[i], next[i + 1]] = [next[i + 1], next[i]];
+                                setPhotos(next);
+                              }}
+                              disabled={i === photos.length - 1}
+                              className="h-6 w-6 rounded text-muted-foreground hover:bg-muted disabled:opacity-30"
+                              aria-label="הוריד"
+                            >
+                              <ChevronDown className="h-3.5 w-3.5 mx-auto" />
+                            </button>
+                          </div>
+                          <button
+                            onClick={() => setPhotos(photos.filter((_, idx) => idx !== i))}
+                            className="rounded p-1 text-destructive hover:bg-destructive/10"
+                            aria-label="מחק תמונה"
+                          >
+                            <X className="h-4 w-4" />
+                          </button>
+                        </div>
+                      ))}
+                      <PhotoPicker
+                        key={addPhotoKey}
+                        value={undefined}
+                        onChange={(url) => {
+                          if (!url) return;
+                          setPhotos([...photos, url]);
+                          setAddPhotoKey((k) => k + 1);
+                        }}
+                        label="+ הוסף תמונת פרט"
+                      />
+                    </>
+                  );
+                })()}
               </div>
             </div>
           )}
