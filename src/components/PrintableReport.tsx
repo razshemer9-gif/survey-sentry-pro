@@ -98,7 +98,7 @@ export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, sett
             <img
               src={report.coverPhoto}
               alt="cover"
-              style={{ maxWidth: "100%", height: "auto", maxHeight: 380, display: "block", borderRadius: 16, boxShadow: "0 20px 40px rgba(0,0,0,0.25)" }}
+              style={{ maxWidth: "100%", height: "auto", maxHeight: 520, display: "block", borderRadius: 16, boxShadow: "0 20px 40px rgba(0,0,0,0.25)" }}
             />
           </div>
         )}
@@ -204,7 +204,7 @@ export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, sett
                 style={{ border: "1px solid #e2e8f0", borderRadius: 14, overflow: "hidden", background: "#fff", pageBreakInside: "avoid" }}
               >
                 {/* ── Section 1: Template / professional data ── */}
-                <div style={{ padding: "14px 18px 12px", background: "#f8fafc", borderBottom: "1px solid #e2e8f0" }}>
+                <div data-pdf-no-break="" style={{ padding: "14px 18px 12px", background: "#f8fafc", borderBottom: "1px solid #e2e8f0" }}>
                   <div style={{ fontSize: 11, color: "#64748b", marginBottom: 2 }}>ממצא {idx + 1}</div>
                   <div style={{ fontSize: 17, fontWeight: 700, color: "#0f172a" }}>{item.title}</div>
                   {(item.standardPart || item.clause) && (
@@ -213,24 +213,25 @@ export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, sett
                     </div>
                   )}
                   {item.notes && (
-                    <div style={{ marginTop: 8, fontSize: 13, color: "#334155", lineHeight: 1.6, whiteSpace: "pre-wrap" }}>
+                    <div data-pdf-no-break="" style={{ marginTop: 8, fontSize: 13, color: "#334155", lineHeight: 1.6, whiteSpace: "pre-wrap" }}>
                       <span style={{ fontWeight: 700 }}>ממצא: </span>{item.notes}
                     </div>
                   )}
                   {item.suggestedCorrection && (
-                    <div style={{ marginTop: 6, fontSize: 13, color: "#1e40af", lineHeight: 1.6, whiteSpace: "pre-wrap" }}>
+                    <div data-pdf-no-break="" style={{ marginTop: 6, fontSize: 13, color: "#1e40af", lineHeight: 1.6, whiteSpace: "pre-wrap" }}>
                       <span style={{ fontWeight: 700 }}>פתרון: </span>{item.suggestedCorrection}
                     </div>
                   )}
                   {refPhotos.length > 0 && (
-                    <div style={{ marginTop: 10, display: "grid", gridTemplateColumns: refPhotos.length > 1 ? "1fr 1fr" : "200px", gap: 8 }}>
+                    <div data-pdf-no-break="" style={{ marginTop: 10, display: "grid", gridTemplateColumns: refPhotos.length > 1 ? "1fr 1fr" : "200px", gap: 8 }}>
                       {refPhotos.map((p, i) => (
-                        <img
-                          key={i}
-                          src={p}
-                          alt={item.referenceLabel || `פרט ${i + 1}`}
-                          style={{ maxWidth: "100%", height: "auto", display: "block", background: "#fff", borderRadius: 8, border: "1px solid #bfdbfe" }}
-                        />
+                        <div key={i} data-pdf-no-break="">
+                          <img
+                            src={p}
+                            alt={item.referenceLabel || `פרט ${i + 1}`}
+                            style={{ maxWidth: "100%", height: "auto", display: "block", background: "#fff", borderRadius: 8, border: "1px solid #bfdbfe" }}
+                          />
+                        </div>
                       ))}
                     </div>
                   )}
@@ -238,11 +239,11 @@ export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, sett
 
                 {/* ── Section 2: Client / field data ── */}
                 {(item.photo || item.fieldNotes || (item.estimatedCost || 0) > 0) && (
-                  <div style={{ padding: "12px 18px" }}>
+                  <div data-pdf-no-break="" style={{ padding: "12px 18px" }}>
                     {(item.photo || item.fieldNotes) && (
                       <div style={{ display: "grid", gridTemplateColumns: item.photo && item.fieldNotes ? "1fr 1fr" : "1fr", gap: 12, alignItems: "start" }}>
                         {item.photo && (
-                          <div>
+                          <div data-pdf-no-break="">
                             <div style={{ fontSize: 11, color: "#64748b", marginBottom: 4, fontWeight: 600 }}>מצב קיים</div>
                             <img
                               src={item.photo}
@@ -252,7 +253,7 @@ export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, sett
                           </div>
                         )}
                         {item.fieldNotes && (
-                          <div>
+                          <div data-pdf-no-break="">
                             <div style={{ fontSize: 11, color: "#64748b", marginBottom: 4, fontWeight: 600 }}>פירוט מצב קיים</div>
                             <div style={{ fontSize: 13, color: "#334155", lineHeight: 1.7, whiteSpace: "pre-wrap", background: "#f8fafc", borderRadius: 8, padding: "10px 12px", border: "1px solid #e2e8f0" }}>
                               {item.fieldNotes}
