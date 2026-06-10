@@ -480,7 +480,7 @@ export default function ReportEditor() {
       />
 
       {/* Hidden printable mount used for PDF rasterization */}
-      <div className="pointer-events-none fixed -left-[10000px] top-0 opacity-0">
+      <div className="pointer-events-none absolute -left-[10000px] top-0">
         <PrintableReport ref={printRef} report={report} settings={settings} />
       </div>
     </AppShell>

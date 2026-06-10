@@ -19,25 +19,57 @@ export async function generateReportPdf(
     await (document as any).fonts.ready;
   }
 
+  // Collect no-break element ranges (CSS px, relative to element top) BEFORE rasterising.
+  const containerTop = element.getBoundingClientRect().top;
+  const noBreakCss: Array<{ top: number; bottom: number }> = [];
+  element.querySelectorAll("[data-pdf-no-break]").forEach((el) => {
+    const r = (el as HTMLElement).getBoundingClientRect();
+    noBreakCss.push({ top: r.top - containerTop, bottom: r.bottom - containerTop });
+  });
+
   const canvas = await html2canvas(element, {
     scale: 2,
     backgroundColor: "#ffffff",
     useCORS: true,
+    allowTaint: true,
     windowWidth: element.scrollWidth,
   });
+
+  // Scale factor between CSS pixels and canvas pixels.
+  const canvasScale = canvas.width / element.scrollWidth;
+  const noBreakPx = noBreakCss.map(({ top, bottom }) => ({
+    top: Math.floor(top * canvasScale),
+    bottom: Math.ceil(bottom * canvasScale),
+  }));
 
   const pdf = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
   const pageWidthMm = pdf.internal.pageSize.getWidth();
   const pageHeightMm = pdf.internal.pageSize.getHeight();
 
   const pxPerMm = canvas.width / pageWidthMm;
-  const pageHeightPx = Math.floor(pageHeightMm * pxPerMm);
+  const pageHeightPx = pageHeightMm * pxPerMm;
 
   let renderedHeight = 0;
   let pageIndex = 0;
 
   while (renderedHeight < canvas.height) {
-    const sliceHeight = Math.min(pageHeightPx, canvas.height - renderedHeight);
+    let cutAt = Math.min(renderedHeight + pageHeightPx, canvas.height);
+
+    // If the ideal cut falls inside a no-break element, move it to before that element.
+    if (cutAt < canvas.height) {
+      for (const { top, bottom } of noBreakPx) {
+        if (cutAt > top && cutAt < bottom) {
+          const blockH = bottom - top;
+          // Only move the cut if the element fits in one page and moving makes progress.
+          if (blockH <= pageHeightPx && top > renderedHeight) {
+            cutAt = top;
+          }
+          break;
+        }
+      }
+    }
+
+    const sliceHeight = Math.max(1, Math.floor(cutAt - renderedHeight));
 
     const pageCanvas = document.createElement("canvas");
     pageCanvas.width = canvas.width;
@@ -47,14 +79,10 @@ export async function generateReportPdf(
     ctx.fillRect(0, 0, pageCanvas.width, pageCanvas.height);
     ctx.drawImage(
       canvas,
-      0,
-      renderedHeight,
-      canvas.width,
-      sliceHeight,
-      0,
-      0,
-      canvas.width,
-      sliceHeight,
+      0, renderedHeight,
+      canvas.width, sliceHeight,
+      0, 0,
+      canvas.width, sliceHeight,
     );
 
     const imgData = pageCanvas.toDataURL("image/jpeg", 0.92);

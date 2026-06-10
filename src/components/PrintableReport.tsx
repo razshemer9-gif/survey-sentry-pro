@@ -68,7 +68,7 @@ export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, sett
             <img
               src={coverLogo}
               alt={settings.companyName || "לוגו"}
-              style={{ height: 140, objectFit: "contain" }}
+              style={{ maxHeight: 140, height: "auto", maxWidth: "100%" }}
               crossOrigin="anonymous"
             />
           )}
@@ -98,7 +98,7 @@ export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, sett
             <img
               src={report.coverPhoto}
               alt="cover"
-              style={{ width: "100%", height: 380, objectFit: "cover", borderRadius: 16, boxShadow: "0 20px 40px rgba(0,0,0,0.25)" }}
+              style={{ maxWidth: "100%", height: "auto", maxHeight: 380, display: "block", borderRadius: 16, boxShadow: "0 20px 40px rgba(0,0,0,0.25)" }}
             />
           </div>
         )}
@@ -200,6 +200,7 @@ export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, sett
             return (
               <div
                 key={item.id}
+                data-pdf-no-break=""
                 style={{ border: "1px solid #e2e8f0", borderRadius: 14, overflow: "hidden", background: "#fff", pageBreakInside: "avoid" }}
               >
                 {/* ── Section 1: Template / professional data ── */}
@@ -228,7 +229,7 @@ export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, sett
                           key={i}
                           src={p}
                           alt={item.referenceLabel || `פרט ${i + 1}`}
-                          style={{ width: "100%", maxHeight: 200, objectFit: "contain", background: "#fff", borderRadius: 8, border: "1px solid #bfdbfe" }}
+                          style={{ maxWidth: "100%", height: "auto", display: "block", background: "#fff", borderRadius: 8, border: "1px solid #bfdbfe" }}
                         />
                       ))}
                     </div>
@@ -246,7 +247,7 @@ export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, sett
                             <img
                               src={item.photo}
                               alt="מצב קיים"
-                              style={{ width: "100%", maxHeight: 220, objectFit: "cover", borderRadius: 8, border: "1px solid #e2e8f0" }}
+                              style={{ maxWidth: "100%", height: "auto", display: "block", borderRadius: 8, border: "1px solid #e2e8f0" }}
                             />
                           </div>
                         )}
@@ -328,7 +329,7 @@ export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, sett
                   <img
                     src={fmt.signatureImage || report.signatureDataUrl}
                     alt="חתימה"
-                    style={{ height: 64, maxWidth: 200, objectFit: "contain", display: "block" }}
+                    style={{ maxHeight: 64, height: "auto", maxWidth: 200, display: "block" }}
                     crossOrigin="anonymous"
                   />
                 ) : (
@@ -345,7 +346,7 @@ export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, sett
                   <img
                     src={fmt.stampImage}
                     alt="חותמת"
-                    style={{ height: 80, maxWidth: 120, objectFit: "contain", display: "block" }}
+                    style={{ maxHeight: 80, height: "auto", maxWidth: 120, display: "block" }}
                     crossOrigin="anonymous"
                   />
                   <div style={{ fontSize: 11, color: "#64748b", marginTop: 2 }}>חותמת</div>
