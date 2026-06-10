@@ -376,11 +376,10 @@ function Field({ label, value, dark }: { label: string; value?: string; dark?: b
   );
 }
 
-function PageHeader({ title, company, accentColor }: { title: string; company: string; accentColor?: string }) {
+function PageHeader({ title, accentColor }: { title: string; company?: string; accentColor?: string }) {
   return (
-    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: `3px solid ${accentColor ?? "#2563eb"}`, paddingBottom: 12 }}>
+    <div style={{ borderBottom: `3px solid ${accentColor ?? "#2563eb"}`, paddingBottom: 12 }}>
       <h2 style={{ margin: 0, fontSize: 28, color: "#1e3a8a", fontWeight: 800 }}>{title}</h2>
-      <div style={{ fontSize: 13, color: "#64748b" }}>{company}</div>
     </div>
   );
 }
