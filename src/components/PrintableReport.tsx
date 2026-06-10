@@ -72,6 +72,11 @@ export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, sett
               crossOrigin="anonymous"
             />
           )}
+          {settings.companyName && (
+            <div style={{ marginTop: 10, fontSize: 24, fontWeight: 800, letterSpacing: 1, color: "#1e3a8a" }}>
+              {settings.companyName}
+            </div>
+          )}
           {settings.consultantName && (
             <div style={{ fontSize: 16, color: "#475569", marginTop: 4 }}>
               {settings.consultantName}
@@ -89,12 +94,11 @@ export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, sett
         </div>
 
         {report.coverPhoto && (
-          <div style={{ padding: "0 48px", display: "flex", justifyContent: "center" }}>
+          <div style={{ padding: "0 48px" }}>
             <img
               src={report.coverPhoto}
               alt="cover"
-              crossOrigin="anonymous"
-              style={{ maxWidth: "100%", height: "auto", maxHeight: 520, display: "block", borderRadius: 16, boxShadow: "0 20px 40px rgba(0,0,0,0.25)" }}
+              style={{ maxWidth: "100%", height: "auto", maxHeight: 380, display: "block", borderRadius: 16, boxShadow: "0 20px 40px rgba(0,0,0,0.25)" }}
             />
           </div>
         )}
@@ -372,10 +376,11 @@ function Field({ label, value, dark }: { label: string; value?: string; dark?: b
   );
 }
 
-function PageHeader({ title, company: _company, accentColor }: { title: string; company: string; accentColor?: string }) {
+function PageHeader({ title, company, accentColor }: { title: string; company: string; accentColor?: string }) {
   return (
-    <div style={{ borderBottom: `3px solid ${accentColor ?? "#2563eb"}`, paddingBottom: 12 }}>
+    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: `3px solid ${accentColor ?? "#2563eb"}`, paddingBottom: 12 }}>
       <h2 style={{ margin: 0, fontSize: 28, color: "#1e3a8a", fontWeight: 800 }}>{title}</h2>
+      <div style={{ fontSize: 13, color: "#64748b" }}>{company}</div>
     </div>
   );
 }
