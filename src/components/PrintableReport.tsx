@@ -94,11 +94,12 @@ export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, sett
         </div>
 
         {report.coverPhoto && (
-          <div style={{ padding: "0 48px" }}>
+          <div style={{ padding: "0 24px" }}>
             <img
               src={report.coverPhoto}
               alt="cover"
-              style={{ maxWidth: "100%", height: "auto", maxHeight: 380, display: "block", borderRadius: 16, boxShadow: "0 20px 40px rgba(0,0,0,0.25)" }}
+              style={{ maxWidth: "100%", height: "auto", maxHeight: 580, display: "block", borderRadius: 16, boxShadow: "0 20px 40px rgba(0,0,0,0.25)" }}
+              crossOrigin="anonymous"
             />
           </div>
         )}
