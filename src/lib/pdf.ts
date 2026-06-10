@@ -62,17 +62,15 @@ export async function generateReportPdf(
     let cutAt = Math.min(renderedHeight + pageHeightPx, canvas.height);
 
     // If the ideal cut falls inside a no-break element, move it to before that element.
-    // Iterate ALL no-break elements (no early break) so that inner sub-sections of
-    // a tall card are also respected when the outer card itself is too tall to keep whole.
     if (cutAt < canvas.height) {
       for (const { top, bottom } of noBreakPx) {
         if (cutAt > top && cutAt < bottom) {
           const blockH = bottom - top;
-          // Only move the cut when the block fits on one page — avoids pushing an
-          // oversized block to the next page where it would still be cut.
+          // Only move the cut if the element fits in one page and moving makes progress.
           if (blockH <= pageHeightPx && top > renderedHeight) {
             cutAt = top;
           }
+          break;
         }
       }
     }
