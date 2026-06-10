@@ -72,11 +72,6 @@ export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, sett
               crossOrigin="anonymous"
             />
           )}
-          {settings.consultantName && (
-            <div style={{ fontSize: 16, color: "#475569", marginTop: 4 }}>
-              {settings.consultantName}
-            </div>
-          )}
         </div>
 
         <div style={{ height: 40, background: "linear-gradient(to bottom, #ffffff 0%, rgba(255,255,255,0) 100%)", marginTop: -8 }} />
