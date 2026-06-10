@@ -24,9 +24,16 @@ const Index = () => {
   useEffect(() => {
     listReports()
       .then(setReports)
-      .catch(() => toast.error("שגיאה בטעינת הדוחות"))
+      .catch((err: unknown) => {
+        const msg = err instanceof Error ? err.message : "";
+        if (msg === "משתמש לא מחובר") {
+          navigate("/auth");
+        } else {
+          toast.error("שגיאה בטעינת הדוחות");
+        }
+      })
       .finally(() => setLoading(false));
-  }, []);
+  }, [navigate]);
 
   function openNewDialog() {
     setSelectedType(null);
