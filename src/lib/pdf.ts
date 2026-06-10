@@ -27,11 +27,17 @@ export async function generateReportPdf(
     noBreakCss.push({ top: r.top - containerTop, bottom: r.bottom - containerTop });
   });
 
+  // iOS Safari caps canvas at ~16.7M pixels total. Reduce scale for tall documents.
+  const MAX_CANVAS_PIXELS = 14_000_000; // conservative limit for older iPhones
+  const rawPixels = element.scrollWidth * element.scrollHeight;
+  const scale = rawPixels * 4 > MAX_CANVAS_PIXELS
+    ? Math.max(1, Math.sqrt(MAX_CANVAS_PIXELS / rawPixels))
+    : 2;
+
   const canvas = await html2canvas(element, {
-    scale: 2,
+    scale,
     backgroundColor: "#ffffff",
     useCORS: true,
-    allowTaint: true,
     windowWidth: element.scrollWidth,
   });
 
