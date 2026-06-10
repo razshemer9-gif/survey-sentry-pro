@@ -72,11 +72,6 @@ export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, sett
               crossOrigin="anonymous"
             />
           )}
-          {settings.companyName && (
-            <div style={{ marginTop: 10, fontSize: 24, fontWeight: 800, letterSpacing: 1, color: "#1e3a8a" }}>
-              {settings.companyName}
-            </div>
-          )}
           {settings.consultantName && (
             <div style={{ fontSize: 16, color: "#475569", marginTop: 4 }}>
               {settings.consultantName}
@@ -98,7 +93,8 @@ export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, sett
             <img
               src={report.coverPhoto}
               alt="cover"
-              style={{ maxWidth: "100%", height: "auto", maxHeight: 380, display: "block", borderRadius: 16, boxShadow: "0 20px 40px rgba(0,0,0,0.25)" }}
+              crossOrigin="anonymous"
+              style={{ maxWidth: "100%", height: "auto", maxHeight: 520, display: "block", margin: "0 auto", borderRadius: 16, boxShadow: "0 20px 40px rgba(0,0,0,0.25)" }}
             />
           </div>
         )}
