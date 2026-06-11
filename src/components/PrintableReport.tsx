@@ -96,6 +96,7 @@ export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, sett
         <div style={{ flex: 1 }} />
 
         <div
+          data-pdf-no-break=""
           style={{
             margin: "32px 48px 48px",
             background: "rgba(255,255,255,0.96)",
@@ -137,6 +138,7 @@ export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, sett
         )}
 
         <div
+          data-pdf-no-break=""
           style={{
             marginTop: 24,
             display: "grid",
