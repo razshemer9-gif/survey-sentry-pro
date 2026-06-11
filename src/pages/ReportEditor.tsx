@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { useNavigate, useParams } from "react-router-dom";
 import { ArrowRight, Download, Eye, FileDown, Loader2, PenLine, Plus, Save, Trash2 } from "lucide-react";
 import { v4 as uuid } from "uuid";
@@ -153,6 +154,7 @@ export default function ReportEditor() {
     .reduce((s, i) => s + (Number(i.estimatedCost) || 0), 0);
 
   return (
+    <>
     <AppShell>
       {/* Header */}
       <header className="brand-gradient text-primary-foreground px-4 pb-5 pt-4 safe-top shadow-elev">
@@ -474,11 +476,14 @@ export default function ReportEditor() {
         }}
       />
 
-      {/* Hidden printable mount used for PDF rasterization */}
-      <div style={{ position: "absolute", left: "-9999px", top: 0, pointerEvents: "none" }}>
-        <PrintableReport ref={printRef} report={report} settings={settings} />
-      </div>
     </AppShell>
+    {createPortal(
+      <div aria-hidden="true" style={{ position: "fixed", top: "100vh", left: 0, pointerEvents: "none", zIndex: -9999 }}>
+        <PrintableReport ref={printRef} report={report} settings={settings} />
+      </div>,
+      document.body
+    )}
+    </>
   );
 }
 
