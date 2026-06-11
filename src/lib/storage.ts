@@ -33,14 +33,10 @@ function write<T>(key: string, value: T) {
 
 // ---------- Reports (Supabase) ----------
 export async function listReports(): Promise<SurveyReport[]> {
-  const userId = await getUserId();
-  const { data, error } = await supabase
-    .from("reports")
-    .select("data")
-    .eq("device_id", userId);
+  const { data, error } = await supabase.rpc("list_my_reports");
   if (error) throw error;
   return (data ?? [])
-    .map((row) => row.data as SurveyReport)
+    .map((row: { data: SurveyReport }) => row.data)
     .sort((a, b) => (b.updatedAt ?? 0) - (a.updatedAt ?? 0));
 }
 
