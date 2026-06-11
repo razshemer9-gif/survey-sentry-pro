@@ -49,7 +49,6 @@ export default function ReportEditor() {
   const [settings, setSettings] = useState<ConsultantSettings>({ ...DEFAULT_SETTINGS });
   const [signatureOpen, setSignatureOpen] = useState(false);
   const [refPickerItemId, setRefPickerItemId] = useState<string | null>(null);
-  const printRef = useRef<HTMLDivElement>(null);
   const autoSaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const isFirstLoad = useRef(true);
 
@@ -136,11 +135,11 @@ export default function ReportEditor() {
   };
 
   const handleGenerate = async () => {
-    if (!printRef.current || !report) return;
+    if (!report) return;
     setGenerating(true);
     try {
       await saveReport(report);
-      await generateReportPdf(printRef.current, buildPdfFileName(report));
+      await generateReportPdf(buildPdfFileName(report));
       toast.success("ה-PDF הופק והורד");
     } catch {
       toast.error("שגיאה ביצירת ה-PDF");
@@ -478,8 +477,8 @@ export default function ReportEditor() {
 
     </AppShell>
     {createPortal(
-      <div aria-hidden="true" style={{ position: "fixed", top: "100vh", left: 0, pointerEvents: "none", zIndex: -9999 }}>
-        <PrintableReport ref={printRef} report={report} settings={settings} />
+      <div data-pdf-portal="" aria-hidden="true" style={{ position: "fixed", top: "100vh", left: 0, pointerEvents: "none", zIndex: -9999 }}>
+        <PrintableReport report={report} settings={settings} />
       </div>,
       document.body
     )}
