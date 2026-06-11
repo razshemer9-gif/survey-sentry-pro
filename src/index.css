@@ -477,7 +477,7 @@ button:active, a:active { opacity: 0.85; }
     margin: 0;
   }
 
-  /* Print all backgrounds, gradients, shadows exactly as on screen */
+  /* Preserve all backgrounds, gradients and shadows */
   * {
     -webkit-print-color-adjust: exact !important;
     print-color-adjust: exact !important;
@@ -488,57 +488,28 @@ button:active, a:active { opacity: 0.85; }
     background: white;
   }
 
-  /* Hide everything except the dialog that contains the live preview */
-  body > *:not([data-radix-portal]) {
+  /* Hide the entire app; show only the dedicated print mount we control */
+  body > *:not(#pdf-print-mount) {
     display: none !important;
     visibility: hidden !important;
   }
 
-  /* Radix portal: show it */
-  [data-radix-portal] {
+  /* Reset the portal wrapper so the report flows from the top of page 1 */
+  #pdf-print-mount {
     display: block !important;
+    position: static !important;
+    top: auto !important;
+    left: auto !important;
+    width: 210mm !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: visible !important;
     visibility: visible !important;
   }
 
-  /* Hide dialog backdrop and chrome; keep only the report content */
-  [data-radix-dialog-overlay],
-  [role="dialog"] > [class*="DialogHeader"],
-  [role="dialog"] > [class*="DialogFooter"],
-  [role="dialog"] > [class*="header"],
-  [role="dialog"] > [class*="footer"],
-  [role="dialog"] > button {
-    display: none !important;
-  }
-
-  /* Remove dialog's own size / overflow constraints */
-  [role="dialog"] {
-    position: static !important;
-    max-width: none !important;
-    max-height: none !important;
-    overflow: visible !important;
-    padding: 0 !important;
-    border: none !important;
-    box-shadow: none !important;
-    background: transparent !important;
-  }
-
-  /* The scroll+background wrapper inside the dialog */
-  [data-pdf-content] {
-    overflow: visible !important;
-    background: transparent !important;
-    padding: 0 !important;
-  }
-
-  /* Remove the screen-only zoom; print at 1:1 */
-  .pdf-scale-wrapper {
-    transform: none !important;
-    transform-origin: initial !important;
-  }
-
-  /* The actual report: A4 width, no extra transform */
+  /* Report itself: A4 width, no scale transform */
   .report-preview {
     width: 210mm !important;
-    margin: 0 auto !important;
     transform: none !important;
   }
 
@@ -554,7 +525,7 @@ button:active, a:active { opacity: 0.85; }
     page-break-inside: avoid;
   }
 
-  /* Images: keep their declared object-fit / dimensions */
+  /* Images respect their declared dimensions */
   .report-preview img {
     max-width: 100% !important;
   }
