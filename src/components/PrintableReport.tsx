@@ -197,16 +197,16 @@ export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, sett
                 <div data-pdf-no-break="" style={{ padding: "14px 18px 12px", background: "#f8fafc", borderBottom: "1px solid #e2e8f0" }}>
                   <div style={{ fontSize: 11, color: "#64748b", marginBottom: 2 }}>ממצא {idx + 1}</div>
                   <div style={{ fontSize: 17, fontWeight: 700, color: "#0f172a" }}>{item.title}</div>
-                  {item.notes && (
-                    <div data-pdf-no-break="" style={{ marginTop: 8, fontSize: 13, color: "#334155", lineHeight: 1.6, whiteSpace: "pre-wrap" }}>
-                      <span style={{ fontWeight: 700 }}>ממצא: </span>{item.notes}
+                  {item.notes && item.notes.split("\n").map((line, li) => (
+                    <div key={`n${li}`} data-pdf-no-break="" style={{ marginTop: li === 0 ? 8 : 0, fontSize: 13, color: "#334155", lineHeight: 1.6, whiteSpace: "pre-wrap" }}>
+                      {li === 0 ? <><span style={{ fontWeight: 700 }}>ממצא: </span>{line}</> : line}
                     </div>
-                  )}
-                  {item.suggestedCorrection && (
-                    <div data-pdf-no-break="" style={{ marginTop: 6, fontSize: 13, color: "#1e40af", lineHeight: 1.6, whiteSpace: "pre-wrap" }}>
-                      <span style={{ fontWeight: 700 }}>פתרון: </span>{item.suggestedCorrection}
+                  ))}
+                  {item.suggestedCorrection && item.suggestedCorrection.split("\n").map((line, li) => (
+                    <div key={`c${li}`} data-pdf-no-break="" style={{ marginTop: li === 0 ? 6 : 0, fontSize: 13, color: "#1e40af", lineHeight: 1.6, whiteSpace: "pre-wrap" }}>
+                      {li === 0 ? <><span style={{ fontWeight: 700 }}>פתרון: </span>{line}</> : line}
                     </div>
-                  )}
+                  ))}
                   {refPhotos.length > 0 && (
                     <div data-pdf-no-break="" style={{ marginTop: 10, display: "grid", gridTemplateColumns: refPhotos.length > 1 ? "1fr 1fr" : "200px", gap: 8 }}>
                       {refPhotos.map((p, i) => (
