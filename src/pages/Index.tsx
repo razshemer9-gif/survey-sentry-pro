@@ -12,6 +12,7 @@ import { formatHebrewDate } from "@/lib/image";
 import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { supabase } from "@/lib/supabase";
 
 const Index = () => {
   const navigate = useNavigate();
@@ -22,17 +23,22 @@ const Index = () => {
   const [creating, setCreating] = useState(false);
 
   useEffect(() => {
-    listReports()
-      .then(setReports)
-      .catch((err: unknown) => {
-        const msg = err instanceof Error ? err.message : "";
-        if (msg === "משתמש לא מחובר") {
-          navigate("/auth");
-        } else {
-          toast.error("שגיאה בטעינת הדוחות");
-        }
-      })
-      .finally(() => setLoading(false));
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (!session) {
+        navigate("/auth");
+        return;
+      }
+      listReports()
+        .then(setReports)
+        .catch((err: unknown) => {
+          const detail = err instanceof Error
+            ? err.message
+            : (err as { message?: string })?.message ?? JSON.stringify(err);
+          console.error("listReports error:", err);
+          toast.error(`שגיאה בטעינת הדוחות: ${detail}`);
+        })
+        .finally(() => setLoading(false));
+    });
   }, [navigate]);
 
   function openNewDialog() {
