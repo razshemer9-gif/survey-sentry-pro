@@ -39,6 +39,27 @@ export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, sett
         fontFamily: "Heebo, Assistant, sans-serif",
       }}
     >
+      {/* White band — outside the blue section so html2canvas never composites it against a colored parent */}
+      <div
+        style={{
+          backgroundColor: "#ffffff",
+          padding: "28px 48px 24px",
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          textAlign: "center",
+        }}
+      >
+        {coverLogo && (
+          <img
+            src={coverLogo}
+            alt={settings.companyName || "לוגו"}
+            style={{ maxHeight: 140, height: "auto", maxWidth: "100%" }}
+            crossOrigin="anonymous"
+          />
+        )}
+      </div>
+
       {/* COVER PAGE */}
       <section
         style={{
@@ -51,29 +72,8 @@ export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, sett
           flexDirection: "column",
         }}
       >
-        {/* White band header */}
-        <div
-          style={{
-            backgroundColor: "#ffffff",
-            padding: "28px 48px 24px",
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "center",
-            textAlign: "center",
-            isolation: "isolate" as const,
-          }}
-        >
-          {coverLogo && (
-            <img
-              src={coverLogo}
-              alt={settings.companyName || "לוגו"}
-              style={{ maxHeight: 140, height: "auto", maxWidth: "100%" }}
-              crossOrigin="anonymous"
-            />
-          )}
-        </div>
-
-        <div style={{ height: 40, background: "linear-gradient(to bottom, #ffffff 0%, rgba(255,255,255,0) 100%)", marginTop: -8 }} />
+        {/* Gradient fade from white into blue */}
+        <div style={{ height: 40, background: `linear-gradient(to bottom, #ffffff 0%, ${surveyConfig.color}dd 100%)` }} />
 
         <div style={{ padding: "10px 48px 24px" }}>
           <h1 style={{ fontSize: 46, fontWeight: 800, lineHeight: 1.05, margin: 0 }}>
