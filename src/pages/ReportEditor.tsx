@@ -474,8 +474,8 @@ export default function ReportEditor() {
         }}
       />
 
-      {/* Hidden printable mount used for PDF rasterization — visibility:hidden keeps layout intact */}
-      <div style={{ position: "fixed", top: 0, left: 0, visibility: "hidden", pointerEvents: "none", zIndex: -1 }}>
+      {/* Hidden printable mount used for PDF rasterization */}
+      <div style={{ position: "absolute", left: "-9999px", top: 0, pointerEvents: "none" }}>
         <PrintableReport ref={printRef} report={report} settings={settings} />
       </div>
     </AppShell>
