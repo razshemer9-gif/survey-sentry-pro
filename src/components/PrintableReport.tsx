@@ -39,6 +39,27 @@ export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, sett
         fontFamily: "Heebo, Assistant, sans-serif",
       }}
     >
+      {/* White band — outside the blue section so html2canvas never composites it against a colored parent */}
+      <div
+        style={{
+          backgroundColor: "#ffffff",
+          padding: "28px 48px 24px",
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          textAlign: "center",
+        }}
+      >
+        {coverLogo && (
+          <img
+            src={coverLogo}
+            alt={settings.companyName || "לוגו"}
+            style={{ maxHeight: 140, height: "auto", maxWidth: "100%" }}
+            crossOrigin="anonymous"
+          />
+        )}
+      </div>
+
       {/* COVER PAGE */}
       <section
         style={{
@@ -51,30 +72,8 @@ export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, sett
           flexDirection: "column",
         }}
       >
-        {/* White band header */}
-        <div
-          style={{
-            background: "#ffffff",
-            padding: "28px 48px 24px",
-            position: "relative",
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "center",
-            textAlign: "center",
-            boxShadow: "0 8px 24px rgba(0,0,0,0.12)",
-          }}
-        >
-          {coverLogo && (
-            <img
-              src={coverLogo}
-              alt={settings.companyName || "לוגו"}
-              style={{ maxHeight: 140, height: "auto", maxWidth: "100%" }}
-              crossOrigin="anonymous"
-            />
-          )}
-        </div>
-
-        <div style={{ height: 40, background: "linear-gradient(to bottom, #ffffff 0%, rgba(255,255,255,0) 100%)", marginTop: -8 }} />
+        {/* Gradient fade from white into blue */}
+        <div style={{ height: 40, background: `linear-gradient(to bottom, #ffffff 0%, ${surveyConfig.color}dd 100%)` }} />
 
         <div style={{ padding: "10px 48px 24px" }}>
           <h1 style={{ fontSize: 46, fontWeight: 800, lineHeight: 1.05, margin: 0 }}>
@@ -198,16 +197,16 @@ export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, sett
                 <div data-pdf-no-break="" style={{ padding: "14px 18px 12px", background: "#f8fafc", borderBottom: "1px solid #e2e8f0" }}>
                   <div style={{ fontSize: 11, color: "#64748b", marginBottom: 2 }}>ממצא {idx + 1}</div>
                   <div style={{ fontSize: 17, fontWeight: 700, color: "#0f172a" }}>{item.title}</div>
-                  {item.notes && (
-                    <div data-pdf-no-break="" style={{ marginTop: 8, fontSize: 13, color: "#334155", lineHeight: 1.6, whiteSpace: "pre-wrap" }}>
-                      <span style={{ fontWeight: 700 }}>ממצא: </span>{item.notes}
+                  {item.notes && item.notes.split("\n").map((line, li) => (
+                    <div key={`n${li}`} data-pdf-no-break="" style={{ marginTop: li === 0 ? 8 : 0, fontSize: 13, color: "#334155", lineHeight: 1.6, whiteSpace: "pre-wrap" }}>
+                      {li === 0 ? <><span style={{ fontWeight: 700 }}>ממצא: </span>{line}</> : line}
                     </div>
-                  )}
-                  {item.suggestedCorrection && (
-                    <div data-pdf-no-break="" style={{ marginTop: 6, fontSize: 13, color: "#1e40af", lineHeight: 1.6, whiteSpace: "pre-wrap" }}>
-                      <span style={{ fontWeight: 700 }}>פתרון: </span>{item.suggestedCorrection}
+                  ))}
+                  {item.suggestedCorrection && item.suggestedCorrection.split("\n").map((line, li) => (
+                    <div key={`c${li}`} data-pdf-no-break="" style={{ marginTop: li === 0 ? 6 : 0, fontSize: 13, color: "#1e40af", lineHeight: 1.6, whiteSpace: "pre-wrap" }}>
+                      {li === 0 ? <><span style={{ fontWeight: 700 }}>פתרון: </span>{line}</> : line}
                     </div>
-                  )}
+                  ))}
                   {refPhotos.length > 0 && (
                     <div data-pdf-no-break="" style={{ marginTop: 10, display: "grid", gridTemplateColumns: refPhotos.length > 1 ? "1fr 1fr" : "200px", gap: 8 }}>
                       {refPhotos.map((p, i) => (
