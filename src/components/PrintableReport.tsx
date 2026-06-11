@@ -198,11 +198,6 @@ export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, sett
                 <div data-pdf-no-break="" style={{ padding: "14px 18px 12px", background: "#f8fafc", borderBottom: "1px solid #e2e8f0" }}>
                   <div style={{ fontSize: 11, color: "#64748b", marginBottom: 2 }}>ממצא {idx + 1}</div>
                   <div style={{ fontSize: 17, fontWeight: 700, color: "#0f172a" }}>{item.title}</div>
-                  {(item.standardPart || item.clause) && (
-                    <div style={{ fontSize: 11, color: "#1e40af", marginTop: 3, fontWeight: 600 }}>
-                      {item.standardPart}{item.clause ? ` · סעיף ${item.clause}` : ""}
-                    </div>
-                  )}
                   {item.notes && (
                     <div data-pdf-no-break="" style={{ marginTop: 8, fontSize: 13, color: "#334155", lineHeight: 1.6, whiteSpace: "pre-wrap" }}>
                       <span style={{ fontWeight: 700 }}>ממצא: </span>{item.notes}

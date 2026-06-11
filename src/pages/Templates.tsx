@@ -273,11 +273,6 @@ export default function Templates() {
                           <X className="h-3.5 w-3.5" />
                         </button>
                       </div>
-                      {(it.standardPart || it.clause) && (
-                        <p className="mt-0.5 pr-14 text-[10px] text-muted-foreground">
-                          {it.standardPart}{it.clause ? ` · סעיף ${it.clause}` : ""}
-                        </p>
-                      )}
                     </div>
                   ))}
                 </div>
@@ -314,29 +309,6 @@ export default function Templates() {
                   }
                   placeholder="כותרת הממצא..."
                 />
-              </div>
-
-              <div className="grid grid-cols-2 gap-2">
-                <div className="space-y-1.5">
-                  <Label className="text-xs">חלק תקן</Label>
-                  <Input
-                    value={editingItem.item.standardPart || ""}
-                    onChange={(e) =>
-                      setEditingItem({ ...editingItem, item: { ...editingItem.item, standardPart: e.target.value || undefined } })
-                    }
-                    placeholder='ת"י 1918 חלק 4'
-                  />
-                </div>
-                <div className="space-y-1.5">
-                  <Label className="text-xs">סעיף</Label>
-                  <Input
-                    value={editingItem.item.clause || ""}
-                    onChange={(e) =>
-                      setEditingItem({ ...editingItem, item: { ...editingItem.item, clause: e.target.value || undefined } })
-                    }
-                    placeholder="16.1"
-                  />
-                </div>
               </div>
 
               <div className="space-y-1.5">
