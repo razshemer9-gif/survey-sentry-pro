@@ -254,11 +254,6 @@ export default function ReportEditor() {
                     </button>
                   </div>
                   <p className="font-bold text-sm text-foreground leading-snug">{item.title || "ממצא ללא כותרת"}</p>
-                  {(item.standardPart || item.clause) && (
-                    <p className="mt-0.5 text-xs text-primary font-medium">
-                      {item.standardPart}{item.clause ? ` · סעיף ${item.clause}` : ""}
-                    </p>
-                  )}
                   {item.notes && (
                     <div className="mt-2 rounded-lg bg-background/70 px-2.5 py-1.5 text-xs text-foreground/80 leading-relaxed">
                       <span className="font-semibold text-foreground">ממצא: </span>{item.notes}
