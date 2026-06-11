@@ -37,10 +37,11 @@ export async function listReports(): Promise<SurveyReport[]> {
   const { data, error } = await supabase
     .from("reports")
     .select("data")
-    .eq("device_id", userId)
-    .order("updated_at", { ascending: false });
+    .eq("device_id", userId);
   if (error) throw error;
-  return (data ?? []).map((row) => row.data as SurveyReport);
+  return (data ?? [])
+    .map((row) => row.data as SurveyReport)
+    .sort((a, b) => (b.updatedAt ?? 0) - (a.updatedAt ?? 0));
 }
 
 export async function getReport(id: string): Promise<SurveyReport | undefined> {
