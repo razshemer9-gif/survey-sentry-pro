@@ -194,21 +194,21 @@ export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, sett
                 style={{ border: "1px solid #e2e8f0", borderRadius: 14, overflow: "hidden", background: "#fff", pageBreakInside: "avoid" }}
               >
                 {/* ── Section 1: Template / professional data ── */}
-                <div data-pdf-no-break="" style={{ padding: "14px 18px 12px", background: "#f8fafc", borderBottom: "1px solid #e2e8f0" }}>
-                  <div style={{ fontSize: 11, color: "#64748b", marginBottom: 2 }}>ממצא {idx + 1}</div>
-                  <div style={{ fontSize: 17, fontWeight: 700, color: "#0f172a" }}>{item.title}</div>
+                <div data-pdf-no-break="" style={{ padding: "16px 20px 14px", background: "#f8fafc", borderBottom: "1px solid #e2e8f0" }}>
+                  <div style={{ fontSize: 13, color: "#64748b", marginBottom: 3 }}>ממצא {idx + 1}</div>
+                  <div style={{ fontSize: 19, fontWeight: 700, color: "#0f172a" }}>{item.title}</div>
                   {item.notes && item.notes.split("\n").map((line, li) => (
-                    <div key={`n${li}`} data-pdf-no-break="" style={{ marginTop: li === 0 ? 8 : 0, fontSize: 13, color: "#334155", lineHeight: 1.6, whiteSpace: "pre-wrap" }}>
+                    <div key={`n${li}`} data-pdf-no-break="" style={{ marginTop: li === 0 ? 10 : 0, fontSize: 15, color: "#334155", lineHeight: 1.7, whiteSpace: "pre-wrap" }}>
                       {li === 0 ? <><span style={{ fontWeight: 700 }}>ממצא: </span>{line}</> : line}
                     </div>
                   ))}
                   {item.suggestedCorrection && item.suggestedCorrection.split("\n").map((line, li) => (
-                    <div key={`c${li}`} data-pdf-no-break="" style={{ marginTop: li === 0 ? 6 : 0, fontSize: 13, color: "#1e40af", lineHeight: 1.6, whiteSpace: "pre-wrap" }}>
+                    <div key={`c${li}`} data-pdf-no-break="" style={{ marginTop: li === 0 ? 8 : 0, fontSize: 15, color: "#1e40af", lineHeight: 1.7, whiteSpace: "pre-wrap" }}>
                       {li === 0 ? <><span style={{ fontWeight: 700 }}>פתרון: </span>{line}</> : line}
                     </div>
                   ))}
                   {refPhotos.length > 0 && (
-                    <div data-pdf-no-break="" style={{ marginTop: 10, display: "grid", gridTemplateColumns: refPhotos.length > 1 ? "1fr 1fr" : "200px", gap: 8 }}>
+                    <div data-pdf-no-break="" style={{ marginTop: 12, display: "grid", gridTemplateColumns: refPhotos.length > 1 ? "1fr 1fr" : "260px", gap: 10 }}>
                       {refPhotos.map((p, i) => (
                         <div key={i} data-pdf-no-break="">
                           <img
@@ -224,12 +224,12 @@ export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, sett
 
                 {/* ── Section 2: Client / field data ── */}
                 {(item.photo || item.fieldNotes || (item.estimatedCost || 0) > 0) && (
-                  <div data-pdf-no-break="" style={{ padding: "12px 18px" }}>
+                  <div data-pdf-no-break="" style={{ padding: "14px 20px" }}>
                     {(item.photo || item.fieldNotes) && (
-                      <div style={{ display: "grid", gridTemplateColumns: item.photo && item.fieldNotes ? "1fr 1fr" : "1fr", gap: 12, alignItems: "start" }}>
+                      <div style={{ display: "grid", gridTemplateColumns: item.photo && item.fieldNotes ? "1fr 1fr" : "1fr", gap: 14, alignItems: "start" }}>
                         {item.photo && (
                           <div data-pdf-no-break="">
-                            <div style={{ fontSize: 11, color: "#64748b", marginBottom: 4, fontWeight: 600 }}>מצב קיים</div>
+                            <div style={{ fontSize: 13, color: "#64748b", marginBottom: 5, fontWeight: 600 }}>מצב קיים</div>
                             <img
                               src={item.photo}
                               alt="מצב קיים"
@@ -239,8 +239,8 @@ export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, sett
                         )}
                         {item.fieldNotes && (
                           <div data-pdf-no-break="">
-                            <div style={{ fontSize: 11, color: "#64748b", marginBottom: 4, fontWeight: 600 }}>פירוט מצב קיים</div>
-                            <div style={{ fontSize: 13, color: "#334155", lineHeight: 1.7, whiteSpace: "pre-wrap", background: "#f8fafc", borderRadius: 8, padding: "10px 12px", border: "1px solid #e2e8f0" }}>
+                            <div style={{ fontSize: 13, color: "#64748b", marginBottom: 5, fontWeight: 600 }}>פירוט מצב קיים</div>
+                            <div style={{ fontSize: 15, color: "#334155", lineHeight: 1.7, whiteSpace: "pre-wrap", background: "#f8fafc", borderRadius: 8, padding: "12px 14px", border: "1px solid #e2e8f0" }}>
                               {item.fieldNotes}
                             </div>
                           </div>
@@ -248,7 +248,7 @@ export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, sett
                       </div>
                     )}
                     {(item.estimatedCost || 0) > 0 && (
-                      <div style={{ marginTop: 10, display: "inline-block", background: "#fef2f2", color: "#991b1b", border: "1px solid #fecaca", fontSize: 13, padding: "5px 10px", borderRadius: 999, fontWeight: 600 }}>
+                      <div style={{ marginTop: 12, display: "inline-block", background: "#fef2f2", color: "#991b1b", border: "1px solid #fecaca", fontSize: 15, padding: "6px 14px", borderRadius: 999, fontWeight: 600 }}>
                         אומדן עלות תיקון: {formatCurrency(item.estimatedCost)}
                       </div>
                     )}
