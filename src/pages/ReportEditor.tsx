@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { createRoot } from "react-dom/client";
+import { createPortal } from "react-dom";
 import { useNavigate, useParams } from "react-router-dom";
 import { ArrowRight, Download, Eye, FileDown, Loader2, PenLine, Plus, Save, Trash2 } from "lucide-react";
 import { v4 as uuid } from "uuid";
@@ -49,7 +49,6 @@ export default function ReportEditor() {
   const [settings, setSettings] = useState<ConsultantSettings>({ ...DEFAULT_SETTINGS });
   const [signatureOpen, setSignatureOpen] = useState(false);
   const [refPickerItemId, setRefPickerItemId] = useState<string | null>(null);
-  const printRef = useRef<HTMLDivElement>(null); // kept for type compat; real capture uses fresh mount
   const autoSaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const isFirstLoad = useRef(true);
 
@@ -138,39 +137,14 @@ export default function ReportEditor() {
   const handleGenerate = async () => {
     if (!report) return;
     setGenerating(true);
-
-    // Mount a fresh PrintableReport directly on document.body (below viewport,
-    // outside any overflow-clipping ancestor) so the rasterized pixels are
-    // identical to what the component renders — no persistent hidden element.
-    const container = document.createElement("div");
-    container.style.cssText = "position:fixed;left:0;top:100vh;pointer-events:none;z-index:-9999;";
-    document.body.appendChild(container);
-    const root = createRoot(container);
-
     try {
       await saveReport(report);
-
-      const captureEl = await new Promise<HTMLDivElement>((resolve, reject) => {
-        root.render(
-          <PrintableReport
-            ref={(el) => {
-              if (el) requestAnimationFrame(() => requestAnimationFrame(() => resolve(el)));
-            }}
-            report={report}
-            settings={settings}
-          />
-        );
-        setTimeout(() => reject(new Error("render timeout")), 15000);
-      });
-
-      await generateReportPdf(captureEl, buildPdfFileName(report));
+      await generateReportPdf(buildPdfFileName(report));
       toast.success("ה-PDF הופק והורד");
     } catch {
       toast.error("שגיאה ביצירת ה-PDF");
     } finally {
       setGenerating(false);
-      root.unmount();
-      container.remove();
     }
   };
 
@@ -179,6 +153,7 @@ export default function ReportEditor() {
     .reduce((s, i) => s + (Number(i.estimatedCost) || 0), 0);
 
   return (
+    <>
     <AppShell>
       {/* Header */}
       <header className="brand-gradient text-primary-foreground px-4 pb-5 pt-4 safe-top shadow-elev">
@@ -501,6 +476,13 @@ export default function ReportEditor() {
       />
 
     </AppShell>
+    {createPortal(
+      <div data-pdf-portal="" aria-hidden="true" style={{ position: "fixed", top: "100vh", left: 0, pointerEvents: "none", zIndex: -9999 }}>
+        <PrintableReport report={report} settings={settings} />
+      </div>,
+      document.body
+    )}
+    </>
   );
 }
 
