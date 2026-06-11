@@ -4,31 +4,24 @@ import { ConsultantSettings, getSurveyType, SurveyReport } from "./types";
 import { formatCurrency, formatHebrewDate } from "./image";
 
 /**
- * Renders the given printable element (already styled in RTL Hebrew with web fonts)
- * into a multi-page A4 PDF and triggers a download.
+ * Renders the given printable element into a multi-page A4 PDF and triggers a download.
  *
- * Strategy: rasterize the full document once at high DPI, then slice it into
- * A4-sized page images. This guarantees fonts/RTL render exactly like the preview.
+ * Cut strategy: rasterize the full document once, then for each page boundary
+ * scan backward through the rendered pixels looking for a "background row" —
+ * a row where ≥95% of sampled pixels are light-colored (white or near-white).
+ * This catches blank lines between paragraphs (#f8fafc gray background),
+ * gaps between cards (white), and card padding rows without any DOM measurement.
  */
 export async function generateReportPdf(
   element: HTMLElement,
   fileName: string,
 ): Promise<void> {
-  // Wait for fonts to be ready so html2canvas captures the right metrics.
   if ((document as any).fonts?.ready) {
     await (document as any).fonts.ready;
   }
 
-  // Collect no-break element ranges (CSS px, relative to element top) BEFORE rasterising.
-  const containerTop = element.getBoundingClientRect().top;
-  const noBreakCss: Array<{ top: number; bottom: number }> = [];
-  element.querySelectorAll("[data-pdf-no-break]").forEach((el) => {
-    const r = (el as HTMLElement).getBoundingClientRect();
-    noBreakCss.push({ top: r.top - containerTop, bottom: r.bottom - containerTop });
-  });
-
-  // iOS Safari caps canvas at ~16.7M pixels total. Reduce scale for tall documents.
-  const MAX_CANVAS_PIXELS = 14_000_000; // conservative limit for older iPhones
+  // iOS Safari caps canvas at ~16.7M pixels total.
+  const MAX_CANVAS_PIXELS = 14_000_000;
   const rawPixels = element.scrollWidth * element.scrollHeight;
   const scale = rawPixels * 4 > MAX_CANVAS_PIXELS
     ? Math.max(1, Math.sqrt(MAX_CANVAS_PIXELS / rawPixels))
@@ -41,17 +34,11 @@ export async function generateReportPdf(
     windowWidth: element.scrollWidth,
   });
 
-  // Scale factor between CSS pixels and canvas pixels.
-  const canvasScale = canvas.width / element.scrollWidth;
-  const noBreakPx = noBreakCss.map(({ top, bottom }) => ({
-    top: Math.floor(top * canvasScale),
-    bottom: Math.ceil(bottom * canvasScale),
-  }));
+  const ctx = canvas.getContext("2d")!;
 
   const pdf = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
   const pageWidthMm = pdf.internal.pageSize.getWidth();
   const pageHeightMm = pdf.internal.pageSize.getHeight();
-
   const pxPerMm = canvas.width / pageWidthMm;
   const pageHeightPx = pageHeightMm * pxPerMm;
 
@@ -59,37 +46,20 @@ export async function generateReportPdf(
   let pageIndex = 0;
 
   while (renderedHeight < canvas.height) {
-    let cutAt = Math.min(renderedHeight + pageHeightPx, canvas.height);
-
-    // If the ideal cut falls inside a no-break element, move it to before that element.
-    // No early break — all elements are checked so inner sub-sections of a tall
-    // card are also protected even when the outer card itself is too tall to keep whole.
-    if (cutAt < canvas.height) {
-      for (const { top, bottom } of noBreakPx) {
-        if (cutAt > top && cutAt < bottom) {
-          const blockH = bottom - top;
-          if (blockH <= pageHeightPx && top > renderedHeight) {
-            cutAt = top;
-          }
-        }
-      }
-    }
+    const idealCut = Math.min(renderedHeight + pageHeightPx, canvas.height);
+    const cutAt = idealCut < canvas.height
+      ? findNaturalCut(ctx, canvas.width, renderedHeight, idealCut)
+      : idealCut;
 
     const sliceHeight = Math.max(1, Math.floor(cutAt - renderedHeight));
 
     const pageCanvas = document.createElement("canvas");
     pageCanvas.width = canvas.width;
     pageCanvas.height = sliceHeight;
-    const ctx = pageCanvas.getContext("2d")!;
-    ctx.fillStyle = "#ffffff";
-    ctx.fillRect(0, 0, pageCanvas.width, pageCanvas.height);
-    ctx.drawImage(
-      canvas,
-      0, renderedHeight,
-      canvas.width, sliceHeight,
-      0, 0,
-      canvas.width, sliceHeight,
-    );
+    const pCtx = pageCanvas.getContext("2d")!;
+    pCtx.fillStyle = "#ffffff";
+    pCtx.fillRect(0, 0, pageCanvas.width, pageCanvas.height);
+    pCtx.drawImage(canvas, 0, renderedHeight, canvas.width, sliceHeight, 0, 0, canvas.width, sliceHeight);
 
     const imgData = pageCanvas.toDataURL("image/jpeg", 0.92);
     if (pageIndex > 0) pdf.addPage();
@@ -100,8 +70,6 @@ export async function generateReportPdf(
     pageIndex++;
   }
 
-  // Use blob + manual <a download> instead of pdf.save() — works better
-  // inside iframes (e.g. Lovable preview) and with non-ASCII filenames.
   const blob = pdf.output("blob");
   const url = URL.createObjectURL(blob);
   try {
@@ -114,7 +82,6 @@ export async function generateReportPdf(
     a.click();
     document.body.removeChild(a);
   } catch (err) {
-    // Fallback — open in a new tab so the user can save manually
     window.open(url, "_blank", "noopener,noreferrer");
     throw err;
   } finally {
@@ -122,8 +89,50 @@ export async function generateReportPdf(
   }
 }
 
+/**
+ * Scans backward from idealCut looking for the last "background row" —
+ * a row where ≥95% of sampled pixels have R,G,B all ≥ 235.
+ * This covers white (#fff), near-white, and the light gray used in Section 1 (#f8fafc = 248,250,252).
+ * Sampling every 4th column for performance (~400 samples per row on a 1588px canvas).
+ */
+function findNaturalCut(
+  ctx: CanvasRenderingContext2D,
+  canvasWidth: number,
+  pageStart: number,
+  idealCut: number,
+): number {
+  const BG_THRESHOLD = 235;
+  const MIN_BG_RATIO = 0.95;
+  const SAMPLE_STEP = 4;
+  // Search the last 35% of the current page for a background row.
+  const searchRange = Math.floor((idealCut - pageStart) * 0.35);
+  const searchFrom = Math.max(Math.floor(pageStart), Math.floor(idealCut) - searchRange);
+  const scanHeight = Math.floor(idealCut) - searchFrom;
+
+  if (scanHeight <= 0) return idealCut;
+
+  const imageData = ctx.getImageData(0, searchFrom, canvasWidth, scanHeight);
+  const { data } = imageData;
+  const sampledCols = Math.floor(canvasWidth / SAMPLE_STEP);
+
+  for (let row = scanHeight - 1; row >= 0; row--) {
+    let bgCount = 0;
+    for (let ci = 0; ci < sampledCols; ci++) {
+      const i = (row * canvasWidth + ci * SAMPLE_STEP) * 4;
+      if (data[i] >= BG_THRESHOLD && data[i + 1] >= BG_THRESHOLD && data[i + 2] >= BG_THRESHOLD) {
+        bgCount++;
+      }
+    }
+    if (bgCount / sampledCols >= MIN_BG_RATIO) {
+      return searchFrom + row + 1;
+    }
+  }
+
+  return idealCut;
+}
+
 export function buildPdfFileName(report: SurveyReport): string {
-  const safe = (report.placeName || "report").replace(/[^\u0590-\u05FFa-zA-Z0-9 _-]/g, "").trim() || "report";
+  const safe = (report.placeName || "report").replace(/[^֐-׿a-zA-Z0-9 _-]/g, "").trim() || "report";
   const date = report.surveyDate || new Date().toISOString().slice(0, 10);
   const prefix = getSurveyType(report.surveyType).filePrefix;
   return `${prefix}-${safe}-${date}.pdf`;
