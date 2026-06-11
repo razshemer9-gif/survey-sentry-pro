@@ -30,6 +30,7 @@ export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, sett
   return (
     <div
       ref={ref}
+      className="report-preview"
       dir="rtl"
       lang="he"
       style={{

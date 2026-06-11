@@ -1,5 +1,4 @@
 import { useEffect, useRef, useState } from "react";
-import { createPortal } from "react-dom";
 import { useNavigate, useParams } from "react-router-dom";
 import { ArrowRight, Download, Eye, FileDown, Loader2, PenLine, Plus, Save, Trash2 } from "lucide-react";
 import { v4 as uuid } from "uuid";
@@ -137,14 +136,21 @@ export default function ReportEditor() {
   const handleGenerate = async () => {
     if (!report) return;
     setGenerating(true);
+    const wasOpen = previewOpen;
     try {
       await saveReport(report);
+      // Open the preview dialog so the exact same component shown in the
+      // preview is the one the browser prints — not a separate hidden element.
+      if (!wasOpen) setPreviewOpen(true);
+      // Two animation frames: let React commit + browser paint the dialog
+      await new Promise<void>((r) => requestAnimationFrame(() => requestAnimationFrame(() => r())));
       await generateReportPdf(buildPdfFileName(report));
       toast.success("ה-PDF הופק והורד");
     } catch {
       toast.error("שגיאה ביצירת ה-PDF");
     } finally {
       setGenerating(false);
+      if (!wasOpen) setPreviewOpen(false);
     }
   };
 
@@ -394,8 +400,8 @@ export default function ReportEditor() {
           <DialogHeader className="px-2">
             <DialogTitle>תצוגה מקדימה</DialogTitle>
           </DialogHeader>
-          <div className="overflow-auto rounded-lg bg-muted p-2">
-            <div className="origin-top-right scale-[0.42] sm:scale-[0.6]" style={{ transformOrigin: "top right" }}>
+          <div data-pdf-content="" className="overflow-auto rounded-lg bg-muted p-2">
+            <div className="pdf-scale-wrapper origin-top-right scale-[0.42] sm:scale-[0.6]" style={{ transformOrigin: "top right" }}>
               <PrintableReport report={report} settings={settings} />
             </div>
           </div>
@@ -476,12 +482,6 @@ export default function ReportEditor() {
       />
 
     </AppShell>
-    {createPortal(
-      <div data-pdf-portal="" aria-hidden="true" style={{ position: "fixed", top: "100vh", left: 0, pointerEvents: "none", zIndex: -9999 }}>
-        <PrintableReport report={report} settings={settings} />
-      </div>,
-      document.body
-    )}
     </>
   );
 }
