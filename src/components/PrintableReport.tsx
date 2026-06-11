@@ -54,13 +54,13 @@ export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, sett
         {/* White band header */}
         <div
           style={{
-            background: "#ffffff",
+            backgroundColor: "#ffffff",
             padding: "28px 48px 24px",
-            position: "relative",
             display: "flex",
             flexDirection: "column",
             alignItems: "center",
             textAlign: "center",
+            isolation: "isolate" as const,
           }}
         >
           {coverLogo && (
