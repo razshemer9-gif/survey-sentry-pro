@@ -82,17 +82,6 @@ export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, sett
           <div style={{ fontSize: 22, marginTop: 14, opacity: 0.95 }}>{report.placeName || "ללא שם"}</div>
         </div>
 
-        {report.coverPhoto && (
-          <div style={{ padding: "0 48px" }}>
-            <img
-              src={report.coverPhoto}
-              alt="cover"
-              crossOrigin="anonymous"
-              style={{ maxWidth: "100%", height: "auto", maxHeight: 520, display: "block", margin: "0 auto", borderRadius: 16, boxShadow: "0 20px 40px rgba(0,0,0,0.25)" }}
-            />
-          </div>
-        )}
-
         <div style={{ flex: 1 }} />
 
         <div
@@ -102,27 +91,40 @@ export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, sett
             background: "rgba(255,255,255,0.96)",
             color: "#0f172a",
             borderRadius: 16,
+            overflow: "hidden",
+            boxShadow: "0 20px 40px rgba(0,0,0,0.25)",
+          }}
+        >
+          {report.coverPhoto && (
+            <img
+              src={report.coverPhoto}
+              alt="cover"
+              crossOrigin="anonymous"
+              style={{ width: "100%", maxHeight: 380, objectFit: "cover", display: "block" }}
+            />
+          )}
+          <div style={{
             padding: "24px 28px",
             display: "grid",
             gridTemplateColumns: "1fr 1fr",
             gap: "16px 28px",
             fontSize: 15,
-          }}
-        >
-          <Field label="שם המקום / העסק" value={report.placeName} />
-          <Field label="שם הלקוח" value={report.clientName} />
-          <Field label="כתובת" value={report.address} />
-          <Field label="תאריך הסקר" value={formatHebrewDate(report.surveyDate)} />
-          {report.buildingType && (
-            <Field
-              label="סוג הבניין"
-              value={
-                report.buildingType === "existing_public" ? "בניין ציבורי קיים" :
-                report.buildingType === "new_public" ? "בניין ציבורי חדש" :
-                report.buildingTypeOther || "אחר"
-              }
-            />
-          )}
+          }}>
+            <Field label="שם המקום / העסק" value={report.placeName} />
+            <Field label="שם הלקוח" value={report.clientName} />
+            <Field label="כתובת" value={report.address} />
+            <Field label="תאריך הסקר" value={formatHebrewDate(report.surveyDate)} />
+            {report.buildingType && (
+              <Field
+                label="סוג הבניין"
+                value={
+                  report.buildingType === "existing_public" ? "בניין ציבורי קיים" :
+                  report.buildingType === "new_public" ? "בניין ציבורי חדש" :
+                  report.buildingTypeOther || "אחר"
+                }
+              />
+            )}
+          </div>
         </div>
       </section>
 
