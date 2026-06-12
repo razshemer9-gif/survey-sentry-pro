@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { useNavigate, useParams } from "react-router-dom";
 import { ArrowRight, Download, Eye, FileDown, Loader2, PenLine, Plus, Save, Trash2 } from "lucide-react";
 import { v4 as uuid } from "uuid";
@@ -48,6 +49,7 @@ export default function ReportEditor() {
   const [settings, setSettings] = useState<ConsultantSettings>({ ...DEFAULT_SETTINGS });
   const [signatureOpen, setSignatureOpen] = useState(false);
   const [refPickerItemId, setRefPickerItemId] = useState<string | null>(null);
+  const printRef = useRef<HTMLDivElement>(null);
   const autoSaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const isFirstLoad = useRef(true);
 
@@ -136,21 +138,15 @@ export default function ReportEditor() {
   const handleGenerate = async () => {
     if (!report) return;
     setGenerating(true);
-    const wasOpen = previewOpen;
     try {
       await saveReport(report);
-      // Open the preview dialog so the exact same component shown in the
-      // preview is the one the browser prints — not a separate hidden element.
-      if (!wasOpen) setPreviewOpen(true);
-      // Two animation frames: let React commit + browser paint the dialog
-      await new Promise<void>((r) => requestAnimationFrame(() => requestAnimationFrame(() => r())));
-      await generateReportPdf(buildPdfFileName(report));
+      await generateReportPdf(printRef.current, buildPdfFileName(report));
       toast.success("ה-PDF הופק והורד");
-    } catch {
+    } catch (err) {
+      console.error("[PDF]", err);
       toast.error("שגיאה ביצירת ה-PDF");
     } finally {
       setGenerating(false);
-      if (!wasOpen) setPreviewOpen(false);
     }
   };
 
@@ -482,6 +478,20 @@ export default function ReportEditor() {
       />
 
     </AppShell>
+
+    {/* Dedicated print mount — id="pdf-print-mount" is the ONLY selector used
+        by @media print, so there is no dependency on Radix or any other
+        third-party portal attribute. Always rendered, always up-to-date. */}
+    {createPortal(
+      <div
+        id="pdf-print-mount"
+        aria-hidden="true"
+        style={{ position: "fixed", top: "100vh", left: 0, pointerEvents: "none" }}
+      >
+        <PrintableReport ref={printRef} report={report} settings={settings} />
+      </div>,
+      document.body
+    )}
     </>
   );
 }
