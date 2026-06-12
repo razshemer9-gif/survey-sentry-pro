@@ -4,10 +4,20 @@ import { getSurveyType, SurveyReport } from "./types";
 import { formatCurrency, formatHebrewDate } from "./image";
 
 /**
- * Captures the live portal element in horizontal strips (each strip ≤ 4 000 px
- * before scaling, keeping every canvas well under the browser's ~16 384 px
- * height limit).  The strips are stitched together into a single long PDF page
- * that is a 1:1 copy of the preview — no page breaks, no scaling distortion.
+ * Captures the live portal element as a single continuous PDF page.
+ *
+ * Root cause of the old truncation: html2canvas's `y` option is in DOCUMENT
+ * coordinates, but the portal element is `position:fixed; top:100vh`, so its
+ * document-Y starts at ~viewportHeight (≈900px), not 0.  Passing `y: 4000`
+ * told html2canvas to start at document Y=4000, which is only 3100px into the
+ * element — making the last strips miss the tail of the report entirely.
+ *
+ * Fix: use the "translateY window" technique.  For each strip we:
+ *   1. shrink the container to exactly the strip height + overflow:hidden
+ *   2. shift the element up with translateY so the desired slice is visible
+ *   3. call html2canvas on the *container* (whose viewport position is fixed
+ *      and known) — it always sees exactly the strip we want
+ *   4. restore styles before the next strip
  */
 export async function generateReportPdf(
   element: HTMLElement | null,
@@ -15,7 +25,7 @@ export async function generateReportPdf(
 ): Promise<void> {
   // ── Validation ──────────────────────────────────────────────────────────
   if (!element) {
-    console.error("[PDF] printRef is null — portal not mounted");
+    console.error("[PDF] printRef is null");
     throw new Error("PDF element not found");
   }
   if (!element.innerHTML.trim()) {
@@ -23,8 +33,10 @@ export async function generateReportPdf(
     throw new Error("PDF element is empty");
   }
 
+  const container = element.parentElement;
+  if (!container) throw new Error("PDF element has no parent container");
+
   const elWidth = element.scrollWidth;
-  // Use the largest of the three height measures to avoid truncation
   const fullHeight = Math.max(
     element.scrollHeight,
     element.offsetHeight,
@@ -40,15 +52,10 @@ export async function generateReportPdf(
     findingsCount: element.querySelectorAll("[data-pdf-no-break]").length,
   });
 
-  if (fullHeight === 0) {
-    console.error("[PDF] fullHeight === 0");
-    throw new Error("PDF element has no height");
-  }
+  if (fullHeight === 0) throw new Error("PDF element has no height");
 
   // ── Wait for fonts ───────────────────────────────────────────────────────
-  if ((document as any).fonts?.ready) {
-    await (document as any).fonts.ready;
-  }
+  if ((document as any).fonts?.ready) await (document as any).fonts.ready;
 
   // ── Wait for images ──────────────────────────────────────────────────────
   const imgs = Array.from(element.querySelectorAll<HTMLImageElement>("img"));
@@ -63,24 +70,20 @@ export async function generateReportPdf(
     ),
   );
 
-  // ── Strip height and scale ───────────────────────────────────────────────
-  // Each strip is captured separately so no single canvas exceeds
-  // the browser's ~16 384 px height limit.
-  // At STRIP_H=4 000 and scale=2 the canvas is 1 588 × 8 000 px — well within limits.
-  const STRIP_H = 4_000; // source pixels per strip
+  // ── Strip config ─────────────────────────────────────────────────────────
+  // 4 000 px source → 8 000 px canvas at scale 2 — well under the 16 384 px limit.
+  const STRIP_H = 4_000;
   const MAX_CANVAS_PX = 14_000_000;
-  const rawStrip = elWidth * STRIP_H;
-  const scale = rawStrip * 4 > MAX_CANVAS_PX
-    ? Math.max(1, Math.sqrt(MAX_CANVAS_PX / rawStrip))
+  const scale = elWidth * STRIP_H * 4 > MAX_CANVAS_PX
+    ? Math.max(1, Math.sqrt(MAX_CANVAS_PX / (elWidth * STRIP_H)))
     : 2;
 
   const stripCount = Math.ceil(fullHeight / STRIP_H);
-  console.log(`[PDF] scale: ${scale.toFixed(2)}, strips: ${stripCount}, totalHeight: ${fullHeight}px`);
+  console.log(`[PDF] scale=${scale.toFixed(2)}, strips=${stripCount}, fullHeight=${fullHeight}px`);
 
-  // ── Build PDF ────────────────────────────────────────────────────────────
-  // 1 CSS px = 25.4 / 96 mm at standard screen resolution
+  // ── Build PDF (single long page) ─────────────────────────────────────────
   const PX_TO_MM = 25.4 / 96;
-  const pageW = elWidth    * PX_TO_MM;   // ≈ 210 mm for the 794 px report
+  const pageW = elWidth    * PX_TO_MM;
   const pageH = fullHeight * PX_TO_MM;
 
   const pdf = new jsPDF({
@@ -89,30 +92,51 @@ export async function generateReportPdf(
     format: [pageW, pageH],
   });
 
-  for (let y = 0; y < fullHeight; y += STRIP_H) {
-    const h = Math.min(STRIP_H, fullHeight - y);
+  // ── Capture strips via translateY window ──────────────────────────────────
+  const savedOverflow  = container.style.overflow;
+  const savedHeight    = container.style.height;
+  const savedTransform = element.style.transform;
 
-    const strip = await html2canvas(element, {
-      scale,
-      backgroundColor: "#ffffff",
-      useCORS: true,
-      windowWidth: elWidth,
-      x:      0,
-      y,
-      width:  elWidth,
-      height: h,
-    });
+  try {
+    for (let i = 0; i < stripCount; i++) {
+      const eY = i * STRIP_H;                        // element-relative Y
+      const h  = Math.min(STRIP_H, fullHeight - eY); // actual strip height
 
-    const imgData = strip.toDataURL("image/jpeg", 0.95);
-    pdf.addImage(
-      imgData, "JPEG",
-      0,               // x in mm
-      y * PX_TO_MM,    // y in mm
-      pageW,           // width in mm
-      h * PX_TO_MM,    // height in mm
-      undefined,
-      "FAST",
-    );
+      // Expose only this strip through the container's clipping window
+      container.style.overflow = "hidden";
+      container.style.height   = h + "px";
+      element.style.transform  = `translateY(-${eY}px)`;
+
+      // Two rAF ticks so the browser repaints before we screenshot
+      await new Promise<void>((r) =>
+        requestAnimationFrame(() => requestAnimationFrame(() => r())),
+      );
+
+      const canvas = await html2canvas(container, {
+        scale,
+        backgroundColor: "#ffffff",
+        useCORS: true,
+        windowWidth: elWidth,
+        width:  elWidth,
+        height: h,
+      });
+
+      pdf.addImage(
+        canvas.toDataURL("image/jpeg", 0.95),
+        "JPEG",
+        0,             // x mm
+        eY * PX_TO_MM, // y mm — correct offset in the long page
+        pageW,         // width mm
+        h  * PX_TO_MM, // height mm
+        undefined,
+        "FAST",
+      );
+    }
+  } finally {
+    // Always restore — even if html2canvas throws
+    container.style.overflow = savedOverflow;
+    container.style.height   = savedHeight;
+    element.style.transform  = savedTransform;
   }
 
   // ── Download ─────────────────────────────────────────────────────────────
@@ -128,7 +152,7 @@ export async function generateReportPdf(
     a.click();
     document.body.removeChild(a);
   } finally {
-    setTimeout(() => URL.revokeObjectURL(url), 4000);
+    setTimeout(() => URL.revokeObjectURL(url), 4_000);
   }
 }
 
