@@ -112,7 +112,8 @@ export async function generateReportPdf(
   let pdf!: jsPDF;
 
   try {
-    for (const { top: pageTop, height: pageH } of slices) {
+    for (let i = 0; i < slices.length; i++) {
+      const { top: pageTop, height: pageH } = slices[i];
       const pageHmm = pageH * PX_TO_MM;
 
       container.style.overflow = "hidden";
