@@ -45,24 +45,64 @@ export async function generateReportPdf(
     ),
   );
 
-  // ── Page sizing ──────────────────────────────────────────────────────────
+  // ── Page sizing and smart break calculation ──────────────────────────────
   // At scale 2 each canvas is elWidth*2 × PAGE_H*2 pixels.
   // Stay well under the browser ~16 384 px height limit and 14 MP total.
-  const scale    = 2;
-  const MAX_PX   = 14_000_000;
-  const PAGE_H   = Math.min(4_000, Math.floor(MAX_PX / (elWidth * scale)));
-  const numPages = Math.ceil(elHeight / PAGE_H);
+  const scale  = 2;
+  const MAX_PX = 14_000_000;
+  const PAGE_H = Math.min(4_000, Math.floor(MAX_PX / (elWidth * scale)));
 
-  console.log(`[PDF] scale=${scale}, PAGE_H=${PAGE_H}px, pages=${numPages}`);
+  // Positions of [data-pdf-no-break] cards relative to the element's top.
+  // Must be computed before any marginTop manipulation.
+  const elTop    = element.getBoundingClientRect().top;
+  const noBreaks = Array.from(
+    element.querySelectorAll<HTMLElement>("[data-pdf-no-break]"),
+  ).map((el) => {
+    const r = el.getBoundingClientRect();
+    return { top: r.top - elTop, bottom: r.bottom - elTop };
+  });
+
+  // Build slice list — never break inside a no-break card.
+  const slices: { top: number; height: number }[] = [];
+  let cursor = 0;
+
+  while (cursor < elHeight) {
+    let end = cursor + PAGE_H;
+
+    if (end >= elHeight) {
+      slices.push({ top: cursor, height: elHeight - cursor });
+      break;
+    }
+
+    // Pull break earlier if it lands inside a no-break card.
+    for (const nb of noBreaks) {
+      if (nb.top < end && nb.bottom > end) {
+        end = nb.top;
+        break;
+      }
+    }
+
+    // If a single card is taller than PAGE_H, let it overflow its page
+    // rather than cutting it — push end to the card's bottom edge.
+    if (end <= cursor) {
+      const tall = noBreaks.find((nb) => nb.top <= cursor && nb.bottom > cursor);
+      end = tall ? tall.bottom : cursor + PAGE_H;
+    }
+
+    slices.push({ top: cursor, height: end - cursor });
+    cursor = end;
+  }
+
+  console.log(`[PDF] scale=${scale}, PAGE_H=${PAGE_H}px, slices=${slices.length}, total=${elHeight}px`);
 
   const PX_TO_MM = 25.4 / 96;
   const pageWmm  = elWidth * PX_TO_MM;
 
-  // ── Capture each page via the "marginTop slide" technique ────────────────
+  // ── Capture each slice via the "marginTop slide" technique ───────────────
   // The container (#pdf-print-mount) is position:fixed; top:100vh — always
-  // at a known viewport position.  For each page we:
-  //   1. Shrink the container to PAGE_H + overflow:hidden
-  //   2. Slide the element up by pageTop using a negative margin-top
+  // at a known viewport position.  For each slice we:
+  //   1. Shrink the container to sliceH + overflow:hidden
+  //   2. Slide the element up by sliceTop using a negative margin-top
   //   3. html2canvas(container) captures the container from its own top —
   //      no document-coordinate math needed for the fixed element.
   const savedOverflow  = container.style.overflow;
@@ -72,9 +112,8 @@ export async function generateReportPdf(
   let pdf!: jsPDF;
 
   try {
-    for (let i = 0; i < numPages; i++) {
-      const pageTop = i * PAGE_H;
-      const pageH   = Math.min(PAGE_H, elHeight - pageTop);
+    for (let i = 0; i < slices.length; i++) {
+      const { top: pageTop, height: pageH } = slices[i];
       const pageHmm = pageH * PX_TO_MM;
 
       container.style.overflow = "hidden";
