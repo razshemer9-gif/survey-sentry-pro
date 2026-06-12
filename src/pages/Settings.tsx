@@ -15,7 +15,6 @@ import { ConsultantSettings, SurveyReportFormat, SurveyType, SURVEY_TYPES } from
 import { loadUserSettings, saveUserSettings } from "@/lib/storage";
 import { useAuth } from "@/contexts/AuthContext";
 
-// Tab labels in the order the user requested
 const TAB_ORDER: { id: SurveyType; label: string }[] = [
   { id: "accessibility",    label: "נגישות" },
   { id: "general_safety",   label: 'בטיחות כללי' },
@@ -175,7 +174,6 @@ export default function Settings() {
         </div>
 
         <Tabs defaultValue="accessibility" dir="rtl">
-          {/* ── Tab triggers ── */}
           <TabsList className="w-full mb-5 rounded-2xl h-11">
             {TAB_ORDER.map((t) => (
               <TabsTrigger key={t.id} value={t.id} className="flex-1 text-xs font-semibold rounded-xl">
@@ -184,7 +182,6 @@ export default function Settings() {
             ))}
           </TabsList>
 
-          {/* ── Tab content ── */}
           {TAB_ORDER.map(({ id }) => {
             const surveyConfig = SURVEY_TYPES.find((t) => t.id === id)!;
             const fmt = getFormat(id);
@@ -193,6 +190,14 @@ export default function Settings() {
 
             return (
               <TabsContent key={id} value={id} className="space-y-4 mt-0">
+
+                <Field label="שם חברה">
+                  <Input
+                    placeholder='למשל: יועצי נגישות מתו"ס'
+                    value={s.companyName ?? ""}
+                    onChange={(e) => setS((prev) => prev ? { ...prev, companyName: e.target.value } : prev)}
+                  />
+                </Field>
 
                 <Field label="כותרת הדוח (PDF)">
                   <Input
