@@ -6,18 +6,12 @@ import { formatCurrency, formatHebrewDate } from "./image";
 /**
  * Captures the live portal element as a single continuous PDF page.
  *
- * Root cause of the old truncation: html2canvas's `y` option is in DOCUMENT
- * coordinates, but the portal element is `position:fixed; top:100vh`, so its
- * document-Y starts at ~viewportHeight (≈900px), not 0.  Passing `y: 4000`
- * told html2canvas to start at document Y=4000, which is only 3100px into the
- * element — making the last strips miss the tail of the report entirely.
- *
- * Fix: use the "translateY window" technique.  For each strip we:
- *   1. shrink the container to exactly the strip height + overflow:hidden
- *   2. shift the element up with translateY so the desired slice is visible
- *   3. call html2canvas on the *container* (whose viewport position is fixed
- *      and known) — it always sees exactly the strip we want
- *   4. restore styles before the next strip
+ * Key: html2canvas `y` is in DOCUMENT coordinates, not element-relative.
+ * The portal element is `position:fixed; top:100vh`, so its document-Y
+ * ≈ window.innerHeight (~900 px).  We compute elementDocTop once and add
+ * each strip's element-relative offset to get the correct document-Y for
+ * every html2canvas call.  The strips are stitched into one long PDF page
+ * at their correct element-relative Y positions.
  */
 export async function generateReportPdf(
   element: HTMLElement | null,
@@ -32,9 +26,6 @@ export async function generateReportPdf(
     console.error("[PDF] printRef.innerHTML is empty");
     throw new Error("PDF element is empty");
   }
-
-  const container = element.parentElement;
-  if (!container) throw new Error("PDF element has no parent container");
 
   const elWidth = element.scrollWidth;
   const fullHeight = Math.max(
@@ -79,7 +70,15 @@ export async function generateReportPdf(
     : 2;
 
   const stripCount = Math.ceil(fullHeight / STRIP_H);
-  console.log(`[PDF] scale=${scale.toFixed(2)}, strips=${stripCount}, fullHeight=${fullHeight}px`);
+
+  // html2canvas `y` is in document coordinates.
+  // parseBounds(element) = getBoundingClientRect().top + window.scrollY.
+  // For position:fixed; top:100vh → docTop ≈ window.innerHeight + scrollY.
+  // Each strip must pass (docTop + elementRelativeY) so html2canvas crops
+  // exactly the right slice — not from the top of the page.
+  const elementDocTop = element.getBoundingClientRect().top + window.scrollY;
+
+  console.log(`[PDF] scale=${scale.toFixed(2)}, strips=${stripCount}, fullHeight=${fullHeight}px, elementDocTop=${Math.round(elementDocTop)}px`);
 
   // ── Build PDF (single long page) ─────────────────────────────────────────
   const PX_TO_MM = 25.4 / 96;
@@ -92,51 +91,32 @@ export async function generateReportPdf(
     format: [pageW, pageH],
   });
 
-  // ── Capture strips via translateY window ──────────────────────────────────
-  const savedOverflow  = container.style.overflow;
-  const savedHeight    = container.style.height;
-  const savedTransform = element.style.transform;
+  // ── Capture strips with correct document-Y offsets ───────────────────────
+  for (let i = 0; i < stripCount; i++) {
+    const eY = i * STRIP_H;                        // element-relative Y
+    const h  = Math.min(STRIP_H, fullHeight - eY); // actual strip height
 
-  try {
-    for (let i = 0; i < stripCount; i++) {
-      const eY = i * STRIP_H;                        // element-relative Y
-      const h  = Math.min(STRIP_H, fullHeight - eY); // actual strip height
+    const canvas = await html2canvas(element, {
+      scale,
+      backgroundColor: "#ffffff",
+      useCORS: true,
+      windowWidth:  elWidth,
+      x:            0,
+      y:            elementDocTop + eY, // ← document Y of this strip's start
+      width:        elWidth,
+      height:       h,
+    });
 
-      // Expose only this strip through the container's clipping window
-      container.style.overflow = "hidden";
-      container.style.height   = h + "px";
-      element.style.transform  = `translateY(-${eY}px)`;
-
-      // Two rAF ticks so the browser repaints before we screenshot
-      await new Promise<void>((r) =>
-        requestAnimationFrame(() => requestAnimationFrame(() => r())),
-      );
-
-      const canvas = await html2canvas(container, {
-        scale,
-        backgroundColor: "#ffffff",
-        useCORS: true,
-        windowWidth: elWidth,
-        width:  elWidth,
-        height: h,
-      });
-
-      pdf.addImage(
-        canvas.toDataURL("image/jpeg", 0.95),
-        "JPEG",
-        0,             // x mm
-        eY * PX_TO_MM, // y mm — correct offset in the long page
-        pageW,         // width mm
-        h  * PX_TO_MM, // height mm
-        undefined,
-        "FAST",
-      );
-    }
-  } finally {
-    // Always restore — even if html2canvas throws
-    container.style.overflow = savedOverflow;
-    container.style.height   = savedHeight;
-    element.style.transform  = savedTransform;
+    pdf.addImage(
+      canvas.toDataURL("image/jpeg", 0.95),
+      "JPEG",
+      0,             // x mm
+      eY * PX_TO_MM, // y mm — element-relative, matches strip offset
+      pageW,         // width mm
+      h  * PX_TO_MM, // height mm
+      undefined,
+      "FAST",
+    );
   }
 
   // ── Download ─────────────────────────────────────────────────────────────
