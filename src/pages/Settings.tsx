@@ -15,7 +15,6 @@ import { ConsultantSettings, SurveyReportFormat, SurveyType, SURVEY_TYPES } from
 import { loadUserSettings, saveUserSettings } from "@/lib/storage";
 import { useAuth } from "@/contexts/AuthContext";
 
-// Tab labels in the order the user requested
 const TAB_ORDER: { id: SurveyType; label: string }[] = [
   { id: "accessibility",    label: "נגישות" },
   { id: "general_safety",   label: 'בטיחות כללי' },
@@ -28,7 +27,6 @@ export default function Settings() {
   const [s, setS] = useState<ConsultantSettings | null>(null);
   const [admin, setAdmin] = useState(false);
   const [savingType, setSavingType] = useState<SurveyType | null>(null);
-  const [savingGeneral, setSavingGeneral] = useState(false);
 
   useEffect(() => {
     if (!user) return;
@@ -63,22 +61,6 @@ export default function Settings() {
     );
   };
 
-  const updGeneral = (patch: Partial<ConsultantSettings>) =>
-    setS((prev) => (prev ? { ...prev, ...patch } : prev));
-
-  const handleSaveGeneral = async () => {
-    if (!user || !s) return;
-    setSavingGeneral(true);
-    try {
-      await saveUserSettings(user.id, s);
-      toast.success("פרטי היועץ נשמרו");
-    } catch {
-      toast.error("שגיאה בשמירת הפרטים");
-    } finally {
-      setSavingGeneral(false);
-    }
-  };
-
   const handleSave = async (type: SurveyType) => {
     if (!user || !s) return;
     setSavingType(type);
@@ -107,75 +89,7 @@ export default function Settings() {
       </header>
 
       <div className="px-4 pt-4 pb-6" dir="rtl">
-
-        {/* ── Consultant profile ── */}
-        <div className="mb-5 rounded-2xl border border-border bg-card p-4 space-y-3">
-          <p className="text-sm font-bold text-foreground">פרטי יועץ</p>
-
-          <Field label="שם חברה">
-            <Input
-              placeholder='למשל: יועצי נגישות מתו"ס'
-              value={s.companyName ?? ""}
-              onChange={(e) => updGeneral({ companyName: e.target.value })}
-            />
-          </Field>
-
-          <Field label="שם בעל המקצוע">
-            <Input
-              placeholder="שם מלא"
-              value={s.consultantName ?? ""}
-              onChange={(e) => updGeneral({ consultantName: e.target.value })}
-            />
-          </Field>
-
-          <Field label="מספר רישוי">
-            <Input
-              placeholder="מספר רישוי שירות"
-              value={s.license ?? ""}
-              onChange={(e) => updGeneral({ license: e.target.value })}
-              dir="ltr"
-            />
-          </Field>
-
-          <Field label="טלפון">
-            <Input
-              placeholder="050-0000000"
-              value={s.phone ?? ""}
-              onChange={(e) => updGeneral({ phone: e.target.value })}
-              dir="ltr"
-            />
-          </Field>
-
-          <Field label='דוא"ל'>
-            <Input
-              placeholder="email@example.com"
-              value={s.email ?? ""}
-              onChange={(e) => updGeneral({ email: e.target.value })}
-              dir="ltr"
-            />
-          </Field>
-
-          <Field label="כתובת">
-            <Input
-              placeholder="רחוב, עיר"
-              value={s.address ?? ""}
-              onChange={(e) => updGeneral({ address: e.target.value })}
-            />
-          </Field>
-
-          <Button
-            onClick={handleSaveGeneral}
-            className="w-full gap-2 rounded-2xl"
-            size="lg"
-            disabled={savingGeneral}
-          >
-            <Save className="h-5 w-5" />
-            {savingGeneral ? "שומר..." : "שמור פרטי יועץ"}
-          </Button>
-        </div>
-
         <Tabs defaultValue="accessibility" dir="rtl">
-          {/* ── Tab triggers ── */}
           <TabsList className="w-full mb-5 rounded-2xl h-11">
             {TAB_ORDER.map((t) => (
               <TabsTrigger key={t.id} value={t.id} className="flex-1 text-xs font-semibold rounded-xl">
@@ -184,7 +98,6 @@ export default function Settings() {
             ))}
           </TabsList>
 
-          {/* ── Tab content ── */}
           {TAB_ORDER.map(({ id }) => {
             const surveyConfig = SURVEY_TYPES.find((t) => t.id === id)!;
             const fmt = getFormat(id);
@@ -193,6 +106,14 @@ export default function Settings() {
 
             return (
               <TabsContent key={id} value={id} className="space-y-4 mt-0">
+
+                <Field label="שם חברה">
+                  <Input
+                    placeholder='למשל: יועצי נגישות מתו"ס'
+                    value={s.companyName ?? ""}
+                    onChange={(e) => setS((prev) => prev ? { ...prev, companyName: e.target.value } : prev)}
+                  />
+                </Field>
 
                 <Field label="כותרת הדוח (PDF)">
                   <Input
