@@ -64,7 +64,6 @@ export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, sett
       {/* COVER PAGE */}
       <section
         style={{
-          minHeight: "1100px",
           padding: "0",
           position: "relative",
           background: `linear-gradient(160deg,${surveyConfig.color}dd 0%,${surveyConfig.color} 55%,${surveyConfig.color}99 100%)`,
@@ -83,12 +82,10 @@ export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, sett
           <div style={{ fontSize: 22, marginTop: 14, opacity: 0.95 }}>{report.placeName || "ללא שם"}</div>
         </div>
 
-        <div style={{ flex: 1 }} />
-
         <div
           data-pdf-no-break=""
           style={{
-            margin: "32px 48px 48px",
+            margin: "24px 48px 48px",
             background: "rgba(255,255,255,0.96)",
             color: "#0f172a",
             borderRadius: 16,
@@ -101,7 +98,7 @@ export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, sett
               src={report.coverPhoto}
               alt="cover"
               crossOrigin="anonymous"
-              style={{ width: "100%", maxHeight: 380, objectFit: "cover", display: "block" }}
+              style={{ width: "100%", height: "auto", display: "block" }}
             />
           )}
           <div style={{
