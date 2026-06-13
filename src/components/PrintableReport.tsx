@@ -1,6 +1,6 @@
 import { ConsultantSettings, getSurveyType, SurveyReport, SurveyReportFormat } from "@/lib/types";
 import { formatCurrency, formatHebrewDate } from "@/lib/pdf";
-import { forwardRef } from "react";
+import React, { forwardRef } from "react";
 
 interface Props {
   report: SurveyReport;
@@ -119,6 +119,193 @@ export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, sett
       </div>
     );
   };
+
+  // ── Education Safety: bespoke table layout ────────────────────────────────
+  if (report.surveyType === "education_safety") {
+    const inspectorName = fmt.professionalName || settings.consultantName;
+    const inspectorRole = fmt.professionalRole;
+    const headerColor = "#15803d"; // green accent for education safety
+
+    const EDU_PRIORITY: { p: 0 | 1 | 2; label: string; desc: string; color: string; bg: string; border: string }[] = [
+      { p: 0, label: "קדימות 0", desc: "מפגע בטיחותי — מחייב הסרה מיידית.",              color: "#b91c1c", bg: "#fef2f2", border: "#fca5a5" },
+      { p: 1, label: "קדימות 1", desc: "תיקון ליקוי — פער גדול בין הממצא לדרישה.",     color: "#c2410c", bg: "#fff7ed", border: "#fdba74" },
+      { p: 2, label: "קדימות 2", desc: "תיקון ליקוי — פער קטן עד בינוני.",             color: "#b45309", bg: "#fffbeb", border: "#fde68a" },
+    ];
+
+    const TH: React.CSSProperties = {
+      background: headerColor, color: "#fff", fontWeight: 700, fontSize: 12,
+      padding: "8px 8px", border: "1px solid #166534", textAlign: "center",
+    };
+    const TD: React.CSSProperties = {
+      padding: "8px 8px", fontSize: 12, border: "1px solid #d1d5db", verticalAlign: "top",
+      lineHeight: 1.6,
+    };
+    const COL = "50px 120px 64px 1fr 1fr";
+
+    const renderTableRow = (item: typeof report.items[0], idx: number) => (
+      <div key={item.id} data-pdf-no-break="" style={{ display: "grid", gridTemplateColumns: COL }}>
+        <div style={{ ...TD, textAlign: "center", fontWeight: 700 }}>{idx + 1}</div>
+        <div style={TD}>{item.title || "—"}</div>
+        <div style={{ ...TD, textAlign: "center" }}>{item.clause || "—"}</div>
+        <div style={TD}>{item.notes || "—"}</div>
+        <div style={TD}>
+          {item.fieldNotes || "—"}
+          {item.photo && (
+            <img src={item.photo} alt="מצב קיים" crossOrigin="anonymous"
+              style={{ marginTop: 6, maxWidth: "100%", height: "auto", display: "block", borderRadius: 4 }} />
+          )}
+        </div>
+      </div>
+    );
+
+    const groups0 = report.items.filter(i => i.priority === 0);
+    const groups1 = report.items.filter(i => i.priority === 1);
+    const groups2 = report.items.filter(i => i.priority === 2);
+    const groupsNone = report.items.filter(i => i.priority === undefined);
+
+    return (
+      <div ref={ref} dir="rtl" lang="he"
+        style={{ width: "794px", background: "#ffffff", color: "#0f172a", fontFamily: "Heebo, Assistant, sans-serif" }}>
+
+        {/* Header */}
+        <div style={{ padding: "32px 48px 20px", textAlign: "center", borderBottom: `3px solid ${headerColor}` }}>
+          {coverLogo && (
+            <img src={coverLogo} alt="logo" crossOrigin="anonymous"
+              style={{ maxHeight: 90, maxWidth: "100%", height: "auto", display: "block", margin: "0 auto 12px" }} />
+          )}
+          <div style={{ fontSize: 13, color: "#64748b", marginBottom: 6 }}>{formatHebrewDate(report.surveyDate)}</div>
+          <h1 style={{ fontSize: 26, fontWeight: 800, color: headerColor, margin: "0 0 8px" }}>
+            {fmt.reportTitle || "הבטחת תנאים בטיחותיים במוסדות חינוך"}
+          </h1>
+          <div style={{ fontSize: 18, fontWeight: 700, letterSpacing: 6, color: "#334155" }}>
+            ד ו ח &nbsp; ס י כ ו ם &nbsp; מ ב ד ק
+          </div>
+        </div>
+
+        {/* General data */}
+        <div style={{ padding: "24px 48px 16px" }}>
+          <h2 style={{ fontSize: 15, fontWeight: 800, color: headerColor, borderBottom: `2px solid ${headerColor}`, paddingBottom: 6, marginBottom: 14 }}>
+            נתונים כלליים
+          </h2>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px 32px", background: "#f0fdf4", border: "1px solid #bbf7d0", borderRadius: 10, padding: "16px 20px", fontSize: 14 }}>
+            <div><strong>שם המוסד:</strong> {report.placeName || "—"}</div>
+            <div><strong>הבעלות / הרשות:</strong> {report.clientName || "—"}</div>
+            <div><strong>כתובת המוסד:</strong> {report.address || "—"}</div>
+            <div><strong>תאריך המבדק:</strong> {formatHebrewDate(report.surveyDate)}</div>
+            <div style={{ gridColumn: "span 2" }}>
+              <strong>פרטי הבודק:</strong>{" "}
+              {[inspectorName, inspectorRole, licNum ? `מ.ר ${licNum}` : ""].filter(Boolean).join(" — ")}
+            </div>
+            {settings.companyName && (
+              <div style={{ gridColumn: "span 2" }}><strong>חברה:</strong> {settings.companyName}</div>
+            )}
+          </div>
+        </div>
+
+        {/* Priority legend */}
+        <div style={{ padding: "0 48px 20px" }}>
+          <h2 style={{ fontSize: 15, fontWeight: 800, color: headerColor, borderBottom: `2px solid ${headerColor}`, paddingBottom: 6, marginBottom: 12 }}>
+            ממצאים לפי תחומי בדיקה וקדימות טיפול
+          </h2>
+          {EDU_PRIORITY.map(({ label, desc }) => (
+            <div key={label} style={{ fontSize: 13, lineHeight: 1.8 }}>
+              <strong>{label}:</strong> {desc}
+            </div>
+          ))}
+          {report.generalNotes && (
+            <div style={{ marginTop: 10, fontSize: 13, whiteSpace: "pre-wrap", lineHeight: 1.7, background: "#f8fafc", borderRadius: 8, padding: "10px 14px", border: "1px solid #e2e8f0" }}>
+              {report.generalNotes}
+            </div>
+          )}
+        </div>
+
+        {/* Findings table */}
+        <div style={{ padding: "0 48px 48px" }}>
+          {/* Column headers */}
+          <div style={{ display: "grid", gridTemplateColumns: COL }}>
+            <div style={TH}>מס״ד</div>
+            <div style={TH}>תחום הבדיקה</div>
+            <div style={TH}>סעיף</div>
+            <div style={TH}>הדרישה</div>
+            <div style={TH}>מיקום הממצא, תיאור הממצא ומהותו</div>
+          </div>
+
+          {EDU_PRIORITY.map(({ p, label, color, bg, border }) => {
+            const items = p === 0 ? groups0 : p === 1 ? groups1 : groups2;
+            if (!items.length) return null;
+            return (
+              <div key={p}>
+                <div style={{ background: bg, color, fontWeight: 800, fontSize: 14, padding: "9px 14px", border: `2px solid ${border}`, marginTop: 8, marginBottom: 2 }}>
+                  {label}
+                </div>
+                {items.map(item => renderTableRow(item, report.items.indexOf(item)))}
+              </div>
+            );
+          })}
+
+          {groupsNone.length > 0 && (
+            <div>
+              <div style={{ background: "#f8fafc", color: "#334155", fontWeight: 800, fontSize: 14, padding: "9px 14px", border: "2px solid #e2e8f0", marginTop: 8, marginBottom: 2 }}>
+                ממצאים נוספים
+              </div>
+              {groupsNone.map(item => renderTableRow(item, report.items.indexOf(item)))}
+            </div>
+          )}
+
+          <div style={{ marginTop: 14, fontSize: 12, color: "#64748b", fontStyle: "italic" }}>
+            * דוח זה מתייחס לליקויים שהתגלו ביום הבדיקה בלבד.
+          </div>
+
+          {/* Cost summary if any */}
+          {totalCost > 0 && (
+            <div style={{ marginTop: 24, background: headerColor, color: "#fff", borderRadius: 12, overflow: "hidden" }}>
+              {report.items.filter(i => i.includeInCost && (Number(i.estimatedCost) || 0) > 0).map((item, idx, arr) => (
+                <div key={item.id} style={{ display: "flex", justifyContent: "space-between", padding: "8px 16px", borderBottom: idx < arr.length - 1 ? "1px solid rgba(255,255,255,0.2)" : undefined, fontSize: 13 }}>
+                  <span style={{ opacity: 0.85, flex: 1 }}>{item.title}</span>
+                  {(item.quantity ?? 1) > 1 && <span style={{ opacity: 0.7, fontSize: 12 }}>{formatCurrency(item.estimatedCost)} × {item.quantity}</span>}
+                  <span style={{ fontWeight: 600 }}>{formatCurrency(itemTotal(item))}</span>
+                </div>
+              ))}
+              <div style={{ display: "flex", justifyContent: "space-between", padding: "12px 16px", borderTop: "2px solid rgba(255,255,255,0.35)" }}>
+                <span>אומדן עלות תיקונים כולל</span>
+                <strong style={{ fontSize: 18 }}>{formatCurrency(totalCost)}</strong>
+              </div>
+            </div>
+          )}
+
+          {/* Signature */}
+          <div style={{ marginTop: 32, display: "flex", gap: 48, alignItems: "flex-end" }}>
+            <div>
+              {(fmt.signatureImage || report.signatureDataUrl) ? (
+                <img src={fmt.signatureImage || report.signatureDataUrl} alt="חתימה" crossOrigin="anonymous"
+                  style={{ maxHeight: 64, maxWidth: 200, display: "block" }} />
+              ) : (
+                <div style={{ height: 56, width: 200, borderBottom: "1px solid #94a3b8" }} />
+              )}
+              <div style={{ fontSize: 12, color: "#64748b", marginTop: 4 }}>
+                {sigName || "חתימת הבודק"}
+                {report.signatureDate ? ` • ${report.signatureDate}` : ""}
+              </div>
+            </div>
+            {fmt.stampImage && (
+              <div>
+                <img src={fmt.stampImage} alt="חותמת" crossOrigin="anonymous"
+                  style={{ maxHeight: 80, maxWidth: 120, display: "block" }} />
+                <div style={{ fontSize: 11, color: "#64748b", marginTop: 2 }}>חותמת</div>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Footer */}
+        <div style={{ padding: "12px 48px", borderTop: "1px solid #e2e8f0", display: "flex", justifyContent: "space-between", fontSize: 12, color: "#64748b" }}>
+          <span>{settings.companyName}</span>
+          <span>הופק בתאריך {formatHebrewDate(new Date().toISOString().slice(0, 10))}</span>
+        </div>
+      </div>
+    );
+  }
+  // ─────────────────────────────────────────────────────────────────────────
 
   return (
     <div
