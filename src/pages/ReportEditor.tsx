@@ -390,13 +390,9 @@ export default function ReportEditor() {
 
       {/* Bottom action bar */}
       <div className="fixed inset-x-0 z-30 mx-auto max-w-lg px-4" style={{ bottom: 'calc(3.5rem + env(safe-area-inset-bottom, 0px))' }}>
-        <div className="grid grid-cols-3 gap-2 rounded-2xl bg-card/95 p-2 shadow-pop backdrop-blur-md border border-border">
+        <div className="grid grid-cols-2 gap-2 rounded-2xl bg-card/95 p-2 shadow-pop backdrop-blur-md border border-border">
           <Button variant="outline" onClick={() => setPreviewOpen(true)} className="gap-1.5 rounded-xl text-xs">
             <Eye className="h-4 w-4" /> תצוגה
-          </Button>
-          <Button variant="outline" onClick={() => setSignatureOpen(true)} className="gap-1.5 rounded-xl text-xs relative">
-            <PenLine className="h-4 w-4" /> חתימה
-            {report.signatureDataUrl && <span className="absolute top-1 right-1 h-2 w-2 rounded-full bg-success" />}
           </Button>
           <Button onClick={handleGenerate} disabled={generating} className="gap-1.5 rounded-xl text-xs">
             {generating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
