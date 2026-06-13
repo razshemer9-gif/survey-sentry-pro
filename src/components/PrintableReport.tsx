@@ -187,19 +187,46 @@ export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, sett
           <h2 style={{ fontSize: 15, fontWeight: 800, color: headerColor, borderBottom: `2px solid ${headerColor}`, paddingBottom: 6, marginBottom: 14 }}>
             נתונים כלליים
           </h2>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px 32px", background: "#eff6ff", border: "1px solid #bfdbfe", borderRadius: 10, padding: "16px 20px", fontSize: 14 }}>
-            <div><strong>שם המוסד:</strong> {report.placeName || "—"}</div>
-            <div><strong>הבעלות / הרשות:</strong> {report.clientName || "—"}</div>
-            <div><strong>כתובת המוסד:</strong> {report.address || "—"}</div>
-            <div><strong>תאריך המבדק:</strong> {formatHebrewDate(report.surveyDate)}</div>
-            <div style={{ gridColumn: "span 2" }}>
-              <strong>פרטי הבודק:</strong>{" "}
-              {[inspectorName, inspectorRole, licNum ? `מ.ר ${licNum}` : ""].filter(Boolean).join(" — ")}
-            </div>
-            {settings.companyName && (
-              <div style={{ gridColumn: "span 2" }}><strong>חברה:</strong> {settings.companyName}</div>
-            )}
-          </div>
+          {(() => {
+            const C: React.CSSProperties = { border: "1px solid #374151", padding: "6px 8px", fontSize: 13, verticalAlign: "top" };
+            const L: React.CSSProperties = { fontWeight: 700, fontSize: 11, display: "block", marginBottom: 2 };
+            const Cell = ({ label, value, colSpan }: { label: string; value?: string; colSpan?: number }) => (
+              <td style={{ ...C, ...(colSpan ? { colSpan } : {}) }} colSpan={colSpan}>
+                <span style={L}>{label}:</span>{value || ""}
+              </td>
+            );
+            return (
+              <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
+                <tbody>
+                  <tr>
+                    <Cell label="מספר תלמידים וכיתות" value={report.studentCount} />
+                    <Cell label="סמל המוסד" value={report.institutionSymbol} />
+                    <Cell label="שם המוסד" value={report.placeName} />
+                    <Cell label="הבעלות" value={report.clientName} />
+                    <Cell label="הישוב" value={report.city} />
+                  </tr>
+                  <tr>
+                    <Cell label="טלפון המוסד" value={report.institutionPhone} />
+                    <Cell label="שנת הקמה" value={report.establishedYear} />
+                    <td style={C} colSpan={3}><span style={L}>כתובת המוסד:</span>{report.address || ""}</td>
+                  </tr>
+                  <tr>
+                    <Cell label="משתתפים מטעם הרשות" value={report.authorityParticipants} />
+                    <Cell label="משתתפים מטעם המוסד החינוכי" value={report.institutionParticipants} />
+                    <Cell label="שם המפקח" value={report.supervisorName} />
+                    <td style={C} colSpan={2}><span style={L}>שם המנהל/ת:</span>{report.principalName || ""}</td>
+                  </tr>
+                  <tr>
+                    <td style={C} colSpan={2}>
+                      <span style={L}>פרטי הבודק:</span>
+                      {[inspectorName, inspectorRole, licNum ? `מ.ר ${licNum}` : ""].filter(Boolean).join(" — ")}
+                    </td>
+                    <td style={C} colSpan={3}><span style={L}>תאריך המבדק:</span>{formatHebrewDate(report.surveyDate)}</td>
+                  </tr>
+                </tbody>
+              </table>
+            );
+          })()}
         </div>
 
         {/* Priority legend */}
