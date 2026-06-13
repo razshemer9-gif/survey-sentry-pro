@@ -123,15 +123,6 @@ export default function Settings() {
                   />
                 </Field>
 
-                <Field label="מספר ת.ז.">
-                  <Input
-                    placeholder="000000000"
-                    value={s.idNumber ?? ""}
-                    onChange={(e) => setS((prev) => prev ? { ...prev, idNumber: e.target.value } : prev)}
-                    dir="ltr"
-                  />
-                </Field>
-
                 <Field label="תפקיד / הסמכה">
                   <Input
                     placeholder='למשל: מורשה נגישות מתו"ס'
