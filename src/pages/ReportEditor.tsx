@@ -308,6 +308,7 @@ export default function ReportEditor() {
               </>
             );
           })()}
+        </TabsContent>
 
         {/* CHECKLIST TAB */}
         <TabsContent value="checklist" className="mt-4 space-y-3 pb-20">
