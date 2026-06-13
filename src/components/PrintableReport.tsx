@@ -167,15 +167,40 @@ export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, sett
             background: surveyConfig.color,
             color: "#fff",
             borderRadius: 14,
-            padding: "16px 20px",
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
+            overflow: "hidden",
             fontSize: 16,
           }}
         >
-          <span style={{ opacity: 0.9 }}>אומדן עלות תיקונים כולל</span>
-          <strong style={{ fontSize: 22 }}>{formatCurrency(totalCost)}</strong>
+          {/* Cost breakdown rows */}
+          {report.items.filter((i) => i.includeInCost && (Number(i.estimatedCost) || 0) > 0).map((item, idx, arr) => (
+            <div
+              key={item.id}
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+                padding: "10px 20px",
+                borderBottom: idx < arr.length - 1 ? "1px solid rgba(255,255,255,0.2)" : undefined,
+                fontSize: 14,
+              }}
+            >
+              <span style={{ opacity: 0.85 }}>{item.title || `ממצא ${idx + 1}`}</span>
+              <span style={{ fontWeight: 600, whiteSpace: "nowrap", marginRight: 12 }}>{formatCurrency(item.estimatedCost)}</span>
+            </div>
+          ))}
+          {/* Total row */}
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              padding: "14px 20px",
+              borderTop: "2px solid rgba(255,255,255,0.35)",
+            }}
+          >
+            <span style={{ opacity: 0.9 }}>אומדן עלות תיקונים כולל</span>
+            <strong style={{ fontSize: 22 }}>{formatCurrency(totalCost)}</strong>
+          </div>
         </div>
 
       </section>
