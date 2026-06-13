@@ -86,7 +86,7 @@ export function newReport(
         title: i.title,
         status: "non_compliant" as const,
         notes: i.notes || "",
-        estimatedCost: 0,
+        estimatedCost: i.defaultCost || 0,
         ...(i.includeInCost !== undefined && { includeInCost: i.includeInCost }),
         ...(i.referencePhoto && { referencePhoto: i.referencePhoto }),
         ...(i.referencePhotos?.length && { referencePhotos: i.referencePhotos }),
