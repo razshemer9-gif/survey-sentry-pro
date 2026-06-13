@@ -51,7 +51,8 @@ export interface ChecklistItem {
   status: ComplianceStatus;
   notes: string;           // ממצא — מגיע מתבנית, read-only בדוח
   fieldNotes?: string;     // פירוט מצב קיים — נמלא בשטח, ייעודי לדוח
-  estimatedCost: number; // ILS
+  estimatedCost: number; // ILS — unit price
+  quantity?: number;     // units (default 1); total = estimatedCost × quantity
   includeInCost?: boolean;
   photo?: string; // dataURL — תמונת מצב קיים
   referencePhoto?: string; // legacy single photo — read for backwards compat

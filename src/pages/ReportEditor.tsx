@@ -152,7 +152,7 @@ export default function ReportEditor() {
 
   const totalCost = report.items
     .filter((i) => i.includeInCost)
-    .reduce((s, i) => s + (Number(i.estimatedCost) || 0), 0);
+    .reduce((s, i) => s + (Number(i.estimatedCost) || 0) * (i.quantity ?? 1), 0);
 
   return (
     <>
@@ -303,15 +303,30 @@ export default function ReportEditor() {
                   </div>
 
                   <div className="flex flex-wrap items-center gap-2">
-                    <Label className="shrink-0 text-xs text-muted-foreground">אומדן עלות (₪)</Label>
+                    <Label className="shrink-0 text-xs text-muted-foreground">מחיר יחידה (₪)</Label>
                     <Input
                       type="number"
                       inputMode="numeric"
                       value={item.estimatedCost || ""}
                       onChange={(e) => updateItem(item.id, { estimatedCost: Number(e.target.value) || 0 })}
-                      className="h-9 w-28 min-w-0"
+                      className="h-9 w-24 min-w-0"
                       placeholder="0"
                     />
+                    <Label className="shrink-0 text-xs text-muted-foreground">כמות</Label>
+                    <Input
+                      type="number"
+                      inputMode="numeric"
+                      min={1}
+                      value={item.quantity ?? 1}
+                      onChange={(e) => updateItem(item.id, { quantity: Math.max(1, Number(e.target.value) || 1) })}
+                      className="h-9 w-16 min-w-0"
+                      placeholder="1"
+                    />
+                    {(item.quantity ?? 1) > 1 && item.estimatedCost > 0 && (
+                      <span className="text-xs text-muted-foreground">
+                        = ₪{(item.estimatedCost * (item.quantity ?? 1)).toLocaleString()}
+                      </span>
+                    )}
                     <label className="flex shrink-0 items-center gap-1.5 text-xs text-muted-foreground cursor-pointer select-none min-h-[44px]">
                       <input
                         type="checkbox"
