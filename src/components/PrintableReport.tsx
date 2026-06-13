@@ -19,9 +19,10 @@ export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, sett
   const surveyConfig = getSurveyType(report.surveyType);
   const fmt = getFormat(settings, report);
 
+  const itemTotal = (i: typeof report.items[0]) => (Number(i.estimatedCost) || 0) * (i.quantity ?? 1);
   const totalCost = report.items
     .filter((i) => i.includeInCost)
-    .reduce((sum, i) => sum + (Number(i.estimatedCost) || 0), 0);
+    .reduce((sum, i) => sum + itemTotal(i), 0);
 
   const coverLogo = fmt.companyLogo || settings.logo;
   const licNum = fmt.licenseNumber || settings.license;
@@ -182,10 +183,16 @@ export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, sett
                 padding: "10px 20px",
                 borderBottom: idx < arr.length - 1 ? "1px solid rgba(255,255,255,0.2)" : undefined,
                 fontSize: 14,
+                gap: 12,
               }}
             >
-              <span style={{ opacity: 0.85 }}>{item.title || `ממצא ${idx + 1}`}</span>
-              <span style={{ fontWeight: 600, whiteSpace: "nowrap", marginRight: 12 }}>{formatCurrency(item.estimatedCost)}</span>
+              <span style={{ opacity: 0.85, flex: 1 }}>{item.title || `ממצא ${idx + 1}`}</span>
+              {(item.quantity ?? 1) > 1 && (
+                <span style={{ opacity: 0.7, whiteSpace: "nowrap", fontSize: 12 }}>
+                  {formatCurrency(item.estimatedCost)} × {item.quantity}
+                </span>
+              )}
+              <span style={{ fontWeight: 600, whiteSpace: "nowrap" }}>{formatCurrency(itemTotal(item))}</span>
             </div>
           ))}
           {/* Total row */}
@@ -276,7 +283,7 @@ export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, sett
                     )}
                     {(item.estimatedCost || 0) > 0 && (
                       <div style={{ marginTop: 12, display: "inline-block", background: "#fef2f2", color: "#991b1b", border: "1px solid #fecaca", fontSize: 15, padding: "6px 14px", borderRadius: 999, fontWeight: 600 }}>
-                        אומדן עלות תיקון: {formatCurrency(item.estimatedCost)}
+                        אומדן עלות תיקון: {(item.quantity ?? 1) > 1 ? `${formatCurrency(item.estimatedCost)} × ${item.quantity} = ${formatCurrency(itemTotal(item))}` : formatCurrency(item.estimatedCost)}
                       </div>
                     )}
                   </div>
