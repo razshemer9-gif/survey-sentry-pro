@@ -162,53 +162,6 @@ export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, sett
           <Field label="כתובת המשרד" value={settings.address} dark />
         </div>
 
-        <div
-          style={{
-            marginTop: 18,
-            background: surveyConfig.color,
-            color: "#fff",
-            borderRadius: 14,
-            overflow: "hidden",
-            fontSize: 16,
-          }}
-        >
-          {/* Cost breakdown rows */}
-          {report.items.filter((i) => i.includeInCost && (Number(i.estimatedCost) || 0) > 0).map((item, idx, arr) => (
-            <div
-              key={item.id}
-              style={{
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "center",
-                padding: "10px 20px",
-                borderBottom: idx < arr.length - 1 ? "1px solid rgba(255,255,255,0.2)" : undefined,
-                fontSize: 14,
-                gap: 12,
-              }}
-            >
-              <span style={{ opacity: 0.85, flex: 1 }}>{item.title || `ממצא ${idx + 1}`}</span>
-              {(item.quantity ?? 1) > 1 && (
-                <span style={{ opacity: 0.7, whiteSpace: "nowrap", fontSize: 12 }}>
-                  {formatCurrency(item.estimatedCost)} × {item.quantity}
-                </span>
-              )}
-              <span style={{ fontWeight: 600, whiteSpace: "nowrap" }}>{formatCurrency(itemTotal(item))}</span>
-            </div>
-          ))}
-          {/* Total row */}
-          <div
-            style={{
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
-              padding: "14px 20px",
-              borderTop: "2px solid rgba(255,255,255,0.35)",
-            }}
-          >
-            <span style={{ opacity: 0.9 }}>אומדן עלות תיקונים כולל</span>
-            <strong style={{ fontSize: 22 }}>{formatCurrency(totalCost)}</strong>
-          </div>
-        </div>
 
       </section>
 
@@ -325,6 +278,54 @@ export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, sett
                   {report.generalNotes}
                 </div>
               </>
+            )}
+
+            {totalCost > 0 && (
+              <div
+                style={{
+                  marginBottom: 32,
+                  background: surveyConfig.color,
+                  color: "#fff",
+                  borderRadius: 14,
+                  overflow: "hidden",
+                  fontSize: 16,
+                }}
+              >
+                {report.items.filter((i) => i.includeInCost && (Number(i.estimatedCost) || 0) > 0).map((item, idx, arr) => (
+                  <div
+                    key={item.id}
+                    style={{
+                      display: "flex",
+                      justifyContent: "space-between",
+                      alignItems: "center",
+                      padding: "10px 20px",
+                      borderBottom: idx < arr.length - 1 ? "1px solid rgba(255,255,255,0.2)" : undefined,
+                      fontSize: 14,
+                      gap: 12,
+                    }}
+                  >
+                    <span style={{ opacity: 0.85, flex: 1 }}>{item.title || `ממצא ${idx + 1}`}</span>
+                    {(item.quantity ?? 1) > 1 && (
+                      <span style={{ opacity: 0.7, whiteSpace: "nowrap", fontSize: 12 }}>
+                        {formatCurrency(item.estimatedCost)} × {item.quantity}
+                      </span>
+                    )}
+                    <span style={{ fontWeight: 600, whiteSpace: "nowrap" }}>{formatCurrency(itemTotal(item))}</span>
+                  </div>
+                ))}
+                <div
+                  style={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                    padding: "14px 20px",
+                    borderTop: "2px solid rgba(255,255,255,0.35)",
+                  }}
+                >
+                  <span style={{ opacity: 0.9 }}>אומדן עלות תיקונים כולל</span>
+                  <strong style={{ fontSize: 22 }}>{formatCurrency(totalCost)}</strong>
+                </div>
+              </div>
             )}
 
             <h3 style={{ margin: "0 0 12px", fontSize: 18, color: "#1e3a8a" }}>פרטי עורך הדוח</h3>
