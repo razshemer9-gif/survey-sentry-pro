@@ -99,7 +99,7 @@ export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, sett
               src={report.coverPhoto}
               alt="cover"
               crossOrigin="anonymous"
-              style={{ width: "100%", height: "auto", display: "block" }}
+              style={{ width: "100%", maxHeight: 360, objectFit: "cover", objectPosition: "center", display: "block" }}
             />
           )}
           <div style={{
