@@ -124,7 +124,7 @@ export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, sett
   if (report.surveyType === "education_safety") {
     const inspectorName = fmt.professionalName || settings.consultantName;
     const inspectorRole = fmt.professionalRole;
-    const headerColor = "#15803d"; // green accent for education safety
+    const headerColor = "#1e3a8a"; // blue accent (matches brand)
 
     const EDU_PRIORITY: { p: 0 | 1 | 2; label: string; desc: string; color: string; bg: string; border: string }[] = [
       { p: 0, label: "קדימות 0", desc: "מפגע בטיחותי — מחייב הסרה מיידית.",              color: "#b91c1c", bg: "#fef2f2", border: "#fca5a5" },
@@ -187,7 +187,7 @@ export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, sett
           <h2 style={{ fontSize: 15, fontWeight: 800, color: headerColor, borderBottom: `2px solid ${headerColor}`, paddingBottom: 6, marginBottom: 14 }}>
             נתונים כלליים
           </h2>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px 32px", background: "#f0fdf4", border: "1px solid #bbf7d0", borderRadius: 10, padding: "16px 20px", fontSize: 14 }}>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px 32px", background: "#eff6ff", border: "1px solid #bfdbfe", borderRadius: 10, padding: "16px 20px", fontSize: 14 }}>
             <div><strong>שם המוסד:</strong> {report.placeName || "—"}</div>
             <div><strong>הבעלות / הרשות:</strong> {report.clientName || "—"}</div>
             <div><strong>כתובת המוסד:</strong> {report.address || "—"}</div>
