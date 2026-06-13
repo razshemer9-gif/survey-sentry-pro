@@ -46,6 +46,7 @@ export default function ReportEditor() {
   const [report, setReport] = useState<SurveyReport | null>(null);
   const [previewOpen, setPreviewOpen] = useState(false);
   const [generating, setGenerating] = useState(false);
+  const [zipping, setZipping] = useState(false);
   const [settings, setSettings] = useState<ConsultantSettings>({ ...DEFAULT_SETTINGS });
   const [signatureOpen, setSignatureOpen] = useState(false);
   const [refPickerItemId, setRefPickerItemId] = useState<string | null>(null);
@@ -149,8 +150,6 @@ export default function ReportEditor() {
       setGenerating(false);
     }
   };
-
-  const [zipping, setZipping] = useState(false);
 
   const handleDownloadPhotos = async () => {
     if (!report) return;
