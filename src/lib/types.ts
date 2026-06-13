@@ -96,6 +96,16 @@ export interface SurveyReport {
   surveyType?: SurveyType;
   // Optional notes
   generalNotes?: string;
+  // Education safety specific fields
+  city?: string;
+  institutionSymbol?: string;
+  studentCount?: string;
+  establishedYear?: string;
+  institutionPhone?: string;
+  principalName?: string;
+  supervisorName?: string;
+  institutionParticipants?: string;
+  authorityParticipants?: string;
   // Digital signature
   signatureDataUrl?: string;
   signatureDate?: string;
