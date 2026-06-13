@@ -54,6 +54,7 @@ export interface ChecklistItem {
   estimatedCost: number; // ILS — unit price
   quantity?: number;     // units (default 1); total = estimatedCost × quantity
   includeInCost?: boolean;
+  priority?: 0 | 1 | 2; // קדימות לתיקון (0=דחוף, 1=גבוה, 2=רגיל)
   photo?: string; // dataURL — תמונת מצב קיים
   referencePhoto?: string; // legacy single photo — read for backwards compat
   referencePhotos?: string[]; // multiple detail photos (preferred)
@@ -72,7 +73,7 @@ export interface ChecklistTemplate {
   name: string;
   description?: string;
   surveyType?: SurveyType;
-  items: (Omit<ChecklistItem, "id" | "status" | "notes" | "estimatedCost" | "photo"> & { notes?: string; defaultCost?: number })[];
+  items: (Omit<ChecklistItem, "id" | "status" | "notes" | "estimatedCost" | "photo"> & { notes?: string; defaultCost?: number; defaultPriority?: 0 | 1 | 2 })[];
   builtIn?: boolean;
 }
 
