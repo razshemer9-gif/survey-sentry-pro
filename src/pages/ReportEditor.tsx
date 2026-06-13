@@ -364,6 +364,26 @@ export default function ReportEditor() {
                     />
                   </div>
 
+                  <div className="flex items-center gap-2">
+                    <Label className="shrink-0 text-xs text-muted-foreground">קדימות</Label>
+                    {([0, 1, 2] as const).map((p) => (
+                      <button
+                        key={p}
+                        onClick={() => updateItem(item.id, { priority: item.priority === p ? undefined : p })}
+                        className={cn(
+                          "h-8 w-10 rounded-lg text-xs font-bold border transition-colors",
+                          item.priority === p
+                            ? p === 0 ? "bg-red-500 text-white border-red-500"
+                            : p === 1 ? "bg-orange-400 text-white border-orange-400"
+                            : "bg-yellow-400 text-white border-yellow-400"
+                            : "bg-background text-muted-foreground border-border hover:border-primary/50"
+                        )}
+                      >
+                        {p}
+                      </button>
+                    ))}
+                  </div>
+
                   <div className="flex flex-wrap items-center gap-2">
                     <Label className="shrink-0 text-xs text-muted-foreground">מחיר יחידה (₪)</Label>
                     <Input

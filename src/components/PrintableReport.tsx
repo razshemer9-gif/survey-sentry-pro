@@ -28,6 +28,98 @@ export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, sett
   const licNum = fmt.licenseNumber || settings.license;
   const sigName = fmt.professionalName || report.signatureConsultantName || settings.consultantName;
 
+  const hasPriorities = report.items.some(i => i.priority !== undefined);
+  const PRIORITY_GROUPS: { priority: 0 | 1 | 2 | undefined; label: string; color: string; bg: string; border: string }[] = [
+    { priority: 0, label: "קדימות 0 — דחוף",  color: "#dc2626", bg: "#fef2f2", border: "#fecaca" },
+    { priority: 1, label: "קדימות 1 — גבוה",  color: "#ea580c", bg: "#fff7ed", border: "#fdba74" },
+    { priority: 2, label: "קדימות 2 — רגיל",  color: "#d97706", bg: "#fffbeb", border: "#fde68a" },
+    { priority: undefined, label: "ממצאים נוספים", color: "#64748b", bg: "#f8fafc", border: "#e2e8f0" },
+  ];
+  const PRIORITY_BADGE_LABEL = ["דחוף", "גבוה", "רגיל"] as const;
+
+  const renderItem = (item: typeof report.items[0], globalIdx: number) => {
+    const refPhotos = item.referencePhotos && item.referencePhotos.length > 0
+      ? item.referencePhotos
+      : (item.referencePhoto ? [item.referencePhoto] : []);
+    const priorityMeta = item.priority !== undefined ? PRIORITY_GROUPS.find(g => g.priority === item.priority) : undefined;
+    return (
+      <div
+        key={item.id}
+        data-pdf-no-break=""
+        style={{ border: "1px solid #e2e8f0", borderRadius: 14, overflow: "hidden", background: "#fff", pageBreakInside: "avoid" }}
+      >
+        {/* ── Section 1: Template / professional data ── */}
+        <div data-pdf-no-break="" style={{ padding: "16px 20px 14px", background: "#f8fafc", borderBottom: "1px solid #e2e8f0" }}>
+          <div style={{ fontSize: 13, color: "#64748b", marginBottom: 3, display: "flex", alignItems: "center", gap: 8 }}>
+            <span>ממצא {globalIdx + 1}</span>
+            {priorityMeta && item.priority !== undefined && (
+              <span style={{ background: priorityMeta.bg, color: priorityMeta.color, border: `1px solid ${priorityMeta.border}`, borderRadius: 999, padding: "1px 8px", fontSize: 11, fontWeight: 700 }}>
+                {PRIORITY_BADGE_LABEL[item.priority]}
+              </span>
+            )}
+          </div>
+          <div style={{ fontSize: 19, fontWeight: 700, color: "#0f172a" }}>{item.title}</div>
+          {item.notes && item.notes.split("\n").map((line, li) => (
+            <div key={`n${li}`} data-pdf-no-break="" style={{ marginTop: li === 0 ? 10 : 0, fontSize: 15, color: "#334155", lineHeight: 1.7, whiteSpace: "pre-wrap" }}>
+              {li === 0 ? <><span style={{ fontWeight: 700 }}>ממצא: </span>{line}</> : line}
+            </div>
+          ))}
+          {item.suggestedCorrection && item.suggestedCorrection.split("\n").map((line, li) => (
+            <div key={`c${li}`} data-pdf-no-break="" style={{ marginTop: li === 0 ? 8 : 0, fontSize: 15, color: "#1e40af", lineHeight: 1.7, whiteSpace: "pre-wrap" }}>
+              {li === 0 ? <><span style={{ fontWeight: 700 }}>פתרון: </span>{line}</> : line}
+            </div>
+          ))}
+          {refPhotos.length > 0 && (
+            <div data-pdf-no-break="" style={{ marginTop: 12, display: "grid", gridTemplateColumns: refPhotos.length > 1 ? "1fr 1fr" : "260px", gap: 10 }}>
+              {refPhotos.map((p, i) => (
+                <div key={i} data-pdf-no-break="">
+                  <img
+                    src={p}
+                    alt={item.referenceLabel || `פרט ${i + 1}`}
+                    style={{ maxWidth: "100%", height: "auto", display: "block", background: "#fff", borderRadius: 8, border: "1px solid #bfdbfe" }}
+                  />
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* ── Section 2: Client / field data ── */}
+        {(item.photo || item.fieldNotes || (item.estimatedCost || 0) > 0) && (
+          <div data-pdf-no-break="" style={{ padding: "14px 20px" }}>
+            {(item.photo || item.fieldNotes) && (
+              <div style={{ display: "grid", gridTemplateColumns: item.photo && item.fieldNotes ? "1fr 1fr" : "1fr", gap: 14, alignItems: "start" }}>
+                {item.photo && (
+                  <div data-pdf-no-break="">
+                    <div style={{ fontSize: 13, color: "#64748b", marginBottom: 5, fontWeight: 600 }}>מצב קיים</div>
+                    <img
+                      src={item.photo}
+                      alt="מצב קיים"
+                      style={{ maxWidth: "100%", height: "auto", display: "block", borderRadius: 8, border: "1px solid #e2e8f0" }}
+                    />
+                  </div>
+                )}
+                {item.fieldNotes && (
+                  <div data-pdf-no-break="">
+                    <div style={{ fontSize: 13, color: "#64748b", marginBottom: 5, fontWeight: 600 }}>פירוט מצב קיים</div>
+                    <div style={{ fontSize: 15, color: "#334155", lineHeight: 1.7, whiteSpace: "pre-wrap", background: "#f8fafc", borderRadius: 8, padding: "12px 14px", border: "1px solid #e2e8f0" }}>
+                      {item.fieldNotes}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+            {(item.estimatedCost || 0) > 0 && (
+              <div style={{ marginTop: 12, display: "inline-block", background: "#fef2f2", color: "#991b1b", border: "1px solid #fecaca", fontSize: 15, padding: "6px 14px", borderRadius: 999, fontWeight: 600 }}>
+                אומדן עלות תיקון: {(item.quantity ?? 1) > 1 ? `${formatCurrency(item.estimatedCost)} × ${item.quantity} = ${formatCurrency(itemTotal(item))}` : formatCurrency(item.estimatedCost)}
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+    );
+  };
+
   return (
     <div
       ref={ref}
@@ -170,80 +262,24 @@ export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, sett
         <PageHeader title="חוות דעת מקצועית" company={settings.companyName} accentColor={surveyConfig.color} />
 
         <div style={{ marginTop: 24, display: "flex", flexDirection: "column", gap: 14 }}>
-          {report.items.map((item, idx) => {
-            const refPhotos = item.referencePhotos && item.referencePhotos.length > 0
-              ? item.referencePhotos
-              : (item.referencePhoto ? [item.referencePhoto] : []);
-            return (
-              <div
-                key={item.id}
-                data-pdf-no-break=""
-                style={{ border: "1px solid #e2e8f0", borderRadius: 14, overflow: "hidden", background: "#fff", pageBreakInside: "avoid" }}
-              >
-                {/* ── Section 1: Template / professional data ── */}
-                <div data-pdf-no-break="" style={{ padding: "16px 20px 14px", background: "#f8fafc", borderBottom: "1px solid #e2e8f0" }}>
-                  <div style={{ fontSize: 13, color: "#64748b", marginBottom: 3 }}>ממצא {idx + 1}</div>
-                  <div style={{ fontSize: 19, fontWeight: 700, color: "#0f172a" }}>{item.title}</div>
-                  {item.notes && item.notes.split("\n").map((line, li) => (
-                    <div key={`n${li}`} data-pdf-no-break="" style={{ marginTop: li === 0 ? 10 : 0, fontSize: 15, color: "#334155", lineHeight: 1.7, whiteSpace: "pre-wrap" }}>
-                      {li === 0 ? <><span style={{ fontWeight: 700 }}>ממצא: </span>{line}</> : line}
-                    </div>
-                  ))}
-                  {item.suggestedCorrection && item.suggestedCorrection.split("\n").map((line, li) => (
-                    <div key={`c${li}`} data-pdf-no-break="" style={{ marginTop: li === 0 ? 8 : 0, fontSize: 15, color: "#1e40af", lineHeight: 1.7, whiteSpace: "pre-wrap" }}>
-                      {li === 0 ? <><span style={{ fontWeight: 700 }}>פתרון: </span>{line}</> : line}
-                    </div>
-                  ))}
-                  {refPhotos.length > 0 && (
-                    <div data-pdf-no-break="" style={{ marginTop: 12, display: "grid", gridTemplateColumns: refPhotos.length > 1 ? "1fr 1fr" : "260px", gap: 10 }}>
-                      {refPhotos.map((p, i) => (
-                        <div key={i} data-pdf-no-break="">
-                          <img
-                            src={p}
-                            alt={item.referenceLabel || `פרט ${i + 1}`}
-                            style={{ maxWidth: "100%", height: "auto", display: "block", background: "#fff", borderRadius: 8, border: "1px solid #bfdbfe" }}
-                          />
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-
-                {/* ── Section 2: Client / field data ── */}
-                {(item.photo || item.fieldNotes || (item.estimatedCost || 0) > 0) && (
-                  <div data-pdf-no-break="" style={{ padding: "14px 20px" }}>
-                    {(item.photo || item.fieldNotes) && (
-                      <div style={{ display: "grid", gridTemplateColumns: item.photo && item.fieldNotes ? "1fr 1fr" : "1fr", gap: 14, alignItems: "start" }}>
-                        {item.photo && (
-                          <div data-pdf-no-break="">
-                            <div style={{ fontSize: 13, color: "#64748b", marginBottom: 5, fontWeight: 600 }}>מצב קיים</div>
-                            <img
-                              src={item.photo}
-                              alt="מצב קיים"
-                              style={{ maxWidth: "100%", height: "auto", display: "block", borderRadius: 8, border: "1px solid #e2e8f0" }}
-                            />
-                          </div>
-                        )}
-                        {item.fieldNotes && (
-                          <div data-pdf-no-break="">
-                            <div style={{ fontSize: 13, color: "#64748b", marginBottom: 5, fontWeight: 600 }}>פירוט מצב קיים</div>
-                            <div style={{ fontSize: 15, color: "#334155", lineHeight: 1.7, whiteSpace: "pre-wrap", background: "#f8fafc", borderRadius: 8, padding: "12px 14px", border: "1px solid #e2e8f0" }}>
-                              {item.fieldNotes}
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    )}
-                    {(item.estimatedCost || 0) > 0 && (
-                      <div style={{ marginTop: 12, display: "inline-block", background: "#fef2f2", color: "#991b1b", border: "1px solid #fecaca", fontSize: 15, padding: "6px 14px", borderRadius: 999, fontWeight: 600 }}>
-                        אומדן עלות תיקון: {(item.quantity ?? 1) > 1 ? `${formatCurrency(item.estimatedCost)} × ${item.quantity} = ${formatCurrency(itemTotal(item))}` : formatCurrency(item.estimatedCost)}
-                      </div>
-                    )}
-                  </div>
-                )}
-              </div>
-            );
-          })}
+          {hasPriorities
+            ? PRIORITY_GROUPS.flatMap(({ priority, label, color, bg, border }) => {
+                const groupItems = report.items.filter(i => i.priority === priority);
+                if (groupItems.length === 0) return [];
+                return [
+                  <div
+                    key={`group-${String(priority ?? "none")}`}
+                    style={{ padding: "10px 18px", background: bg, border: `2px solid ${border}`, borderRadius: 10, display: "flex", alignItems: "center", gap: 10, marginBottom: -4 }}
+                  >
+                    <div style={{ width: 14, height: 14, borderRadius: "50%", background: color, flexShrink: 0 }} />
+                    <span style={{ fontSize: 16, fontWeight: 800, color }}>{label}</span>
+                    <span style={{ fontSize: 13, color: "#64748b", marginRight: "auto" }}>({groupItems.length} ממצאים)</span>
+                  </div>,
+                  ...groupItems.map(item => renderItem(item, report.items.indexOf(item))),
+                ];
+              })
+            : report.items.map((item, idx) => renderItem(item, idx))
+          }
         </div>
 
         {/* Opinion summary */}

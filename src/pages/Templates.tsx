@@ -337,6 +337,32 @@ export default function Templates() {
               </div>
 
               <div className="space-y-1.5">
+                <Label className="text-xs">קדימות ברירת מחדל</Label>
+                <div className="flex items-center gap-2">
+                  {([undefined, 0, 1, 2] as const).map((p) => (
+                    <button
+                      key={String(p ?? "none")}
+                      type="button"
+                      onClick={() =>
+                        setEditingItem({ ...editingItem, item: { ...editingItem.item, defaultPriority: p } })
+                      }
+                      className={[
+                        "h-8 rounded-lg px-3 text-xs font-bold border transition-colors",
+                        editingItem.item.defaultPriority === p
+                          ? p === undefined ? "bg-muted text-foreground border-border"
+                          : p === 0 ? "bg-red-500 text-white border-red-500"
+                          : p === 1 ? "bg-orange-400 text-white border-orange-400"
+                          : "bg-yellow-400 text-white border-yellow-400"
+                          : "bg-background text-muted-foreground border-border hover:border-primary/50",
+                      ].join(" ")}
+                    >
+                      {p === undefined ? "ללא" : p === 0 ? "0 — דחוף" : p === 1 ? "1 — גבוה" : "2 — רגיל"}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="space-y-1.5">
                 <Label className="text-xs">פתרון / תיקון</Label>
                 <Textarea
                   value={editingItem.item.suggestedCorrection || ""}
