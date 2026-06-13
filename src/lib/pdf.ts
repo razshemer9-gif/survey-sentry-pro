@@ -46,11 +46,13 @@ export async function generateReportPdf(
   );
 
   // ── Page sizing and smart break calculation ──────────────────────────────
-  // At scale 2 each canvas is elWidth*2 × PAGE_H*2 pixels.
-  // Stay well under the browser ~16 384 px height limit and 14 MP total.
-  const scale  = 2;
-  const MAX_PX = 14_000_000;
-  const PAGE_H = Math.min(4_000, Math.floor(MAX_PX / (elWidth * scale)));
+  // iOS Safari limits canvas height to ~4096px and total area to ~16 MP.
+  // Use scale=1 on mobile so each canvas stays within those bounds.
+  const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+  const scale    = isMobile ? 1 : 2;
+  const MAX_PX   = isMobile ? 3_500_000 : 14_000_000;
+  const MAX_H    = isMobile ? 3_500     : 7_000;
+  const PAGE_H   = Math.min(MAX_H, Math.floor(MAX_PX / (elWidth * scale)));
 
   // Positions of [data-pdf-no-break] cards relative to the element's top.
   // Must be computed before any marginTop manipulation.
