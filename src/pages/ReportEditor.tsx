@@ -253,53 +253,61 @@ export default function ReportEditor() {
 
         {/* COVER TAB */}
         <TabsContent value="cover" className="mt-4 space-y-4">
-          <Field label="שם המקום / העסק">
-            <Input value={report.placeName} onChange={(e) => update({ placeName: e.target.value })} placeholder="לדוגמה: בית קפה הגליל" autoComplete="organization" />
-          </Field>
-          <Field label="שם הלקוח">
-            <Input value={report.clientName} onChange={(e) => update({ clientName: e.target.value })} autoComplete="name" />
-          </Field>
-          <Field label="כתובת">
-            <Input value={report.address} onChange={(e) => update({ address: e.target.value })} autoComplete="street-address" />
-          </Field>
-          <Field label="תאריך הסקר">
-            <Input type="date" value={report.surveyDate} onChange={(e) => update({ surveyDate: e.target.value })} />
-          </Field>
-          <Field label="סוג הבניין">
-            <Select
-              value={report.buildingType || ""}
-              onValueChange={(v) => update({ buildingType: v as "existing_public" | "new_public" | "other" })}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="בחר סוג בניין" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="existing_public">בניין ציבורי קיים</SelectItem>
-                <SelectItem value="new_public">בניין ציבורי חדש</SelectItem>
-                <SelectItem value="other">אחר</SelectItem>
-              </SelectContent>
-            </Select>
-            {report.buildingType === "other" && (
-              <Input
-                className="mt-2"
-                value={report.buildingTypeOther || ""}
-                onChange={(e) => update({ buildingTypeOther: e.target.value })}
-                placeholder="פרט סוג בניין..."
-              />
-            )}
-          </Field>
-          <Field label="תמונת שער">
-            <PhotoPicker value={report.coverPhoto} onChange={(u) => update({ coverPhoto: u })} label="צרף תמונת חזית" />
-          </Field>
-          <Field label="הערות כלליות (אופציונלי)">
-            <Textarea
-              value={report.generalNotes || ""}
-              onChange={(e) => update({ generalNotes: e.target.value })}
-              rows={4}
-              placeholder="הערות שיופיעו בעמוד התקציר"
-            />
-          </Field>
-        </TabsContent>
+          {(() => {
+            const isEdu = report.surveyType === "education_safety";
+            return (
+              <>
+                <Field label={isEdu ? "שם המוסד" : "שם המקום / העסק"}>
+                  <Input value={report.placeName} onChange={(e) => update({ placeName: e.target.value })} placeholder={isEdu ? "לדוגמה: בית ספר יסודי א'" : "לדוגמה: בית קפה הגליל"} autoComplete="organization" />
+                </Field>
+                <Field label={isEdu ? "הבעלות / הרשות" : "שם הלקוח"}>
+                  <Input value={report.clientName} onChange={(e) => update({ clientName: e.target.value })} autoComplete="name" />
+                </Field>
+                <Field label={isEdu ? "כתובת המוסד" : "כתובת"}>
+                  <Input value={report.address} onChange={(e) => update({ address: e.target.value })} autoComplete="street-address" />
+                </Field>
+                <Field label={isEdu ? "תאריך המבדק" : "תאריך הסקר"}>
+                  <Input type="date" value={report.surveyDate} onChange={(e) => update({ surveyDate: e.target.value })} />
+                </Field>
+                {!isEdu && (
+                  <Field label="סוג הבניין">
+                    <Select
+                      value={report.buildingType || ""}
+                      onValueChange={(v) => update({ buildingType: v as "existing_public" | "new_public" | "other" })}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="בחר סוג בניין" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="existing_public">בניין ציבורי קיים</SelectItem>
+                        <SelectItem value="new_public">בניין ציבורי חדש</SelectItem>
+                        <SelectItem value="other">אחר</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    {report.buildingType === "other" && (
+                      <Input
+                        className="mt-2"
+                        value={report.buildingTypeOther || ""}
+                        onChange={(e) => update({ buildingTypeOther: e.target.value })}
+                        placeholder="פרט סוג בניין..."
+                      />
+                    )}
+                  </Field>
+                )}
+                <Field label={isEdu ? "תמונת המוסד" : "תמונת שער"}>
+                  <PhotoPicker value={report.coverPhoto} onChange={(u) => update({ coverPhoto: u })} label="צרף תמונה" />
+                </Field>
+                <Field label="הערות כלליות (אופציונלי)">
+                  <Textarea
+                    value={report.generalNotes || ""}
+                    onChange={(e) => update({ generalNotes: e.target.value })}
+                    rows={4}
+                    placeholder={isEdu ? "הערות שיופיעו לפני פירוט הממצאים" : "הערות שיופיעו בעמוד התקציר"}
+                  />
+                </Field>
+              </>
+            );
+          })()}
 
         {/* CHECKLIST TAB */}
         <TabsContent value="checklist" className="mt-4 space-y-3 pb-20">
