@@ -71,7 +71,7 @@ export interface ChecklistTemplate {
   name: string;
   description?: string;
   surveyType?: SurveyType;
-  items: (Omit<ChecklistItem, "id" | "status" | "notes" | "estimatedCost" | "photo"> & { notes?: string })[];
+  items: (Omit<ChecklistItem, "id" | "status" | "notes" | "estimatedCost" | "photo"> & { notes?: string; defaultCost?: number })[];
   builtIn?: boolean;
 }
 

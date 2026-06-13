@@ -324,6 +324,19 @@ export default function Templates() {
               </div>
 
               <div className="space-y-1.5">
+                <Label className="text-xs">עלות ברירת מחדל (₪)</Label>
+                <Input
+                  type="number"
+                  inputMode="numeric"
+                  value={editingItem.item.defaultCost || ""}
+                  onChange={(e) =>
+                    setEditingItem({ ...editingItem, item: { ...editingItem.item, defaultCost: Number(e.target.value) || undefined } })
+                  }
+                  placeholder="0"
+                />
+              </div>
+
+              <div className="space-y-1.5">
                 <Label className="text-xs">פתרון / תיקון</Label>
                 <Textarea
                   value={editingItem.item.suggestedCorrection || ""}
