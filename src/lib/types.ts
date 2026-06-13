@@ -135,7 +135,6 @@ export interface ConsultantSettings {
   companyName: string;
   consultantName: string;
   license: string; // מספר רישוי שירות (מורשה נגישות)
-  idNumber?: string; // ת.ז. היועץ
   phone: string;
   email: string;
   address: string;

@@ -155,7 +155,7 @@ export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, sett
           <Field label="חברה" value={settings.companyName} dark />
           <Field label="שם בעל המקצוע" value={fmt.professionalName || settings.consultantName} dark />
           {(fmt.professionalRole) && <Field label="תפקיד / הסמכה" value={fmt.professionalRole} dark />}
-          {settings.idNumber && <Field label="מספר ת.ז." value={settings.idNumber} dark />}
+
           {licNum && <Field label="מספר רישיון" value={licNum} dark />}
           <Field label="טלפון" value={settings.phone} dark />
           <Field label='דוא"ל' value={settings.email} dark />
@@ -339,9 +339,7 @@ export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, sett
               {licNum && (
                 <div><strong>מספר רישיון:</strong> {licNum}</div>
               )}
-              {settings.idNumber && (
-                <div><strong>מספר ת.ז.:</strong> {settings.idNumber}</div>
-              )}
+
             </div>
 
             <div style={{ marginTop: 28, display: "flex", justifyContent: "flex-start", gap: 48, alignItems: "flex-end" }}>
