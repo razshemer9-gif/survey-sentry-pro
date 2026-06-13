@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { useNavigate, useParams } from "react-router-dom";
-import { ArrowRight, Download, Eye, FileDown, Loader2, PenLine, Plus, Save, Trash2 } from "lucide-react";
+import { ArrowRight, Download, Eye, FileDown, Images, Loader2, PenLine, Plus, Save, Trash2 } from "lucide-react";
 import { v4 as uuid } from "uuid";
 import { toast } from "sonner";
 
@@ -147,6 +147,69 @@ export default function ReportEditor() {
       toast.error("שגיאה ביצירת ה-PDF");
     } finally {
       setGenerating(false);
+    }
+  };
+
+  const [zipping, setZipping] = useState(false);
+
+  const handleDownloadPhotos = async () => {
+    if (!report) return;
+
+    type Entry = { name: string; dataUrl: string };
+    const entries: Entry[] = [];
+
+    report.items.forEach((item, idx) => {
+      const num = String(idx + 1).padStart(2, "0");
+      const photos: string[] = [];
+      if (item.photo) photos.push(item.photo);
+      if (item.referencePhotos?.length) photos.push(...item.referencePhotos);
+      else if (item.referencePhoto) photos.push(item.referencePhoto);
+
+      if (photos.length === 0) return;
+      if (photos.length === 1) {
+        entries.push({ name: `finding-${num}.jpg`, dataUrl: photos[0] });
+      } else {
+        photos.forEach((p, i) =>
+          entries.push({ name: `finding-${num}-${i + 1}.jpg`, dataUrl: p }),
+        );
+      }
+    });
+
+    if (entries.length === 0) {
+      toast.info("אין תמונות לשמירה");
+      return;
+    }
+
+    setZipping(true);
+    try {
+      const JSZip = (await import("jszip")).default;
+      const zip = new JSZip();
+      entries.forEach(({ name, dataUrl }) => {
+        const base64 = dataUrl.split(",")[1];
+        if (base64) zip.file(name, base64, { base64: true });
+      });
+
+      const blob = await zip.generateAsync({ type: "blob" });
+      const safe = (report.placeName || "report").replace(/[^\w֐-׿\s-]/g, "").trim() || "report";
+      const date = report.surveyDate || new Date().toISOString().slice(0, 10);
+      const fileName = `תמונות-${safe}-${date}.zip`;
+
+      const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+      if (isMobile && navigator.canShare?.({ files: [new File([blob], fileName, { type: "application/zip" })] })) {
+        await navigator.share({ files: [new File([blob], fileName, { type: "application/zip" })], title: fileName });
+      } else {
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url; a.download = fileName; a.rel = "noopener"; a.style.display = "none";
+        document.body.appendChild(a); a.click(); document.body.removeChild(a);
+        setTimeout(() => URL.revokeObjectURL(url), 4_000);
+      }
+      toast.success(`${entries.length} תמונות הורדו`);
+    } catch (err) {
+      console.error("[ZIP]", err);
+      toast.error("שגיאה ביצירת קובץ התמונות");
+    } finally {
+      setZipping(false);
     }
   };
 
@@ -385,6 +448,15 @@ export default function ReportEditor() {
               </button>
             </div>
           </div>
+          <Button
+            variant="outline"
+            onClick={handleDownloadPhotos}
+            disabled={zipping}
+            className="w-full gap-2 rounded-2xl text-xs text-muted-foreground"
+          >
+            {zipping ? <Loader2 className="h-4 w-4 animate-spin" /> : <Images className="h-4 w-4" />}
+            {zipping ? "יוצר קובץ..." : "שמור את כל התמונות למכשיר"}
+          </Button>
         </TabsContent>
       </Tabs>
 
