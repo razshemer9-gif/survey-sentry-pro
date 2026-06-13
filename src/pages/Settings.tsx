@@ -115,6 +115,66 @@ export default function Settings() {
                   />
                 </Field>
 
+                <Field label="שם בעל המקצוע">
+                  <Input
+                    placeholder="שם מלא"
+                    value={s.consultantName ?? ""}
+                    onChange={(e) => setS((prev) => prev ? { ...prev, consultantName: e.target.value } : prev)}
+                  />
+                </Field>
+
+                <Field label="מספר ת.ז.">
+                  <Input
+                    placeholder="000000000"
+                    value={s.idNumber ?? ""}
+                    onChange={(e) => setS((prev) => prev ? { ...prev, idNumber: e.target.value } : prev)}
+                    dir="ltr"
+                  />
+                </Field>
+
+                <Field label="תפקיד / הסמכה">
+                  <Input
+                    placeholder='למשל: מורשה נגישות מתו"ס'
+                    value={fmt.professionalRole ?? ""}
+                    onChange={(e) => upd({ professionalRole: e.target.value || undefined })}
+                  />
+                </Field>
+
+                <Field label="טלפון">
+                  <Input
+                    placeholder="050-0000000"
+                    value={s.phone ?? ""}
+                    onChange={(e) => setS((prev) => prev ? { ...prev, phone: e.target.value } : prev)}
+                    dir="ltr"
+                  />
+                </Field>
+
+                <Field label="מספר רישיון">
+                  <Input
+                    placeholder="מספר רישוי שירות"
+                    value={s.license ?? ""}
+                    onChange={(e) => setS((prev) => prev ? { ...prev, license: e.target.value } : prev)}
+                    dir="ltr"
+                  />
+                </Field>
+
+                <Field label="כתובת המשרד">
+                  <Input
+                    placeholder="רחוב, עיר"
+                    value={s.address ?? ""}
+                    onChange={(e) => setS((prev) => prev ? { ...prev, address: e.target.value } : prev)}
+                  />
+                </Field>
+
+                <Field label='דוא"ל'>
+                  <Input
+                    placeholder="email@example.com"
+                    value={s.email ?? ""}
+                    onChange={(e) => setS((prev) => prev ? { ...prev, email: e.target.value } : prev)}
+                    dir="ltr"
+                  />
+                </Field>
+
                 <Field label="כותרת הדוח (PDF)">
                   <Input
                     placeholder={surveyConfig.pdfTitle}
@@ -133,25 +193,17 @@ export default function Settings() {
                   />
                 </Field>
 
-                <Field label="שם בעל המקצוע">
+                <Field label="שם בעל המקצוע (דוח)">
                   <Input
-                    placeholder="יקרא מפרטי היועץ הכלליים אם ריק"
+                    placeholder="יקרא מ'שם בעל המקצוע' אם ריק"
                     value={fmt.professionalName ?? ""}
                     onChange={(e) => upd({ professionalName: e.target.value || undefined })}
                   />
                 </Field>
 
-                <Field label="תפקיד בעל המקצוע">
+                <Field label="מספר רישיון / תעודה (דוח)">
                   <Input
-                    placeholder='למשל: מורשה נגישות מתו"ס'
-                    value={fmt.professionalRole ?? ""}
-                    onChange={(e) => upd({ professionalRole: e.target.value || undefined })}
-                  />
-                </Field>
-
-                <Field label="מספר רישיון / תעודה">
-                  <Input
-                    placeholder="יקרא ממספר הרישוי הכללי אם ריק"
+                    placeholder="יקרא ממספר הרישיון אם ריק"
                     value={fmt.licenseNumber ?? ""}
                     onChange={(e) => upd({ licenseNumber: e.target.value || undefined })}
                     dir="ltr"
