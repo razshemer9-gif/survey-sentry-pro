@@ -60,7 +60,7 @@ export default function AuthPage() {
       {/* Decorative engineering background elements */}
       <svg className="auth-deco" aria-hidden="true" viewBox="0 0 800 900" fill="none" xmlns="http://www.w3.org/2000/svg">
         {/* Blueprint grid */}
-        <g opacity="0.045" stroke="#7ab3ff" strokeWidth="0.8">
+        <g opacity="0.09" stroke="#7ab3ff" strokeWidth="0.8">
           {Array.from({ length: 18 }).map((_, i) => (
             <line key={`h${i}`} x1="0" y1={i * 52} x2="800" y2={i * 52} />
           ))}
@@ -69,7 +69,7 @@ export default function AuthPage() {
           ))}
         </g>
         {/* Floor plan outline top-left */}
-        <g opacity="0.06" stroke="#a0c4ff" strokeWidth="1.2" fill="none">
+        <g opacity="0.13" stroke="#a0c4ff" strokeWidth="1.4" fill="none">
           <rect x="30" y="40" width="180" height="130" rx="2" />
           <rect x="30" y="40" width="80" height="60" rx="1" />
           <rect x="130" y="40" width="80" height="90" rx="1" />
@@ -79,7 +79,7 @@ export default function AuthPage() {
           <rect x="155" y="115" width="28" height="5" />
         </g>
         {/* Accessibility wheelchair icon — bottom right */}
-        <g opacity="0.07" transform="translate(630,680) scale(2.4)" stroke="#7ab3ff" strokeWidth="1.5" fill="none" strokeLinecap="round">
+        <g opacity="0.15" transform="translate(630,680) scale(2.4)" stroke="#7ab3ff" strokeWidth="1.5" fill="none" strokeLinecap="round">
           <circle cx="12" cy="4" r="2" />
           <path d="M10 6.5c0 0 .5 2 2 2h4" />
           <path d="M9 12l1-5.5" />
@@ -88,7 +88,7 @@ export default function AuthPage() {
           <circle cx="17" cy="20" r="2.5" />
         </g>
         {/* Checklist icon — top right */}
-        <g opacity="0.06" transform="translate(640,50) scale(2.8)" stroke="#a0c4ff" strokeWidth="1.2" fill="none" strokeLinecap="round">
+        <g opacity="0.13" transform="translate(640,50) scale(2.8)" stroke="#a0c4ff" strokeWidth="1.3" fill="none" strokeLinecap="round">
           <rect x="3" y="3" width="18" height="20" rx="2" />
           <line x1="7" y1="9" x2="17" y2="9" />
           <line x1="7" y1="13" x2="17" y2="13" />
@@ -97,14 +97,14 @@ export default function AuthPage() {
           <polyline points="3.5,11 5,12.5 7,10" strokeWidth="1.4" />
         </g>
         {/* Ruler/measure lines — center decorative */}
-        <g opacity="0.05" stroke="#7ab3ff" strokeWidth="1">
+        <g opacity="0.11" stroke="#7ab3ff" strokeWidth="1.1">
           <line x1="350" y1="820" x2="620" y2="820" />
           {Array.from({ length: 9 }).map((_, i) => (
             <line key={i} x1={350 + i * 34} y1="812" x2={350 + i * 34} y2={i % 4 === 0 ? "826" : "818"} />
           ))}
         </g>
         {/* Engineering compass arc */}
-        <g opacity="0.05" stroke="#a0c4ff" strokeWidth="1.2" fill="none">
+        <g opacity="0.11" stroke="#a0c4ff" strokeWidth="1.4" fill="none">
           <path d="M 80 800 A 120 120 0 0 1 260 720" />
           <line x1="80" y1="800" x2="115" y2="690" />
           <line x1="80" y1="800" x2="195" y2="750" />
