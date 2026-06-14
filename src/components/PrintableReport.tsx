@@ -392,12 +392,9 @@ export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, sett
         <div
           data-pdf-no-break=""
           style={{
-            margin: "24px 48px 48px",
-            background: "rgba(255,255,255,0.96)",
+            margin: "24px 0 0",
+            background: "#ffffff",
             color: "#0f172a",
-            borderRadius: 16,
-            overflow: "hidden",
-            boxShadow: "0 20px 40px rgba(0,0,0,0.25)",
           }}
         >
           {report.coverPhoto && (
@@ -436,14 +433,16 @@ export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, sett
 
       {/* CONSULTANT PAGE */}
       <section style={{ padding: "48px", background: "#fff" }}>
-        <PageHeader title="פרטי בעל המקצוע" company={settings.companyName} accentColor={surveyConfig.color} />
-
         {/* Fixed introduction */}
         {fmt.fixedIntroduction && (
-          <div style={{ marginTop: 20, fontSize: 14, lineHeight: 1.8, color: "#334155", whiteSpace: "pre-wrap" }}>
+          <div style={{ fontSize: 14, lineHeight: 1.8, color: "#334155", whiteSpace: "pre-wrap" }}>
             {fmt.fixedIntroduction}
           </div>
         )}
+
+        <div style={{ marginTop: fmt.fixedIntroduction ? 28 : 0 }}>
+          <PageHeader title="פרטי בעל המקצוע" company={settings.companyName} accentColor={surveyConfig.color} />
+        </div>
 
         <div
           data-pdf-no-break=""
