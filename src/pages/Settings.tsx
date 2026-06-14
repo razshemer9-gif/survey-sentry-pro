@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowRight, Save } from "lucide-react";
+import { ArrowRight, BookOpen, Save, Users } from "lucide-react";
 import { toast } from "sonner";
 
 import { AppShell } from "@/components/AppShell";
@@ -10,36 +10,26 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { PhotoPicker } from "@/components/PhotoPicker";
-import { Switch } from "@/components/ui/switch";
 import { ConsultantSettings, SurveyReportFormat, SurveyType, SURVEY_TYPES } from "@/lib/types";
 import { loadUserSettings, saveUserSettings } from "@/lib/storage";
 import { useAuth } from "@/contexts/AuthContext";
 
 const TAB_ORDER: { id: SurveyType; label: string }[] = [
   { id: "accessibility",    label: "נגישות" },
-  { id: "general_safety",   label: 'בטיחות כללי' },
+  { id: "general_safety",   label: "בטיחות כללי" },
   { id: "education_safety", label: 'בטיחות מוס"ח' },
 ];
 
 export default function Settings() {
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, isAdmin } = useAuth();
   const [s, setS] = useState<ConsultantSettings | null>(null);
-  const [admin, setAdmin] = useState(false);
   const [savingType, setSavingType] = useState<SurveyType | null>(null);
 
   useEffect(() => {
     if (!user) return;
-    setAdmin(localStorage.getItem("ans.admin") === "1");
     loadUserSettings(user.id).then(setS);
   }, [user]);
-
-  const toggleAdmin = (v: boolean) => {
-    setAdmin(v);
-    if (v) localStorage.setItem("ans.admin", "1");
-    else localStorage.removeItem("ans.admin");
-    toast.success(v ? "מצב מנהל הופעל" : "מצב מנהל בוטל");
-  };
 
   if (!s) return null;
 
@@ -57,7 +47,7 @@ export default function Settings() {
               [type]: { ...current, ...patch },
             },
           }
-        : prev
+        : prev,
     );
   };
 
@@ -74,25 +64,58 @@ export default function Settings() {
     }
   };
 
+  const headerTitle   = isAdmin ? "הגדרות מערכת" : "הגדרות אישיות";
+  const headerSubtitle = isAdmin
+    ? "בחר סוג סקר וערוך את ההגדרות שלו"
+    : "עדכן את הפרטים האישיים שלך";
+
   return (
     <AppShell>
       <header className="brand-gradient text-primary-foreground px-5 pb-5 pt-4 safe-top rounded-b-3xl shadow-elev">
         <div className="flex items-center justify-between">
-          <button onClick={() => navigate("/")} className="grid h-10 w-10 place-items-center rounded-full bg-white/15">
+          <button
+            onClick={() => navigate("/")}
+            className="grid h-10 w-10 place-items-center rounded-full bg-white/15"
+          >
             <ArrowRight className="h-5 w-5" />
           </button>
           <div className="text-sm font-semibold opacity-90">הגדרות</div>
           <div className="w-10" />
         </div>
-        <h1 className="mt-3 text-2xl font-extrabold">הגדרות סוגי סקרים</h1>
-        <p className="mt-1 text-sm opacity-85">בחר סוג סקר וערוך את ההגדרות שלו</p>
+        <h1 className="mt-3 text-2xl font-extrabold">{headerTitle}</h1>
+        <p className="mt-1 text-sm opacity-85">{headerSubtitle}</p>
       </header>
 
       <div className="px-4 pt-4 pb-6" dir="rtl">
+
+        {/* ── Admin quick-links ── */}
+        {isAdmin && (
+          <div className="flex gap-3 mb-5">
+            <button
+              onClick={() => navigate("/standards")}
+              className="flex-1 flex items-center gap-2 rounded-2xl border border-border bg-card p-3 text-sm font-semibold hover:bg-muted transition-colors"
+            >
+              <BookOpen className="h-4 w-4 text-primary shrink-0" />
+              <span>מאגר ממצאים</span>
+            </button>
+            <button
+              onClick={() => navigate("/admin/users")}
+              className="flex-1 flex items-center gap-2 rounded-2xl border border-border bg-card p-3 text-sm font-semibold hover:bg-muted transition-colors"
+            >
+              <Users className="h-4 w-4 text-primary shrink-0" />
+              <span>ניהול משתמשים</span>
+            </button>
+          </div>
+        )}
+
         <Tabs defaultValue="accessibility" dir="rtl">
           <TabsList className="w-full mb-5 rounded-2xl h-11">
             {TAB_ORDER.map((t) => (
-              <TabsTrigger key={t.id} value={t.id} className="flex-1 text-xs font-semibold rounded-xl">
+              <TabsTrigger
+                key={t.id}
+                value={t.id}
+                className="flex-1 text-xs font-semibold rounded-xl"
+              >
                 {t.label}
               </TabsTrigger>
             ))}
@@ -100,26 +123,52 @@ export default function Settings() {
 
           {TAB_ORDER.map(({ id }) => {
             const surveyConfig = SURVEY_TYPES.find((t) => t.id === id)!;
-            const fmt = getFormat(id);
-            const upd = (patch: Partial<SurveyReportFormat>) => updateFormat(id, patch);
+            const fmt    = getFormat(id);
+            const upd    = (patch: Partial<SurveyReportFormat>) => updateFormat(id, patch);
             const isSaving = savingType === id;
 
             return (
               <TabsContent key={id} value={id} className="space-y-4 mt-0">
 
-                <Field label="שם חברה">
-                  <Input
-                    placeholder='למשל: יועצי נגישות מתו"ס'
-                    value={s.companyName ?? ""}
-                    onChange={(e) => setS((prev) => prev ? { ...prev, companyName: e.target.value } : prev)}
-                  />
-                </Field>
+                {/* ── Admin-only: company / PDF settings ── */}
+                {isAdmin && (
+                  <>
+                    <Field label="שם חברה">
+                      <Input
+                        placeholder='למשל: יועצי נגישות מתו"ס'
+                        value={s.companyName ?? ""}
+                        onChange={(e) =>
+                          setS((prev) =>
+                            prev ? { ...prev, companyName: e.target.value } : prev,
+                          )
+                        }
+                      />
+                    </Field>
 
+                    <Field label="כתובת המשרד">
+                      <Input
+                        placeholder="רחוב, עיר"
+                        value={s.address ?? ""}
+                        onChange={(e) =>
+                          setS((prev) =>
+                            prev ? { ...prev, address: e.target.value } : prev,
+                          )
+                        }
+                      />
+                    </Field>
+                  </>
+                )}
+
+                {/* ── Personal details (all users) ── */}
                 <Field label="שם בעל המקצוע">
                   <Input
                     placeholder="שם מלא"
                     value={s.consultantName ?? ""}
-                    onChange={(e) => setS((prev) => prev ? { ...prev, consultantName: e.target.value } : prev)}
+                    onChange={(e) =>
+                      setS((prev) =>
+                        prev ? { ...prev, consultantName: e.target.value } : prev,
+                      )
+                    }
                   />
                 </Field>
 
@@ -135,7 +184,11 @@ export default function Settings() {
                   <Input
                     placeholder="050-0000000"
                     value={s.phone ?? ""}
-                    onChange={(e) => setS((prev) => prev ? { ...prev, phone: e.target.value } : prev)}
+                    onChange={(e) =>
+                      setS((prev) =>
+                        prev ? { ...prev, phone: e.target.value } : prev,
+                      )
+                    }
                     dir="ltr"
                   />
                 </Field>
@@ -144,16 +197,12 @@ export default function Settings() {
                   <Input
                     placeholder="מספר רישוי שירות"
                     value={s.license ?? ""}
-                    onChange={(e) => setS((prev) => prev ? { ...prev, license: e.target.value } : prev)}
+                    onChange={(e) =>
+                      setS((prev) =>
+                        prev ? { ...prev, license: e.target.value } : prev,
+                      )
+                    }
                     dir="ltr"
-                  />
-                </Field>
-
-                <Field label="כתובת המשרד">
-                  <Input
-                    placeholder="רחוב, עיר"
-                    value={s.address ?? ""}
-                    onChange={(e) => setS((prev) => prev ? { ...prev, address: e.target.value } : prev)}
                   />
                 </Field>
 
@@ -161,46 +210,62 @@ export default function Settings() {
                   <Input
                     placeholder="email@example.com"
                     value={s.email ?? ""}
-                    onChange={(e) => setS((prev) => prev ? { ...prev, email: e.target.value } : prev)}
+                    onChange={(e) =>
+                      setS((prev) =>
+                        prev ? { ...prev, email: e.target.value } : prev,
+                      )
+                    }
                     dir="ltr"
                   />
                 </Field>
 
-                <Field label="כותרת הדוח (PDF)">
-                  <Input
-                    placeholder={surveyConfig.pdfTitle}
-                    value={fmt.reportTitle ?? ""}
-                    onChange={(e) => upd({ reportTitle: e.target.value || undefined })}
-                  />
-                </Field>
+                {/* ── Admin-only: PDF text overrides ── */}
+                {isAdmin && (
+                  <>
+                    <Field label="כותרת הדוח (PDF)">
+                      <Input
+                        placeholder={surveyConfig.pdfTitle}
+                        value={fmt.reportTitle ?? ""}
+                        onChange={(e) => upd({ reportTitle: e.target.value || undefined })}
+                      />
+                    </Field>
 
-                <Field label="הקדמה קבועה">
-                  <Textarea
-                    placeholder="טקסט שיופיע בתחילת הדוח, לפני הממצאים"
-                    value={fmt.fixedIntroduction ?? ""}
-                    onChange={(e) => upd({ fixedIntroduction: e.target.value || undefined })}
-                    rows={4}
-                    className="text-sm"
-                  />
-                </Field>
+                    <Field label="הקדמה קבועה">
+                      <Textarea
+                        placeholder="טקסט שיופיע בתחילת הדוח, לפני הממצאים"
+                        value={fmt.fixedIntroduction ?? ""}
+                        onChange={(e) =>
+                          upd({ fixedIntroduction: e.target.value || undefined })
+                        }
+                        rows={4}
+                        className="text-sm"
+                      />
+                    </Field>
 
-                <Field label="שם בעל המקצוע (דוח)">
-                  <Input
-                    placeholder="יקרא מ'שם בעל המקצוע' אם ריק"
-                    value={fmt.professionalName ?? ""}
-                    onChange={(e) => upd({ professionalName: e.target.value || undefined })}
-                  />
-                </Field>
+                    <Field label="שם בעל המקצוע (דוח)">
+                      <Input
+                        placeholder="יקרא מ'שם בעל המקצוע' אם ריק"
+                        value={fmt.professionalName ?? ""}
+                        onChange={(e) =>
+                          upd({ professionalName: e.target.value || undefined })
+                        }
+                      />
+                    </Field>
 
-                <Field label="מספר רישיון / תעודה (דוח)">
-                  <Input
-                    placeholder="יקרא ממספר הרישיון אם ריק"
-                    value={fmt.licenseNumber ?? ""}
-                    onChange={(e) => upd({ licenseNumber: e.target.value || undefined })}
-                    dir="ltr"
-                  />
-                </Field>
+                    <Field label="מספר רישיון / תעודה (דוח)">
+                      <Input
+                        placeholder="יקרא ממספר הרישיון אם ריק"
+                        value={fmt.licenseNumber ?? ""}
+                        onChange={(e) =>
+                          upd({ licenseNumber: e.target.value || undefined })
+                        }
+                        dir="ltr"
+                      />
+                    </Field>
+                  </>
+                )}
 
+                {/* ── Media (all users) ── */}
                 <Field label="לוגו חברה">
                   <div className="space-y-2">
                     <PhotoPicker
@@ -278,17 +343,6 @@ export default function Settings() {
             );
           })}
         </Tabs>
-
-        {/* ── Admin mode ── */}
-        <div className="mt-4 rounded-2xl border border-border bg-card p-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-semibold">מצב מנהל</p>
-              <p className="text-xs text-muted-foreground">מאפשר עריכה, הוספה ומחיקה של תבניות</p>
-            </div>
-            <Switch checked={admin} onCheckedChange={toggleAdmin} />
-          </div>
-        </div>
 
         <p className="pb-2 pt-3 text-center text-xs text-muted-foreground">
           ההגדרות נשמרות בענן ומשויכות לחשבונך
