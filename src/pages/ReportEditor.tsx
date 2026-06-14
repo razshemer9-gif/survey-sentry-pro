@@ -560,7 +560,7 @@ export default function ReportEditor() {
                         : "border-border bg-background text-muted-foreground hover:border-success/50 hover:text-success"
                     )}
                   >
-                    במקום נמצא בטיחותי
+                    המקום נמצא בטיחותי
                   </button>
                   <button
                     onClick={() => update({ accessibilityComplianceStatus: "no" })}
