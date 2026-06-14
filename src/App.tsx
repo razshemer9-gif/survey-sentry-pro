@@ -9,25 +9,32 @@ import NotFound from "./pages/NotFound.tsx";
 import ReportEditor from "./pages/ReportEditor.tsx";
 import Settings from "./pages/Settings.tsx";
 import Templates from "./pages/Templates.tsx";
+import Standards from "./pages/Standards.tsx";
+import UserManagement from "./pages/UserManagement.tsx";
 import AuthPage from "./pages/AuthPage.tsx";
 
 const queryClient = new QueryClient();
 
+function LoadingSpinner() {
+  return (
+    <div className="min-h-screen flex items-center justify-center">
+      <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+    </div>
+  );
+}
+
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
+  if (loading) return <LoadingSpinner />;
+  if (!user) return <Navigate to="/auth" replace />;
+  return <>{children}</>;
+}
 
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
-      </div>
-    );
-  }
-
-  if (!user) {
-    return <Navigate to="/auth" replace />;
-  }
-
+function AdminRoute({ children }: { children: React.ReactNode }) {
+  const { user, loading, isAdmin } = useAuth();
+  if (loading) return <LoadingSpinner />;
+  if (!user) return <Navigate to="/auth" replace />;
+  if (!isAdmin) return <Navigate to="/" replace />;
   return <>{children}</>;
 }
 
@@ -44,6 +51,8 @@ const App = () => (
             <Route path="/report/:id" element={<ProtectedRoute><ReportEditor /></ProtectedRoute>} />
             <Route path="/templates" element={<ProtectedRoute><Templates /></ProtectedRoute>} />
             <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
+            <Route path="/standards" element={<AdminRoute><Standards /></AdminRoute>} />
+            <Route path="/admin/users" element={<AdminRoute><UserManagement /></AdminRoute>} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>

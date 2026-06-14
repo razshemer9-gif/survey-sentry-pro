@@ -18,11 +18,13 @@ import {
 } from "@/components/ui/select";
 import { ChecklistTemplate, SURVEY_TYPES, SurveyType } from "@/lib/types";
 import { deleteTemplate, listTemplates, migrateLocalTemplates, saveTemplate } from "@/lib/storage";
+import { useAuth } from "@/contexts/AuthContext";
 
 type TemplateItem = ChecklistTemplate["items"][number];
 
 export default function Templates() {
   const navigate = useNavigate();
+  const { isAdmin } = useAuth();
   const [templates, setTemplates] = useState<ChecklistTemplate[]>([]);
   const [editing, setEditing] = useState<ChecklistTemplate | null>(null);
   const [editingItem, setEditingItem] = useState<{ item: TemplateItem; index: number } | null>(null);
@@ -136,11 +138,13 @@ export default function Templates() {
         <p className="mt-1 text-sm opacity-90">צור רשימות ממצאים מותאמות לסוג מבנה או עסק</p>
       </header>
 
-      <div className="px-5 pt-4">
-        <Button onClick={startNew} className="w-full gap-2 rounded-2xl">
-          <Plus className="h-5 w-5" /> תבנית חדשה
-        </Button>
-      </div>
+      {isAdmin && (
+        <div className="px-5 pt-4">
+          <Button onClick={startNew} className="w-full gap-2 rounded-2xl">
+            <Plus className="h-5 w-5" /> תבנית חדשה
+          </Button>
+        </div>
+      )}
 
       <ul className="space-y-3 px-5 pt-4 pb-8">
         {templates.map((t) => (
@@ -159,7 +163,7 @@ export default function Templates() {
                 <p className="mt-2 text-xs text-muted-foreground">{t.items.length} ממצאים</p>
               </div>
               <div className="flex flex-col gap-1">
-                {!t.builtIn && (
+                {isAdmin && !t.builtIn && (
                   <>
                     <button
                       onClick={() => setEditing({ ...t, items: t.items.map((i) => ({ ...i })) })}
@@ -175,7 +179,7 @@ export default function Templates() {
                     </button>
                   </>
                 )}
-                {t.builtIn && (
+                {isAdmin && t.builtIn && (
                   <button
                     onClick={() =>
                       setEditing({

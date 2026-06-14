@@ -35,13 +35,8 @@ import { CATEGORIES, PLACE_TYPE_LABELS } from "@/lib/standards-data";
 import { AccessibilityRequirement, PlaceType } from "@/lib/standards-types";
 import { getSurveyType, SURVEY_TYPES, SurveyReport, SurveyType } from "@/lib/types";
 import { listReports, addRequirementToReport } from "@/lib/storage";
-import {
-  listRequirements,
-  saveRequirement,
-  deleteRequirement,
-  isAdmin,
-  validateAdminSession,
-} from "@/lib/standards-storage";
+import { listRequirements, saveRequirement, deleteRequirement } from "@/lib/standards-storage";
+import { useAuth } from "@/contexts/AuthContext";
 
 
 function emptyReq(): AccessibilityRequirement {
@@ -67,6 +62,7 @@ function emptyReq(): AccessibilityRequirement {
 
 export default function Standards() {
   const navigate = useNavigate();
+  const { isAdmin: admin } = useAuth();
   const [search, setSearch] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("all");
   const [placeFilter, setPlaceFilter] = useState("all");
@@ -74,11 +70,6 @@ export default function Standards() {
 
   const [items, setItems] = useState<AccessibilityRequirement[]>([]);
   const [loading, setLoading] = useState(true);
-  const [admin, setAdmin] = useState(isAdmin()); // fast init from localStorage, verified below
-
-  useEffect(() => {
-    validateAdminSession().then(setAdmin);
-  }, []);
 
   // Add-to-report dialog state
   const [selectedReq, setSelectedReq] = useState<AccessibilityRequirement | null>(null);
