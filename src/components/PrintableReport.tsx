@@ -199,29 +199,29 @@ export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, sett
               <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
                 <tbody>
                   <tr>
-                    <Cell label="מספר תלמידים וכיתות" value={report.studentCount} />
-                    <Cell label="סמל המוסד" value={report.institutionSymbol} />
-                    <Cell label="שם המוסד" value={report.placeName} />
-                    <Cell label="הבעלות" value={report.clientName} />
                     <Cell label="הישוב" value={report.city} />
+                    <Cell label="הבעלות" value={report.clientName} />
+                    <Cell label="שם המוסד" value={report.placeName} />
+                    <Cell label="סמל המוסד" value={report.institutionSymbol} />
+                    <Cell label="מספר תלמידים וכיתות" value={report.studentCount} />
                   </tr>
                   <tr>
-                    <Cell label="טלפון המוסד" value={report.institutionPhone} />
-                    <Cell label="שנת הקמה" value={report.establishedYear} />
                     <td style={C} colSpan={3}><span style={L}>כתובת המוסד:</span>{report.address || ""}</td>
+                    <Cell label="שנת הקמה" value={report.establishedYear} />
+                    <Cell label="טלפון המוסד" value={report.institutionPhone} />
                   </tr>
                   <tr>
-                    <Cell label="משתתפים מטעם הרשות" value={report.authorityParticipants} />
-                    <Cell label="משתתפים מטעם המוסד החינוכי" value={report.institutionParticipants} />
-                    <Cell label="שם המפקח" value={report.supervisorName} />
                     <td style={C} colSpan={2}><span style={L}>שם המנהל/ת:</span>{report.principalName || ""}</td>
+                    <Cell label="שם המפקח" value={report.supervisorName} />
+                    <Cell label="משתתפים מטעם המוסד החינוכי" value={report.institutionParticipants} />
+                    <Cell label="משתתפים מטעם הרשות" value={report.authorityParticipants} />
                   </tr>
                   <tr>
+                    <td style={C} colSpan={3}><span style={L}>תאריך המבדק:</span>{formatHebrewDate(report.surveyDate)}</td>
                     <td style={C} colSpan={2}>
                       <span style={L}>פרטי הבודק:</span>
                       {[inspectorName, inspectorRole, licNum ? `מ.ר ${licNum}` : ""].filter(Boolean).join(" — ")}
                     </td>
-                    <td style={C} colSpan={3}><span style={L}>תאריך המבדק:</span>{formatHebrewDate(report.surveyDate)}</td>
                   </tr>
                 </tbody>
               </table>
