@@ -32,7 +32,8 @@ LANGUAGE plpgsql
 SECURITY DEFINER
 AS $$
 BEGIN
-  IF NEW.role IS DISTINCT FROM OLD.role THEN
+  -- auth.uid() is NULL when called from SQL Editor / service role — allow it
+  IF NEW.role IS DISTINCT FROM OLD.role AND auth.uid() IS NOT NULL THEN
     IF NOT (
       SELECT EXISTS (
         SELECT 1 FROM public.profiles
