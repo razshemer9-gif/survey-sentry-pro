@@ -422,7 +422,7 @@ export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, sett
             <Field label="שם הלקוח" value={report.clientName} />
             <Field label="כתובת" value={report.address} />
             <Field label="תאריך הסקר" value={formatHebrewDate(report.surveyDate)} />
-            {report.buildingType && (
+            {report.surveyType !== "general_safety" && report.buildingType && (
               <Field
                 label="סוג הבניין"
                 value={
@@ -501,25 +501,69 @@ export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, sett
           }
         </div>
 
+        {/* Required approvals — general_safety only */}
+        {report.surveyType === "general_safety" && (report.requiredApprovals?.length ?? 0) > 0 && (
+          <div style={{ marginTop: 32, border: "2px solid #1e3a8a", borderRadius: 14, padding: "20px 24px", background: "#f0f4ff", pageBreakInside: "avoid" }}>
+            <h3 style={{ margin: "0 0 16px", fontSize: 17, fontWeight: 800, color: "#1e3a8a" }}>אישורים נדרשים</h3>
+            <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 14 }}>
+              <thead>
+                <tr style={{ background: "#1e3a8a", color: "#fff" }}>
+                  <th style={{ padding: "8px 12px", textAlign: "right", fontWeight: 700, border: "1px solid #1e3a8a" }}>אישור</th>
+                  <th style={{ padding: "8px 12px", textAlign: "center", fontWeight: 700, border: "1px solid #1e3a8a", width: 80 }}>נדרש</th>
+                </tr>
+              </thead>
+              <tbody>
+                {["אישור חשמלאי בודק", "אגרונום", "קונסטרוקטור"].map((a, i) => (
+                  <tr key={a} style={{ background: i % 2 === 0 ? "#fff" : "#f8fafc" }}>
+                    <td style={{ padding: "8px 12px", border: "1px solid #e2e8f0" }}>{a}</td>
+                    <td style={{ padding: "8px 12px", border: "1px solid #e2e8f0", textAlign: "center", fontSize: 16 }}>
+                      {(report.requiredApprovals ?? []).includes(a) ? "✓" : ""}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+
         {/* Opinion summary */}
         {report.accessibilityComplianceStatus && (
           <div style={{ marginTop: 32, border: "2px solid #1e3a8a", borderRadius: 14, padding: "20px 24px", background: "#f0f4ff", pageBreakInside: "avoid" }}>
             <h3 style={{ margin: "0 0 12px", fontSize: 17, fontWeight: 800, color: "#1e3a8a" }}>
-              סיכום חוות הדעת:
+              {report.surveyType === "general_safety" ? "סיכום ממצאי הבדיקה:" : "סיכום חוות הדעת:"}
             </h3>
-            <p style={{ margin: 0, fontSize: 15, color: "#0f172a", lineHeight: 1.7 }}>
-              האם בוצעו כל ההוראות החלות לפי התקנות?
-            </p>
-            <div style={{ marginTop: 14, display: "flex", gap: 16 }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 16, fontWeight: 700, color: report.accessibilityComplianceStatus === "yes" ? "#15803d" : "#6b7280" }}>
-                <span style={{ display: "inline-block", width: 20, height: 20, borderRadius: "50%", border: `2px solid ${report.accessibilityComplianceStatus === "yes" ? "#15803d" : "#d1d5db"}`, background: report.accessibilityComplianceStatus === "yes" ? "#15803d" : "transparent", flexShrink: 0 }} />
-                כן
+            {report.surveyType === "general_safety" ? (
+              <div style={{ display: "flex", flexDirection: "column", gap: 10, marginTop: 8 }}>
+                {[
+                  { value: "yes", label: "במקום נמצא בטיחותי", color: "#15803d" },
+                  { value: "no", label: "לאחר טיפול בליקויים יש לזמן ביקורת נוספת", color: "#b91c1c" },
+                ].map(({ value, label, color }) => {
+                  const selected = report.accessibilityComplianceStatus === value;
+                  return (
+                    <div key={value} style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 14px", borderRadius: 8, border: `2px solid ${selected ? color : "#e2e8f0"}`, background: selected ? `${color}15` : "#fff" }}>
+                      <span style={{ display: "inline-block", width: 18, height: 18, borderRadius: "50%", border: `2px solid ${selected ? color : "#d1d5db"}`, background: selected ? color : "transparent", flexShrink: 0 }} />
+                      <span style={{ fontSize: 15, fontWeight: 700, color: selected ? color : "#64748b" }}>{label}</span>
+                    </div>
+                  );
+                })}
               </div>
-              <div style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 16, fontWeight: 700, color: report.accessibilityComplianceStatus === "no" ? "#b91c1c" : "#6b7280" }}>
-                <span style={{ display: "inline-block", width: 20, height: 20, borderRadius: "50%", border: `2px solid ${report.accessibilityComplianceStatus === "no" ? "#b91c1c" : "#d1d5db"}`, background: report.accessibilityComplianceStatus === "no" ? "#b91c1c" : "transparent", flexShrink: 0 }} />
-                לא
-              </div>
-            </div>
+            ) : (
+              <>
+                <p style={{ margin: 0, fontSize: 15, color: "#0f172a", lineHeight: 1.7 }}>
+                  האם בוצעו כל ההוראות החלות לפי התקנות?
+                </p>
+                <div style={{ marginTop: 14, display: "flex", gap: 16 }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 16, fontWeight: 700, color: report.accessibilityComplianceStatus === "yes" ? "#15803d" : "#6b7280" }}>
+                    <span style={{ display: "inline-block", width: 20, height: 20, borderRadius: "50%", border: `2px solid ${report.accessibilityComplianceStatus === "yes" ? "#15803d" : "#d1d5db"}`, background: report.accessibilityComplianceStatus === "yes" ? "#15803d" : "transparent", flexShrink: 0 }} />
+                    כן
+                  </div>
+                  <div style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 16, fontWeight: 700, color: report.accessibilityComplianceStatus === "no" ? "#b91c1c" : "#6b7280" }}>
+                    <span style={{ display: "inline-block", width: 20, height: 20, borderRadius: "50%", border: `2px solid ${report.accessibilityComplianceStatus === "no" ? "#b91c1c" : "#d1d5db"}`, background: report.accessibilityComplianceStatus === "no" ? "#b91c1c" : "transparent", flexShrink: 0 }} />
+                    לא
+                  </div>
+                </div>
+              </>
+            )}
           </div>
         )}
 

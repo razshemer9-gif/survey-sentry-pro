@@ -346,6 +346,7 @@ export default function ReportEditor() {
                         ))}
                       </div>
                     </Field>
+                    {report.surveyType !== "general_safety" && (
                     <Field label="סוג הבניין">
                       <Select value={report.buildingType || ""} onValueChange={(v) => update({ buildingType: v as "existing_public" | "new_public" | "other" })}>
                         <SelectTrigger><SelectValue placeholder="בחר סוג בניין" /></SelectTrigger>
@@ -359,6 +360,7 @@ export default function ReportEditor() {
                         <Input className="mt-2" value={report.buildingTypeOther || ""} onChange={(e) => update({ buildingTypeOther: e.target.value })} placeholder="פרט סוג בניין..." />
                       )}
                     </Field>
+                    )}
                     <Field label="תמונת שער">
                       <PhotoPicker value={report.coverPhoto} onChange={(u) => update({ coverPhoto: u })} label="צרף תמונת חזית" />
                     </Field>
@@ -518,36 +520,93 @@ export default function ReportEditor() {
             </div>
           </div>
 
+          {/* Required approvals — general_safety only */}
+          {report.surveyType === "general_safety" && (
+            <div dir="rtl" className="rounded-2xl border-2 border-primary/20 bg-card p-4 space-y-3">
+              <h3 className="font-bold text-sm text-primary">אישורים נדרשים</h3>
+              {["אישור חשמלאי בודק", "אגרונום", "קונסטרוקטור"].map((approval) => (
+                <label key={approval} className="flex items-center gap-2.5 cursor-pointer select-none">
+                  <input
+                    type="checkbox"
+                    checked={(report.requiredApprovals ?? []).includes(approval)}
+                    onChange={(e) => {
+                      const current = report.requiredApprovals ?? [];
+                      update({
+                        requiredApprovals: e.target.checked
+                          ? [...current, approval]
+                          : current.filter((a) => a !== approval),
+                      });
+                    }}
+                    className="h-4 w-4 accent-primary"
+                  />
+                  <span className="text-sm">{approval}</span>
+                </label>
+              ))}
+            </div>
+          )}
+
           {/* Opinion summary section */}
           <div dir="rtl" className="rounded-2xl border-2 border-primary/30 bg-card p-4 space-y-3">
-            <h3 className="font-bold text-sm text-primary">סיכום חוות הדעת של מורשה הנגישות:</h3>
-            <p className="text-sm text-foreground leading-relaxed">
-              האם בוצעו בעסק כל התאמות הנגישות וההוראות החלות עליו לפי התקנות?
-            </p>
-            <div className="flex gap-3">
-              <button
-                onClick={() => update({ accessibilityComplianceStatus: "yes" })}
-                className={cn(
-                  "flex-1 rounded-xl border-2 py-3 text-sm font-bold transition-colors",
-                  report.accessibilityComplianceStatus === "yes"
-                    ? "border-success bg-success/15 text-success ring-2 ring-success/40"
-                    : "border-border bg-background text-muted-foreground hover:border-success/50 hover:text-success"
-                )}
-              >
-                כן
-              </button>
-              <button
-                onClick={() => update({ accessibilityComplianceStatus: "no" })}
-                className={cn(
-                  "flex-1 rounded-xl border-2 py-3 text-sm font-bold transition-colors",
-                  report.accessibilityComplianceStatus === "no"
-                    ? "border-destructive bg-destructive/10 text-destructive ring-2 ring-destructive/30"
-                    : "border-border bg-background text-muted-foreground hover:border-destructive/50 hover:text-destructive"
-                )}
-              >
-                לא
-              </button>
-            </div>
+            {report.surveyType === "general_safety" ? (
+              <>
+                <h3 className="font-bold text-sm text-primary">סיכום ממצאי הבדיקה:</h3>
+                <div className="flex flex-col gap-2">
+                  <button
+                    onClick={() => update({ accessibilityComplianceStatus: "yes" })}
+                    className={cn(
+                      "rounded-xl border-2 py-3 px-4 text-sm font-bold text-right transition-colors",
+                      report.accessibilityComplianceStatus === "yes"
+                        ? "border-success bg-success/15 text-success ring-2 ring-success/40"
+                        : "border-border bg-background text-muted-foreground hover:border-success/50 hover:text-success"
+                    )}
+                  >
+                    במקום נמצא בטיחותי
+                  </button>
+                  <button
+                    onClick={() => update({ accessibilityComplianceStatus: "no" })}
+                    className={cn(
+                      "rounded-xl border-2 py-3 px-4 text-sm font-bold text-right transition-colors",
+                      report.accessibilityComplianceStatus === "no"
+                        ? "border-destructive bg-destructive/10 text-destructive ring-2 ring-destructive/30"
+                        : "border-border bg-background text-muted-foreground hover:border-destructive/50 hover:text-destructive"
+                    )}
+                  >
+                    לאחר טיפול בליקויים יש לזמן ביקורת נוספת
+                  </button>
+                </div>
+              </>
+            ) : (
+              <>
+                <h3 className="font-bold text-sm text-primary">סיכום חוות הדעת של מורשה הנגישות:</h3>
+                <p className="text-sm text-foreground leading-relaxed">
+                  האם בוצעו בעסק כל התאמות הנגישות וההוראות החלות עליו לפי התקנות?
+                </p>
+                <div className="flex gap-3">
+                  <button
+                    onClick={() => update({ accessibilityComplianceStatus: "yes" })}
+                    className={cn(
+                      "flex-1 rounded-xl border-2 py-3 text-sm font-bold transition-colors",
+                      report.accessibilityComplianceStatus === "yes"
+                        ? "border-success bg-success/15 text-success ring-2 ring-success/40"
+                        : "border-border bg-background text-muted-foreground hover:border-success/50 hover:text-success"
+                    )}
+                  >
+                    כן
+                  </button>
+                  <button
+                    onClick={() => update({ accessibilityComplianceStatus: "no" })}
+                    className={cn(
+                      "flex-1 rounded-xl border-2 py-3 text-sm font-bold transition-colors",
+                      report.accessibilityComplianceStatus === "no"
+                        ? "border-destructive bg-destructive/10 text-destructive ring-2 ring-destructive/30"
+                        : "border-border bg-background text-muted-foreground hover:border-destructive/50 hover:text-destructive"
+                    )}
+                  >
+                    לא
+                  </button>
+                </div>
+              </>
+            )}
           </div>
           <Button
             variant="outline"
