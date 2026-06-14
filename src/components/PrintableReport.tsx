@@ -412,6 +412,8 @@ export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, sett
             gridTemplateColumns: "1fr 1fr",
             gap: "16px 28px",
             fontSize: 15,
+            background: "#f1f5f9",
+            border: "1px solid #e2e8f0",
           }}>
             <Field label="שם המקום / העסק" value={report.placeName} />
             <Field label="שם הלקוח" value={report.clientName} />
