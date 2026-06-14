@@ -392,12 +392,9 @@ export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, sett
         <div
           data-pdf-no-break=""
           style={{
-            margin: "24px 48px 48px",
-            background: "rgba(255,255,255,0.96)",
+            margin: "24px 0 0",
+            background: "#ffffff",
             color: "#0f172a",
-            borderRadius: 16,
-            overflow: "hidden",
-            boxShadow: "0 20px 40px rgba(0,0,0,0.25)",
           }}
         >
           {report.coverPhoto && (
