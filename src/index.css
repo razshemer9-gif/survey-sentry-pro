@@ -189,13 +189,7 @@ button:active, a:active { opacity: 0.85; }
   padding: 1.25rem;
   position: relative;
   overflow: hidden;
-  background:
-    radial-gradient(
-      ellipse 120% 60% at 50% -5%,
-      rgba(0, 102, 255, 0.42) 0%,
-      rgba(6, 21, 45, 1) 48%,
-      rgba(2, 8, 20, 1) 100%
-    );
+  background: linear-gradient(160deg, #103b8f 0%, #0b357f 30%, #0a2a6b 60%, #061540 100%);
 }
 
 /* Atmospheric glow orbs */
@@ -248,8 +242,18 @@ button:active, a:active { opacity: 0.85; }
   to   { opacity: 1; transform: translateY(0); }
 }
 
-/* Logo section */
-.auth-logo-container {
+/* Decorative SVG layer */
+.auth-deco {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* Hero section */
+.auth-hero {
   text-align: center;
   margin-bottom: 1.75rem;
 }
@@ -257,21 +261,30 @@ button:active, a:active { opacity: 0.85; }
 .auth-logo-float {
   display: inline-block;
   filter:
-    drop-shadow(0 0 14px rgba(51, 195, 255, 0.55))
-    drop-shadow(0 0 30px rgba(0, 102, 255, 0.35));
+    drop-shadow(0 4px 18px rgba(16, 100, 255, 0.5))
+    drop-shadow(0 0 40px rgba(80, 160, 255, 0.22));
   animation: auth-logo-float 4.5s ease-in-out infinite;
 }
 
 @keyframes auth-logo-float {
   0%, 100% { transform: translateY(0px); }
-  50%       { transform: translateY(-7px); }
+  50%       { transform: translateY(-6px); }
 }
 
-.auth-tagline {
-  margin-top: 0.625rem;
+.auth-hero-title {
+  margin: 1rem 0 0.3rem;
+  font-size: 1.45rem;
+  font-weight: 800;
+  color: #ffffff;
+  letter-spacing: 0.01em;
+  text-shadow: 0 2px 16px rgba(80, 160, 255, 0.35);
+}
+
+.auth-hero-subtitle {
+  margin: 0;
   font-size: 0.8125rem;
-  letter-spacing: 0.025em;
-  color: rgba(51, 195, 255, 0.6);
+  color: rgba(160, 196, 255, 0.75);
+  letter-spacing: 0.02em;
 }
 
 /* Glass card */
