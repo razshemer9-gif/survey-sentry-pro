@@ -41,6 +41,18 @@ function loadImage(src: string): Promise<HTMLImageElement> {
   });
 }
 
+export function cropImageDataUrl(src: string, w: number, h: number): Promise<string> {
+  return loadImage(src).then((img) => {
+    const canvas = document.createElement("canvas");
+    canvas.width = w; canvas.height = h;
+    const ctx = canvas.getContext("2d")!;
+    const scale = Math.max(w / img.naturalWidth, h / img.naturalHeight);
+    const sw = img.naturalWidth * scale, sh = img.naturalHeight * scale;
+    ctx.drawImage(img, (w - sw) / 2, (h - sh) / 2, sw, sh);
+    return canvas.toDataURL("image/jpeg", 0.88);
+  });
+}
+
 export function formatHebrewDate(iso: string): string {
   if (!iso) return "";
   const d = new Date(iso);

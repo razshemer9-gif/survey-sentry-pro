@@ -34,7 +34,7 @@ import { ChecklistItem, ConsultantSettings, DEFAULT_SETTINGS, ReferencePhotoEntr
 import { getReport, loadUserSettings, saveReport, saveUserSettings } from "@/lib/storage";
 import { useAuth } from "@/contexts/AuthContext";
 import { buildPdfFileName, generateReportPdf } from "@/lib/pdf";
-import { formatCurrency } from "@/lib/image";
+import { cropImageDataUrl, formatCurrency } from "@/lib/image";
 import { cn } from "@/lib/utils";
 import { SignaturePad } from "@/components/SignaturePad";
 
@@ -50,6 +50,7 @@ export default function ReportEditor() {
   const [settings, setSettings] = useState<ConsultantSettings>({ ...DEFAULT_SETTINGS });
   const [signatureOpen, setSignatureOpen] = useState(false);
   const [refPickerItemId, setRefPickerItemId] = useState<string | null>(null);
+  const [croppedCoverPhoto, setCroppedCoverPhoto] = useState<string | null>(null);
   const printRef = useRef<HTMLDivElement>(null);
   const autoSaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const isFirstLoad = useRef(true);
@@ -58,6 +59,13 @@ export default function ReportEditor() {
     if (!user) return;
     loadUserSettings(user.id).then(setSettings);
   }, [user]);
+
+  // Pre-crop cover photo so the off-screen PDF element always has the correct size
+  useEffect(() => {
+    const src = report?.coverPhoto;
+    if (!src) { setCroppedCoverPhoto(null); return; }
+    cropImageDataUrl(src, 698, 320).then(setCroppedCoverPhoto);
+  }, [report?.coverPhoto]);
 
   useEffect(() => {
     if (!id) return;
@@ -634,7 +642,11 @@ export default function ReportEditor() {
         aria-hidden="true"
         style={{ position: "fixed", top: "100vh", left: 0, pointerEvents: "none" }}
       >
-        <PrintableReport ref={printRef} report={report} settings={settings} />
+        <PrintableReport
+          ref={printRef}
+          report={croppedCoverPhoto ? { ...report, coverPhoto: croppedCoverPhoto } : report}
+          settings={settings}
+        />
       </div>,
       document.body
     )}
