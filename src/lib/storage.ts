@@ -7,6 +7,7 @@ import {
   SurveyReport,
   SurveyType,
 } from "./types";
+import { AccessibilityRequirement } from "./standards-types";
 import { supabase } from "./supabase";
 
 const K_TEMPLATES = "ans.templates.v1";
@@ -74,6 +75,28 @@ export async function deleteReport(id: string): Promise<void> {
     .eq("id", id)
     .eq("device_id", userId);
   if (error) throw error;
+}
+
+export async function addRequirementToReport(
+  reportId: string,
+  req: AccessibilityRequirement
+): Promise<void> {
+  const report = await getReport(reportId);
+  if (!report) throw new Error("דוח לא נמצא");
+  const newItem = {
+    id: uuid(),
+    title: req.requirementTitle,
+    status: "non_compliant" as const,
+    notes: req.defectText,
+    estimatedCost: 0,
+    suggestedCorrection: req.correctionText,
+    matchedRequirementId: req.id,
+    ...(req.standardPart && { standardPart: req.standardPart }),
+    ...(req.clause && { clause: req.clause }),
+    ...(req.referencePhotos?.length && { referencePhotos: req.referencePhotos }),
+    ...(req.referencePhoto && { referencePhoto: req.referencePhoto }),
+  };
+  await saveReport({ ...report, items: [...report.items, newItem] });
 }
 
 export function newReport(
