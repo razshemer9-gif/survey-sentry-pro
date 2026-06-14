@@ -503,7 +503,7 @@ export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, sett
 
         {/* Required approvals — general_safety only */}
         {report.surveyType === "general_safety" && (report.requiredApprovals?.length ?? 0) > 0 && (
-          <div style={{ marginTop: 32, border: "2px solid #1e3a8a", borderRadius: 14, padding: "20px 24px", backgroundColor: "#f0f4ff", pageBreakInside: "avoid" }}>
+          <div data-pdf-page-break="" style={{ marginTop: 32, border: "2px solid #1e3a8a", borderRadius: 14, padding: "20px 24px", backgroundColor: "#f0f4ff", pageBreakInside: "avoid" }}>
             <h3 style={{ margin: "0 0 16px", fontSize: 17, fontWeight: 800, color: "#1e3a8a" }}>אישורים נדרשים</h3>
             <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 14, direction: "rtl" }}>
               <thead>
