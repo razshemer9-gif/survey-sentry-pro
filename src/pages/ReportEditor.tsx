@@ -64,7 +64,7 @@ export default function ReportEditor() {
   useEffect(() => {
     const src = report?.coverPhoto;
     if (!src) { setCroppedCoverPhoto(null); return; }
-    cropImageDataUrl(src, 698, 320).then(setCroppedCoverPhoto);
+    cropImageDataUrl(src, 698, 400).then(setCroppedCoverPhoto);
   }, [report?.coverPhoto]);
 
   useEffect(() => {
