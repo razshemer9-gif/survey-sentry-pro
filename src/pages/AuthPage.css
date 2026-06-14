@@ -90,30 +90,26 @@
 
 /* ── Logo container ─────────────────────────────────────────────────── */
 /*
- * KEY TECHNIQUE: container background matches page gradient at logo position.
- * The img inside uses mix-blend-mode:multiply.
- * White (255,255,255) × dark-blue ≈ dark-blue → white areas disappear.
- * Colored/dark parts of the logo remain visible.
+ * Container background matches page gradient at logo position.
+ * mix-blend-mode:multiply on the img makes white areas invisible.
+ * No outer glow — the container blends seamlessly with the page.
  */
 .ap-logo-wrap {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(145deg, #0e3280 0%, #0b2970 50%, #081d55 100%);
-  border-radius: 20px;
-  isolation: isolate;                        /* create blending context */
-  box-shadow:
-    0 0 0 1px rgba(99, 155, 255, 0.18),
-    0 10px 48px rgba(10, 40, 180, 0.65),
-    0 0 100px rgba(30, 80, 255, 0.22);
+  padding: 0.5rem 1rem;
+  background: linear-gradient(145deg, #0f3688 0%, #0d2e7a 50%, #0a2060 100%);
+  border-radius: 22px;
+  isolation: isolate;
   animation: ap-float 5s ease-in-out infinite;
 }
 
 .ap-logo-wrap img {
   display: block;
-  mix-blend-mode: multiply;  /* white × container-blue = container-blue = invisible */
-  border-radius: 20px;
-  max-width: 220px;
+  mix-blend-mode: multiply;
+  border-radius: 14px;
+  max-width: 250px;
   width: 100%;
   height: auto;
   object-fit: contain;
