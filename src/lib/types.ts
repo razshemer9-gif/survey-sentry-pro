@@ -35,7 +35,7 @@ export const SURVEY_TYPES: SurveyTypeConfig[] = [
     shortLabel: "בטיחות כללית",
     pdfTitle: "סקר בטיחות כללי",
     filePrefix: "סקר-בטיחות",
-    color: "#d97706",
+    color: "#1e3a8a",
   },
 ];
 
@@ -114,6 +114,8 @@ export interface SurveyReport {
   accessibilityComplianceStatus?: "yes" | "no";
   // Document mode
   reportMode?: "survey" | "approval";
+  // Required approvals (general_safety only)
+  requiredApprovals?: string[];
 }
 
 export interface ReferencePhotoEntry {
