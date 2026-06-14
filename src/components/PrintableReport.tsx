@@ -1,6 +1,6 @@
 import { ConsultantSettings, getSurveyType, SurveyReport, SurveyReportFormat } from "@/lib/types";
 import { formatCurrency, formatHebrewDate } from "@/lib/pdf";
-import React, { forwardRef, useEffect, useState } from "react";
+import React, { forwardRef } from "react";
 
 interface Props {
   report: SurveyReport;
@@ -16,26 +16,6 @@ function getFormat(settings: ConsultantSettings, report: SurveyReport): SurveyRe
  * Width is fixed in px to give html2canvas a stable canvas to rasterize.
  */
 export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, settings }, ref) => {
-  // Pre-crop cover photo using canvas so html2canvas reads exact pixels (no CSS clipping needed)
-  const [croppedCover, setCroppedCover] = useState<string | null>(null);
-  useEffect(() => {
-    const src = report.coverPhoto;
-    if (!src) { setCroppedCover(null); return; }
-    const img = new Image();
-    img.onload = () => {
-      const W = 698, H = 320;
-      const canvas = document.createElement("canvas");
-      canvas.width = W; canvas.height = H;
-      const ctx = canvas.getContext("2d");
-      if (!ctx) return;
-      const scale = Math.max(W / img.naturalWidth, H / img.naturalHeight);
-      const sw = img.naturalWidth * scale, sh = img.naturalHeight * scale;
-      ctx.drawImage(img, (W - sw) / 2, (H - sh) / 2, sw, sh);
-      setCroppedCover(canvas.toDataURL("image/jpeg", 0.9));
-    };
-    img.src = src;
-  }, [report.coverPhoto]);
-
   const surveyConfig = getSurveyType(report.surveyType);
   const fmt = getFormat(settings, report);
 
@@ -420,16 +400,14 @@ export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, sett
             boxShadow: "0 20px 40px rgba(0,0,0,0.25)",
           }}
         >
-          {croppedCover && (
-            <div style={{ width: "100%", height: 320, overflow: "hidden", lineHeight: 0, fontSize: 0 }}>
-              <img
-                src={croppedCover}
-                alt="cover"
-                width={698}
-                height={320}
-                style={{ width: "100%", height: 320, display: "block" }}
-              />
-            </div>
+          {report.coverPhoto && (
+            <img
+              src={report.coverPhoto}
+              alt="cover"
+              width={698}
+              height={320}
+              style={{ width: "100%", height: 320, display: "block" }}
+            />
           )}
           <div style={{
             padding: "24px 28px",
