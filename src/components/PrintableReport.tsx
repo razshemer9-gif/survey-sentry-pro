@@ -384,9 +384,10 @@ export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, sett
 
         <div style={{ padding: "10px 48px 24px" }}>
           <h1 style={{ fontSize: 46, fontWeight: 800, lineHeight: 1.05, margin: 0 }}>
-            {fmt.reportTitle || (report.reportMode === "approval"
-              ? surveyConfig.pdfTitle.replace(/^סקר/, "אישור")
-              : surveyConfig.pdfTitle)}
+            {(() => {
+              const base = fmt.reportTitle || surveyConfig.pdfTitle;
+              return report.reportMode === "approval" ? base.replace(/^סקר/, "אישור") : base;
+            })()}
           </h1>
           <div style={{ fontSize: 22, marginTop: 14, opacity: 0.95 }}>{report.placeName || "ללא שם"}</div>
         </div>
