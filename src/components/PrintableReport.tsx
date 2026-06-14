@@ -433,14 +433,16 @@ export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, sett
 
       {/* CONSULTANT PAGE */}
       <section style={{ padding: "48px", background: "#fff" }}>
-        <PageHeader title="פרטי בעל המקצוע" company={settings.companyName} accentColor={surveyConfig.color} />
-
         {/* Fixed introduction */}
         {fmt.fixedIntroduction && (
-          <div style={{ marginTop: 20, fontSize: 14, lineHeight: 1.8, color: "#334155", whiteSpace: "pre-wrap" }}>
+          <div style={{ fontSize: 14, lineHeight: 1.8, color: "#334155", whiteSpace: "pre-wrap" }}>
             {fmt.fixedIntroduction}
           </div>
         )}
+
+        <div style={{ marginTop: fmt.fixedIntroduction ? 28 : 0 }}>
+          <PageHeader title="פרטי בעל המקצוע" company={settings.companyName} accentColor={surveyConfig.color} />
+        </div>
 
         <div
           data-pdf-no-break=""
