@@ -64,7 +64,12 @@ export async function generateReportPdf(
     return { top: r.top - elTop, bottom: r.bottom - elTop };
   });
 
-  // Build slice list — never break inside a no-break card.
+  // Positions of [data-pdf-page-break] elements — force a new page to start here.
+  const pageBreaks = Array.from(
+    element.querySelectorAll<HTMLElement>("[data-pdf-page-break]"),
+  ).map((el) => el.getBoundingClientRect().top - elTop);
+
+  // Build slice list — never break inside a no-break card; force break at page-break markers.
   const slices: { top: number; height: number }[] = [];
   let cursor = 0;
 
@@ -74,6 +79,14 @@ export async function generateReportPdf(
     if (end >= elHeight) {
       slices.push({ top: cursor, height: elHeight - cursor });
       break;
+    }
+
+    // Force break at the nearest page-break marker that falls between cursor+1 and end.
+    for (const pb of pageBreaks) {
+      if (pb > cursor && pb < end) {
+        end = pb;
+        break;
+      }
     }
 
     // Pull break earlier if it lands inside a no-break card.
