@@ -421,11 +421,15 @@ export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, sett
           }}
         >
           {croppedCover && (
-            <img
-              src={croppedCover}
-              alt="cover"
-              style={{ width: "100%", height: "auto", display: "block" }}
-            />
+            <div style={{ width: "100%", height: 320, overflow: "hidden", lineHeight: 0, fontSize: 0 }}>
+              <img
+                src={croppedCover}
+                alt="cover"
+                width={698}
+                height={320}
+                style={{ width: "100%", height: 320, display: "block" }}
+              />
+            </div>
           )}
           <div style={{
             padding: "24px 28px",
