@@ -327,6 +327,25 @@ export default function ReportEditor() {
                     <Field label="תאריך הסקר">
                       <Input type="date" value={report.surveyDate} onChange={(e) => update({ surveyDate: e.target.value })} />
                     </Field>
+                    <Field label="סוג מסמך">
+                      <div className="flex gap-2">
+                        {(["survey", "approval"] as const).map((m) => (
+                          <button
+                            key={m}
+                            type="button"
+                            onClick={() => update({ reportMode: m })}
+                            className={cn(
+                              "flex-1 rounded-lg border py-2 text-sm font-semibold transition-colors",
+                              (report.reportMode ?? "survey") === m
+                                ? "bg-primary text-primary-foreground border-primary"
+                                : "bg-background text-muted-foreground border-border hover:border-primary/50"
+                            )}
+                          >
+                            {m === "survey" ? "סקר" : "אישור"}
+                          </button>
+                        ))}
+                      </div>
+                    </Field>
                     <Field label="סוג הבניין">
                       <Select value={report.buildingType || ""} onValueChange={(v) => update({ buildingType: v as "existing_public" | "new_public" | "other" })}>
                         <SelectTrigger><SelectValue placeholder="בחר סוג בניין" /></SelectTrigger>

@@ -177,7 +177,8 @@ export async function generateReportPdf(
 export function buildPdfFileName(report: SurveyReport): string {
   const safe = (report.placeName || "report").replace(/[^֐-׿a-zA-Z0-9 _-]/g, "").trim() || "report";
   const date  = report.surveyDate || new Date().toISOString().slice(0, 10);
-  const prefix = getSurveyType(report.surveyType).filePrefix;
+  const basePrefix = getSurveyType(report.surveyType).filePrefix;
+  const prefix = report.reportMode === "approval" ? basePrefix.replace(/^סקר/, "אישור") : basePrefix;
   return `${prefix}-${safe}-${date}.pdf`;
 }
 
