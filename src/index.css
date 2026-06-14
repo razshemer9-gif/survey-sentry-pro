@@ -201,20 +201,20 @@ button:active, a:active { opacity: 0.85; }
 }
 
 .auth-glow-orb-1 {
-  width: 480px;
-  height: 480px;
-  top: -160px;
-  left: calc(50% - 240px);
-  background: radial-gradient(circle, rgba(0, 102, 255, 0.28) 0%, transparent 70%);
+  width: 600px;
+  height: 600px;
+  top: -220px;
+  left: calc(50% - 300px);
+  background: radial-gradient(circle, rgba(0, 80, 255, 0.36) 0%, transparent 68%);
   animation: auth-orb-pulse 7s ease-in-out infinite;
 }
 
 .auth-glow-orb-2 {
-  width: 320px;
-  height: 320px;
-  bottom: -100px;
-  right: -80px;
-  background: radial-gradient(circle, rgba(51, 195, 255, 0.14) 0%, transparent 70%);
+  width: 380px;
+  height: 380px;
+  bottom: -120px;
+  right: -100px;
+  background: radial-gradient(circle, rgba(51, 180, 255, 0.18) 0%, transparent 68%);
   animation: auth-orb-pulse2 9s ease-in-out infinite;
 }
 
@@ -260,10 +260,24 @@ button:active, a:active { opacity: 0.85; }
 
 .auth-logo-float {
   display: inline-block;
-  filter:
-    drop-shadow(0 4px 18px rgba(16, 100, 255, 0.5))
-    drop-shadow(0 0 40px rgba(80, 160, 255, 0.22));
+  position: relative;
   animation: auth-logo-float 4.5s ease-in-out infinite;
+}
+
+/* Blue glow behind the logo (replaces filter:drop-shadow so mix-blend-mode works) */
+.auth-logo-float::before {
+  content: '';
+  position: absolute;
+  inset: -35%;
+  background: radial-gradient(circle, rgba(16, 100, 255, 0.45) 0%, transparent 65%);
+  pointer-events: none;
+  z-index: -1;
+}
+
+/* Remove white PNG background — white × dark-blue = dark-blue (invisible) */
+.auth-logo-float img {
+  display: block;
+  mix-blend-mode: multiply;
 }
 
 @keyframes auth-logo-float {
@@ -289,17 +303,17 @@ button:active, a:active { opacity: 0.85; }
 
 /* Glass card */
 .auth-glass-card {
-  background: rgba(255, 255, 255, 0.04);
-  backdrop-filter: blur(22px);
-  -webkit-backdrop-filter: blur(22px);
-  border: 1px solid rgba(51, 195, 255, 0.14);
+  background: rgba(255, 255, 255, 0.055);
+  backdrop-filter: blur(28px);
+  -webkit-backdrop-filter: blur(28px);
+  border: 1px solid rgba(120, 180, 255, 0.18);
   border-radius: 24px;
   padding: 1.75rem 1.5rem 2rem;
   box-shadow:
-    0 0 0 1px rgba(0, 102, 255, 0.07),
-    0 8px 40px rgba(0, 0, 0, 0.45),
-    0 0 80px rgba(0, 102, 255, 0.07),
-    inset 0 1px 0 rgba(255, 255, 255, 0.07);
+    0 0 0 1px rgba(0, 80, 220, 0.1),
+    0 12px 48px rgba(0, 0, 0, 0.55),
+    0 0 100px rgba(0, 80, 220, 0.1),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
 }
 
 /* Custom tab bar */
