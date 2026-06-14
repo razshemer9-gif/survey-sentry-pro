@@ -402,8 +402,8 @@ export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, sett
               src={report.coverPhoto}
               alt="cover"
               width={698}
-              height={320}
-              style={{ width: "100%", height: 320, display: "block" }}
+              height={400}
+              style={{ width: "100%", height: 400, display: "block" }}
             />
           )}
           <div style={{
