@@ -513,19 +513,14 @@ export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, sett
                 </tr>
               </thead>
               <tbody>
-                {["אישור חשמלאי בודק", "אגרונום", "קונסטרוקטור"].map((a, i) => {
-                  const checked = (report.requiredApprovals ?? []).includes(a);
-                  return (
-                    <tr key={a} style={{ backgroundColor: i % 2 === 0 ? "#ffffff" : "#f8fafc" }}>
-                      <td style={{ padding: "8px 12px", border: "1px solid #cbd5e1" }}>{a}</td>
-                      <td style={{ padding: "8px 12px", border: "1px solid #cbd5e1", textAlign: "center" }}>
-                        {checked && (
-                          <span style={{ display: "inline-block", width: 14, height: 14, backgroundColor: "#1e3a8a", borderRadius: 3 }} />
-                        )}
-                      </td>
-                    </tr>
-                  );
-                })}
+                {(report.requiredApprovals ?? []).map((a, i) => (
+                  <tr key={a} style={{ backgroundColor: i % 2 === 0 ? "#ffffff" : "#f8fafc" }}>
+                    <td style={{ padding: "8px 12px", border: "1px solid #cbd5e1" }}>{a}</td>
+                    <td style={{ padding: "8px 12px", border: "1px solid #cbd5e1", textAlign: "center" }}>
+                      <span style={{ display: "inline-block", width: 14, height: 14, backgroundColor: "#1e3a8a", borderRadius: 3 }} />
+                    </td>
+                  </tr>
+                ))}
               </tbody>
             </table>
           </div>

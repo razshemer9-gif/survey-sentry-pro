@@ -51,6 +51,7 @@ export default function ReportEditor() {
   const [signatureOpen, setSignatureOpen] = useState(false);
   const [refPickerItemId, setRefPickerItemId] = useState<string | null>(null);
   const [croppedCoverPhoto, setCroppedCoverPhoto] = useState<string | null>(null);
+  const [customApprovalInput, setCustomApprovalInput] = useState("");
   const printRef = useRef<HTMLDivElement>(null);
   const autoSaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const isFirstLoad = useRef(true);
@@ -521,29 +522,72 @@ export default function ReportEditor() {
           </div>
 
           {/* Required approvals — general_safety only */}
-          {report.surveyType === "general_safety" && (
-            <div dir="rtl" className="rounded-2xl border-2 border-primary/20 bg-card p-4 space-y-3">
-              <h3 className="font-bold text-sm text-primary">אישורים נדרשים</h3>
-              {["אישור חשמלאי בודק", "אגרונום", "קונסטרוקטור"].map((approval) => (
-                <label key={approval} className="flex items-center gap-2.5 cursor-pointer select-none">
+          {report.surveyType === "general_safety" && (() => {
+            const PREDEFINED = ["אישור חשמלאי בודק", "אגרונום", "קונסטרוקטור"];
+            const selected = report.requiredApprovals ?? [];
+            const custom = selected.filter((a) => !PREDEFINED.includes(a));
+            return (
+              <div dir="rtl" className="rounded-2xl border-2 border-primary/20 bg-card p-4 space-y-3">
+                <h3 className="font-bold text-sm text-primary">אישורים נדרשים</h3>
+                {PREDEFINED.map((approval) => (
+                  <label key={approval} className="flex items-center gap-2.5 cursor-pointer select-none">
+                    <input
+                      type="checkbox"
+                      checked={selected.includes(approval)}
+                      onChange={(e) => {
+                        update({
+                          requiredApprovals: e.target.checked
+                            ? [...selected, approval]
+                            : selected.filter((a) => a !== approval),
+                        });
+                      }}
+                      className="h-4 w-4 accent-primary"
+                    />
+                    <span className="text-sm">{approval}</span>
+                  </label>
+                ))}
+                {custom.map((approval) => (
+                  <div key={approval} className="flex items-center gap-2.5">
+                    <input type="checkbox" checked readOnly className="h-4 w-4 accent-primary" />
+                    <span className="text-sm flex-1">{approval}</span>
+                    <button
+                      type="button"
+                      onClick={() => update({ requiredApprovals: selected.filter((a) => a !== approval) })}
+                      className="text-muted-foreground hover:text-destructive text-xs"
+                    >✕</button>
+                  </div>
+                ))}
+                <div className="flex gap-2 pt-1">
                   <input
-                    type="checkbox"
-                    checked={(report.requiredApprovals ?? []).includes(approval)}
-                    onChange={(e) => {
-                      const current = report.requiredApprovals ?? [];
-                      update({
-                        requiredApprovals: e.target.checked
-                          ? [...current, approval]
-                          : current.filter((a) => a !== approval),
-                      });
+                    type="text"
+                    value={customApprovalInput}
+                    onChange={(e) => setCustomApprovalInput(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" && customApprovalInput.trim()) {
+                        update({ requiredApprovals: [...selected, customApprovalInput.trim()] });
+                        setCustomApprovalInput("");
+                      }
                     }}
-                    className="h-4 w-4 accent-primary"
+                    placeholder="הוסף אישור נוסף..."
+                    className="flex-1 rounded-lg border border-border bg-background px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/40"
                   />
-                  <span className="text-sm">{approval}</span>
-                </label>
-              ))}
-            </div>
-          )}
+                  <button
+                    type="button"
+                    disabled={!customApprovalInput.trim()}
+                    onClick={() => {
+                      if (customApprovalInput.trim()) {
+                        update({ requiredApprovals: [...selected, customApprovalInput.trim()] });
+                        setCustomApprovalInput("");
+                      }
+                    }}
+                    className="rounded-lg border border-primary bg-primary/10 px-3 py-1.5 text-xs font-semibold text-primary disabled:opacity-40"
+                  >
+                    הוסף
+                  </button>
+                </div>
+              </div>
+            );
+          })()}
 
           {/* Opinion summary section */}
           <div dir="rtl" className="rounded-2xl border-2 border-primary/30 bg-card p-4 space-y-3">
