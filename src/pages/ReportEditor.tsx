@@ -370,7 +370,16 @@ export default function ReportEditor() {
                       <Trash2 className="h-4 w-4" />
                     </button>
                   </div>
-                  <p className="font-bold text-sm text-foreground leading-snug">{item.title || "ממצא ללא כותרת"}</p>
+                  {!item.notes ? (
+                    <input
+                      value={item.title}
+                      onChange={(e) => updateItem(item.id, { title: e.target.value })}
+                      placeholder="שם הממצא"
+                      className="w-full font-bold text-sm text-foreground leading-snug bg-transparent border-b border-dashed border-muted-foreground/40 focus:border-primary focus:outline-none pb-0.5"
+                    />
+                  ) : (
+                    <p className="font-bold text-sm text-foreground leading-snug">{item.title || "ממצא ללא כותרת"}</p>
+                  )}
                   {item.notes && (
                     <div className="mt-2 rounded-lg bg-background/70 px-2.5 py-1.5 text-xs text-foreground/80 leading-relaxed">
                       <span className="font-semibold text-foreground">ממצא: </span>{item.notes}
@@ -416,6 +425,7 @@ export default function ReportEditor() {
                     />
                   </div>
 
+                  {report.surveyType && report.surveyType !== "accessibility" && (
                   <div className="flex items-center gap-2">
                     <Label className="shrink-0 text-xs text-muted-foreground">קדימות</Label>
                     {([0, 1, 2] as const).map((p) => (
@@ -435,6 +445,7 @@ export default function ReportEditor() {
                       </button>
                     ))}
                   </div>
+                  )}
 
                   <div className="flex flex-wrap items-center gap-2">
                     <Label className="shrink-0 text-xs text-muted-foreground">מחיר יחידה (₪)</Label>
