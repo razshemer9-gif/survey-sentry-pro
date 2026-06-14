@@ -384,7 +384,9 @@ export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, sett
 
         <div style={{ padding: "10px 48px 24px" }}>
           <h1 style={{ fontSize: 46, fontWeight: 800, lineHeight: 1.05, margin: 0 }}>
-            {fmt.reportTitle || surveyConfig.pdfTitle}
+            {fmt.reportTitle || (report.reportMode === "approval"
+              ? surveyConfig.pdfTitle.replace(/^סקר/, "אישור")
+              : surveyConfig.pdfTitle)}
           </h1>
           <div style={{ fontSize: 22, marginTop: 14, opacity: 0.95 }}>{report.placeName || "ללא שם"}</div>
         </div>
@@ -412,6 +414,8 @@ export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, sett
             gridTemplateColumns: "1fr 1fr",
             gap: "16px 28px",
             fontSize: 15,
+            background: "#f1f5f9",
+            border: "1px solid #e2e8f0",
           }}>
             <Field label="שם המקום / העסק" value={report.placeName} />
             <Field label="שם הלקוח" value={report.clientName} />

@@ -112,6 +112,8 @@ export interface SurveyReport {
   signatureConsultantName?: string;
   // Opinion summary
   accessibilityComplianceStatus?: "yes" | "no";
+  // Document mode
+  reportMode?: "survey" | "approval";
 }
 
 export interface ReferencePhotoEntry {
