@@ -27,7 +27,10 @@ export default function AuthPage() {
     setLoginError("");
     setLoginLoading(true);
     try {
-      await signIn(loginEmail, loginPassword);
+      const timeout = new Promise<never>((_, reject) =>
+        setTimeout(() => reject(new Error("הבקשה לקחה יותר מדי זמן — בדוק חיבור לאינטרנט ונסה שוב")), 12000)
+      );
+      await Promise.race([signIn(loginEmail, loginPassword), timeout]);
       navigate("/");
     } catch (err: unknown) {
       setLoginError(translateError(err instanceof Error ? err.message : "שגיאה בהתחברות"));
