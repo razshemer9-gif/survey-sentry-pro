@@ -19,6 +19,15 @@ export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, sett
   const surveyConfig = getSurveyType(report.surveyType);
   const fmt = getFormat(settings, report);
 
+  const SAFETY_CLAUSES = [
+    "במקום נבדק באזורים המיועדים להימצאות קהל בלבד.",
+    "מובהר בזאת כי האישור שנמסר הינו עבור השירות שהתקבל ונכון לרגע הבדיקה בלבד.",
+    "במידה ונותר כל שינוי במקום לאחר הבדיקה, יש לעצור את הפעילות ולזמן בדיקה מחודשת.",
+    "במידה וקיימות מערכות חשמל ו/או גז, מחובת המזמין לזמן בדיקה.",
+    "אין לעשות כל שינוי במבנים אלא בידיעת הבודק ובאישורו. כל שינוי/שימוש שיעשה ללא אישור יהיה באחריות המזמין בלבד ותוקף האישור יבוטל.",
+    "אין האישור מתייחס לבטיחות המשתמשים אלא לבטיחות הסביבה.",
+  ];
+
   const itemTotal = (i: typeof report.items[0]) => (Number(i.estimatedCost) || 0) * (i.quantity ?? 1);
   const totalCost = report.items
     .filter((i) => i.includeInCost)
@@ -505,26 +514,23 @@ export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, sett
 
         {/* Required approvals — general_safety only */}
         {report.surveyType === "general_safety" && (report.requiredApprovals?.length ?? 0) > 0 && (
-          <div data-pdf-page-break="" style={{ marginTop: 32, border: "2px solid #1e3a8a", borderRadius: 14, padding: "20px 24px", backgroundColor: "#f0f4ff", pageBreakInside: "avoid" }}>
-            <h3 style={{ margin: "0 0 16px", fontSize: 17, fontWeight: 800, color: "#1e3a8a" }}>אישורים נדרשים</h3>
-            <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 14, direction: "rtl" }}>
-              <thead>
-                <tr style={{ backgroundColor: "#1e3a8a", color: "#ffffff" }}>
-                  <th style={{ padding: "8px 12px", textAlign: "right", fontWeight: 700, border: "1px solid #1e3a8a" }}></th>
-                  <th style={{ padding: "8px 12px", textAlign: "center", fontWeight: 700, border: "1px solid #1e3a8a", width: 70 }}>נדרש</th>
-                </tr>
-              </thead>
-              <tbody>
-                {(report.requiredApprovals ?? []).map((a, i) => (
-                  <tr key={a} style={{ backgroundColor: i % 2 === 0 ? "#ffffff" : "#f8fafc" }}>
-                    <td style={{ padding: "8px 12px", border: "1px solid #cbd5e1" }}>{a}</td>
-                    <td style={{ padding: "8px 12px", border: "1px solid #cbd5e1", textAlign: "center" }}>
-                      <span style={{ display: "inline-block", width: 14, height: 14, backgroundColor: "#1e3a8a", borderRadius: 3 }} />
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+          <div data-pdf-page-break="" style={{ marginTop: 32, border: "2px solid #1e3a8a", borderRadius: 14, padding: "20px 24px", backgroundColor: "#f0f4ff" }}>
+            <h3 style={{ margin: "0 0 12px", fontSize: 17, fontWeight: 800, color: "#1e3a8a" }}>אישורים נדרשים</h3>
+            {/* div-based grid — html2canvas handles divs more reliably than <table> */}
+            <div style={{ direction: "rtl", fontSize: 14, border: "1px solid #1e3a8a", borderRadius: 6, overflow: "hidden" }}>
+              <div style={{ display: "flex", backgroundColor: "#1e3a8a", color: "#ffffff", fontWeight: 700 }}>
+                <div style={{ flex: 1, padding: "8px 12px", textAlign: "right" }}></div>
+                <div style={{ width: 80, padding: "8px 12px", textAlign: "center", borderRight: "1px solid rgba(255,255,255,0.3)" }}>נדרש</div>
+              </div>
+              {(report.requiredApprovals ?? []).map((a, i) => (
+                <div key={i} style={{ display: "flex", backgroundColor: i % 2 === 0 ? "#ffffff" : "#f8fafc", borderTop: "1px solid #cbd5e1" }}>
+                  <div style={{ flex: 1, padding: "9px 12px" }}>{a}</div>
+                  <div style={{ width: 80, padding: "9px 12px", textAlign: "center", borderRight: "1px solid #cbd5e1" }}>
+                    <span style={{ display: "inline-block", width: 14, height: 14, backgroundColor: "#1e3a8a", borderRadius: 3 }} />
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
         )}
 
@@ -570,29 +576,18 @@ export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, sett
         )}
 
         {/* Disclaimer clauses — general_safety only */}
-        {report.surveyType === "general_safety" && (report.selectedClauses?.length ?? 0) > 0 && (() => {
-          const CLAUSES = [
-            "במקום נבדק באזורים המיועדים להימצאות קהל בלבד.",
-            "מובהר בזאת כי האישור שנמסר הינו עבור השירות שהתקבל ונכון לרגע הבדיקה בלבד.",
-            "במידה ונותר כל שינוי במקום לאחר הבדיקה, יש לעצור את הפעילות ולזמן בדיקה מחודשת.",
-            "במידה וקיימות מערכות חשמל ו/או גז, מחובת המזמין לזמן בדיקה.",
-            "אין לעשות כל שינוי במבנים אלא בידיעת הבודק ובאישורו. כל שינוי/שימוש שיעשה ללא אישור יהיה באחריות המזמין בלבד ותוקף האישור יבוטל.",
-            "אין האישור מתייחס לבטיחות המשתמשים אלא לבטיחות הסביבה.",
-          ];
-          const active = (report.selectedClauses ?? []).slice().sort((a, b) => a - b);
-          return (
-            <div data-pdf-page-break="" style={{ marginTop: 32, border: "2px solid #1e3a8a", borderRadius: 14, padding: "20px 24px", backgroundColor: "#f0f4ff", pageBreakInside: "avoid" }}>
-              <h3 style={{ margin: "0 0 14px", fontSize: 17, fontWeight: 800, color: "#1e3a8a" }}>הערות וסייגים</h3>
-              <ol style={{ margin: 0, paddingRight: 20, listStyleType: "decimal", direction: "rtl" }}>
-                {active.map((idx) => (
-                  <li key={idx} style={{ fontSize: 13, lineHeight: 1.8, color: "#1e293b", marginBottom: 4 }}>
-                    {CLAUSES[idx]}
-                  </li>
-                ))}
-              </ol>
-            </div>
-          );
-        })()}
+        {report.surveyType === "general_safety" && (report.selectedClauses?.length ?? 0) > 0 && (
+          <div data-pdf-page-break="" style={{ marginTop: 32, border: "2px solid #1e3a8a", borderRadius: 14, padding: "20px 24px", backgroundColor: "#f0f4ff" }}>
+            <h3 style={{ margin: "0 0 14px", fontSize: 17, fontWeight: 800, color: "#1e3a8a" }}>הערות וסייגים</h3>
+            <ol style={{ margin: 0, paddingRight: 20, listStyleType: "decimal", direction: "rtl" }}>
+              {(report.selectedClauses ?? []).slice().sort((a, b) => a - b).map((idx) => (
+                <li key={idx} style={{ fontSize: 13, lineHeight: 1.8, color: "#1e293b", marginBottom: 4 }}>
+                  {SAFETY_CLAUSES[idx]}
+                </li>
+              ))}
+            </ol>
+          </div>
+        )}
 
         {/* CLOSING: general notes + professional sign-off */}
         {(report.generalNotes || fmt.professionalName || settings.consultantName || fmt.signatureImage || report.signatureDataUrl || fmt.stampImage) && (
