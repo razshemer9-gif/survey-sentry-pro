@@ -603,7 +603,7 @@ export default function ReportEditor() {
                 <h3 className="font-bold text-sm text-primary">סיכום ממצאי הבדיקה:</h3>
                 <div className="flex flex-col gap-2">
                   <button
-                    onClick={() => update({ accessibilityComplianceStatus: "yes" })}
+                    onClick={() => update({ accessibilityComplianceStatus: report.accessibilityComplianceStatus === "yes" ? undefined : "yes" })}
                     className={cn(
                       "rounded-xl border-2 py-3 px-4 text-sm font-bold text-right transition-colors",
                       report.accessibilityComplianceStatus === "yes"
@@ -614,7 +614,7 @@ export default function ReportEditor() {
                     המקום נמצא בטיחותי
                   </button>
                   <button
-                    onClick={() => update({ accessibilityComplianceStatus: "no" })}
+                    onClick={() => update({ accessibilityComplianceStatus: report.accessibilityComplianceStatus === "no" ? undefined : "no" })}
                     className={cn(
                       "rounded-xl border-2 py-3 px-4 text-sm font-bold text-right transition-colors",
                       report.accessibilityComplianceStatus === "no"
@@ -634,7 +634,7 @@ export default function ReportEditor() {
                 </p>
                 <div className="flex gap-3">
                   <button
-                    onClick={() => update({ accessibilityComplianceStatus: "yes" })}
+                    onClick={() => update({ accessibilityComplianceStatus: report.accessibilityComplianceStatus === "yes" ? undefined : "yes" })}
                     className={cn(
                       "flex-1 rounded-xl border-2 py-3 text-sm font-bold transition-colors",
                       report.accessibilityComplianceStatus === "yes"
@@ -645,7 +645,7 @@ export default function ReportEditor() {
                     כן
                   </button>
                   <button
-                    onClick={() => update({ accessibilityComplianceStatus: "no" })}
+                    onClick={() => update({ accessibilityComplianceStatus: report.accessibilityComplianceStatus === "no" ? undefined : "no" })}
                     className={cn(
                       "flex-1 rounded-xl border-2 py-3 text-sm font-bold transition-colors",
                       report.accessibilityComplianceStatus === "no"
