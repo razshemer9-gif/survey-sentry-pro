@@ -512,11 +512,31 @@ export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, sett
           }
         </div>
 
+        {/* Disclaimer clauses — general_safety: 1-5 always, 6 conditional */}
+        {report.surveyType === "general_safety" && (
+          <div data-pdf-page-break="" style={{ marginTop: 32, border: "2px solid #1e3a8a", borderRadius: 14, padding: "20px 24px", backgroundColor: "#f0f4ff" }}>
+            <h3 style={{ margin: "0 0 14px", fontSize: 17, fontWeight: 800, color: "#1e3a8a" }}>הערות וסייגים</h3>
+            <div style={{ direction: "rtl" }}>
+              {SAFETY_CLAUSES_FIXED.map((clause, idx) => (
+                <div key={idx} style={{ display: "flex", alignItems: "flex-start", marginBottom: 6, gap: 8 }}>
+                  <span style={{ flexShrink: 0, fontWeight: 700, minWidth: 22, textAlign: "right", fontSize: 13, color: "#1e293b" }}>{idx + 1}.</span>
+                  <span style={{ flex: 1, fontSize: 13, lineHeight: 1.8, color: "#1e293b" }}>{clause}</span>
+                </div>
+              ))}
+              {(report.selectedClauses === undefined || report.selectedClauses.includes(5)) && (
+                <div style={{ display: "flex", alignItems: "flex-start", marginBottom: 6, gap: 8 }}>
+                  <span style={{ flexShrink: 0, fontWeight: 700, minWidth: 22, textAlign: "right", fontSize: 13, color: "#1e293b" }}>6.</span>
+                  <span style={{ flex: 1, fontSize: 13, lineHeight: 1.8, color: "#1e293b" }}>{SAFETY_CLAUSE_6}</span>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
         {/* Required approvals — general_safety only */}
         {report.surveyType === "general_safety" && (report.requiredApprovals?.length ?? 0) > 0 && (
           <div data-pdf-page-break="" style={{ marginTop: 32, border: "2px solid #1e3a8a", borderRadius: 14, padding: "20px 24px", backgroundColor: "#f0f4ff" }}>
             <h3 style={{ margin: "0 0 12px", fontSize: 17, fontWeight: 800, color: "#1e3a8a" }}>אישורים נדרשים</h3>
-            {/* div-based grid — html2canvas handles divs more reliably than <table> */}
             <div style={{ direction: "rtl", fontSize: 14, border: "1px solid #1e3a8a", borderRadius: 6, overflow: "hidden" }}>
               <div style={{ display: "flex", backgroundColor: "#1e3a8a", color: "#ffffff", fontWeight: 700 }}>
                 <div style={{ flex: 1, padding: "8px 12px", textAlign: "right" }}></div>
@@ -572,27 +592,6 @@ export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, sett
                 </div>
               </>
             )}
-          </div>
-        )}
-
-        {/* Disclaimer clauses — general_safety: 1-5 always, 6 conditional */}
-        {report.surveyType === "general_safety" && (
-          <div data-pdf-page-break="" style={{ marginTop: 32, border: "2px solid #1e3a8a", borderRadius: 14, padding: "20px 24px", backgroundColor: "#f0f4ff" }}>
-            <h3 style={{ margin: "0 0 14px", fontSize: 17, fontWeight: 800, color: "#1e3a8a" }}>הערות וסייגים</h3>
-            <div style={{ direction: "rtl" }}>
-              {SAFETY_CLAUSES_FIXED.map((clause, idx) => (
-                <div key={idx} style={{ display: "flex", alignItems: "flex-start", marginBottom: 6, gap: 8 }}>
-                  <span style={{ flexShrink: 0, fontWeight: 700, minWidth: 22, textAlign: "right", fontSize: 13, color: "#1e293b" }}>{idx + 1}.</span>
-                  <span style={{ flex: 1, fontSize: 13, lineHeight: 1.8, color: "#1e293b" }}>{clause}</span>
-                </div>
-              ))}
-              {(report.selectedClauses === undefined || report.selectedClauses.includes(5)) && (
-                <div style={{ display: "flex", alignItems: "flex-start", marginBottom: 6, gap: 8 }}>
-                  <span style={{ flexShrink: 0, fontWeight: 700, minWidth: 22, textAlign: "right", fontSize: 13, color: "#1e293b" }}>6.</span>
-                  <span style={{ flex: 1, fontSize: 13, lineHeight: 1.8, color: "#1e293b" }}>{SAFETY_CLAUSE_6}</span>
-                </div>
-              )}
-            </div>
           </div>
         )}
 
