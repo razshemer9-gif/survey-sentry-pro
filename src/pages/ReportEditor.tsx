@@ -611,7 +611,7 @@ export default function ReportEditor() {
                         : "border-border bg-background text-muted-foreground hover:border-success/50 hover:text-success"
                     )}
                   >
-                    המקום נמצא בטיחותי
+                    המקום נמצא בטיחותי - האישור מותנה בהמצאת האישורים הנדרשים
                   </button>
                   <button
                     onClick={() => update({ accessibilityComplianceStatus: report.accessibilityComplianceStatus === "no" ? undefined : "no" })}

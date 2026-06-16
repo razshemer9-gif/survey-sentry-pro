@@ -543,7 +543,7 @@ export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, sett
             {report.surveyType === "general_safety" ? (
               <div style={{ marginTop: 8 }}>
                 {[
-                  { value: "yes", label: "המקום נמצא בטיחותי", selectedBg: "#dcfce7", selectedColor: "#15803d", selectedBorder: "#16a34a" },
+                  { value: "yes", label: "המקום נמצא בטיחותי - האישור מותנה בהמצאת האישורים הנדרשים", selectedBg: "#dcfce7", selectedColor: "#15803d", selectedBorder: "#16a34a" },
                   { value: "no", label: "לאחר טיפול בליקויים יש לזמן ביקורת נוספת", selectedBg: "#fee2e2", selectedColor: "#b91c1c", selectedBorder: "#dc2626" },
                 ].map(({ value, label, selectedBg, selectedColor, selectedBorder }, idx) => {
                   const selected = report.accessibilityComplianceStatus === value;
