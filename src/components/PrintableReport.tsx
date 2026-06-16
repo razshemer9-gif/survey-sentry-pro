@@ -567,6 +567,31 @@ export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, sett
           </div>
         )}
 
+        {/* Disclaimer clauses — general_safety only */}
+        {report.surveyType === "general_safety" && (report.selectedClauses?.length ?? 0) > 0 && (() => {
+          const CLAUSES = [
+            "במקום נבדק באזורים המיועדים להימצאות קהל בלבד.",
+            "מובהר בזאת כי האישור שנמסר הינו עבור השירות שהתקבל ונכון לרגע הבדיקה בלבד.",
+            "במידה ונותר כל שינוי במקום לאחר הבדיקה, יש לעצור את הפעילות ולזמן בדיקה מחודשת.",
+            "במידה וקיימות מערכות חשמל ו/או גז, מחובת המזמין לזמן בדיקה.",
+            "אין לעשות כל שינוי במבנים אלא בידיעת הבודק ובאישורו. כל שינוי/שימוש שיעשה ללא אישור יהיה באחריות המזמין בלבד ותוקף האישור יבוטל.",
+            "אין האישור מתייחס לבטיחות המשתמשים אלא לבטיחות הסביבה.",
+          ];
+          const active = (report.selectedClauses ?? []).slice().sort((a, b) => a - b);
+          return (
+            <div data-pdf-page-break="" style={{ marginTop: 32, border: "2px solid #1e3a8a", borderRadius: 14, padding: "20px 24px", backgroundColor: "#f0f4ff", pageBreakInside: "avoid" }}>
+              <h3 style={{ margin: "0 0 14px", fontSize: 17, fontWeight: 800, color: "#1e3a8a" }}>הערות וסייגים</h3>
+              <ol style={{ margin: 0, paddingRight: 20, listStyleType: "decimal", direction: "rtl" }}>
+                {active.map((idx) => (
+                  <li key={idx} style={{ fontSize: 13, lineHeight: 1.8, color: "#1e293b", marginBottom: 4 }}>
+                    {CLAUSES[idx]}
+                  </li>
+                ))}
+              </ol>
+            </div>
+          );
+        })()}
+
         {/* CLOSING: general notes + professional sign-off */}
         {(report.generalNotes || fmt.professionalName || settings.consultantName || fmt.signatureImage || report.signatureDataUrl || fmt.stampImage) && (
           <div style={{ marginTop: 40, pageBreakInside: "avoid" }}>

@@ -659,6 +659,40 @@ export default function ReportEditor() {
               </>
             )}
           </div>
+          {/* Disclaimer clauses — general_safety only */}
+          {report.surveyType === "general_safety" && (() => {
+            const CLAUSES = [
+              "במקום נבדק באזורים המיועדים להימצאות קהל בלבד.",
+              "מובהר בזאת כי האישור שנמסר הינו עבור השירות שהתקבל ונכון לרגע הבדיקה בלבד.",
+              "במידה ונותר כל שינוי במקום לאחר הבדיקה, יש לעצור את הפעילות ולזמן בדיקה מחודשת.",
+              "במידה וקיימות מערכות חשמל ו/או גז, מחובת המזמין לזמן בדיקה.",
+              "אין לעשות כל שינוי במבנים אלא בידיעת הבודק ובאישורו. כל שינוי/שימוש שיעשה ללא אישור יהיה באחריות המזמין בלבד ותוקף האישור יבוטל.",
+              "אין האישור מתייחס לבטיחות המשתמשים אלא לבטיחות הסביבה.",
+            ];
+            const selected = report.selectedClauses ?? [];
+            return (
+              <div dir="rtl" className="rounded-2xl border-2 border-primary/20 bg-card p-4 space-y-3">
+                <h3 className="font-bold text-sm text-primary">הערות וסייגים לדוח</h3>
+                {CLAUSES.map((clause, idx) => (
+                  <label key={idx} className="flex items-start gap-2.5 cursor-pointer select-none">
+                    <input
+                      type="checkbox"
+                      checked={selected.includes(idx)}
+                      onChange={(e) => {
+                        const next = e.target.checked
+                          ? [...selected, idx]
+                          : selected.filter((i) => i !== idx);
+                        update({ selectedClauses: next });
+                      }}
+                      className="mt-0.5 h-4 w-4 shrink-0 accent-primary"
+                    />
+                    <span className="text-sm leading-relaxed">{clause}</span>
+                  </label>
+                ))}
+              </div>
+            );
+          })()}
+
           <Button
             variant="outline"
             onClick={handleDownloadPhotos}

@@ -116,6 +116,8 @@ export interface SurveyReport {
   reportMode?: "survey" | "approval";
   // Required approvals (general_safety only)
   requiredApprovals?: string[];
+  // Predefined disclaimer clauses (general_safety only) — indices of selected clauses
+  selectedClauses?: number[];
 }
 
 export interface ReferencePhotoEntry {
