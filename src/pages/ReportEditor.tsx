@@ -53,6 +53,7 @@ export default function ReportEditor() {
   const [croppedCoverPhoto, setCroppedCoverPhoto] = useState<string | null>(null);
   const [customApprovalInput, setCustomApprovalInput] = useState("");
   const printRef = useRef<HTMLDivElement>(null);
+  const reportRef = useRef<SurveyReport | null>(null);
   const autoSaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const isFirstLoad = useRef(true);
 
@@ -60,6 +61,9 @@ export default function ReportEditor() {
     if (!user) return;
     loadUserSettings(user.id).then(setSettings);
   }, [user]);
+
+  // Keep reportRef in sync so handleGenerate always saves the latest state
+  useEffect(() => { reportRef.current = report; }, [report]);
 
   // Pre-crop cover photo so the off-screen PDF element always has the correct size
   useEffect(() => {
@@ -146,11 +150,14 @@ export default function ReportEditor() {
   };
 
   const handleGenerate = async () => {
-    if (!report) return;
+    const latest = reportRef.current;
+    if (!latest) return;
     setGenerating(true);
     try {
-      await saveReport(report);
-      await generateReportPdf(printRef.current, buildPdfFileName(report));
+      await saveReport(latest);
+      // Two rAF ticks let React commit any pending renders to the print portal DOM
+      await new Promise<void>((r) => requestAnimationFrame(() => requestAnimationFrame(() => r())));
+      await generateReportPdf(printRef.current, buildPdfFileName(latest));
       toast.success("ה-PDF הופק והורד");
     } catch (err) {
       console.error("[PDF]", err);
