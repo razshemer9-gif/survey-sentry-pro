@@ -33,7 +33,7 @@ export const SURVEY_TYPES: SurveyTypeConfig[] = [
     id: "general_safety",
     label: "סקר בטיחות כללי",
     shortLabel: "בטיחות כללית",
-    pdfTitle: "סקר בטיחות כללי",
+    pdfTitle: "סקר בטיחות",
     filePrefix: "סקר-בטיחות",
     color: "#1e3a8a",
   },
