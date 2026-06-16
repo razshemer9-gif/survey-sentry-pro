@@ -386,7 +386,9 @@ export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, sett
           <h1 style={{ fontSize: 46, fontWeight: 800, lineHeight: 1.05, margin: 0 }}>
             {(() => {
               const base = fmt.reportTitle || surveyConfig.pdfTitle;
-              return report.reportMode === "approval" ? base.replace(/^סקר/, "אישור") : base;
+              const isApproval = report.reportMode === "approval" ||
+                (report.surveyType === "general_safety" && report.accessibilityComplianceStatus === "yes");
+              return isApproval ? base.replace(/^סקר/, "אישור") : base;
             })()}
           </h1>
           <div style={{ fontSize: 22, marginTop: 14, opacity: 0.95 }}>{report.placeName || "ללא שם"}</div>
