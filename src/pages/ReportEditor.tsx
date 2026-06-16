@@ -669,7 +669,7 @@ export default function ReportEditor() {
               "אין לעשות כל שינוי במבנים אלא בידיעת הבודק ובאישורו. כל שינוי/שימוש שיעשה ללא אישור יהיה באחריות המזמין בלבד ותוקף האישור יבוטל.",
               "אין האישור מתייחס לבטיחות המשתמשים אלא לבטיחות הסביבה.",
             ];
-            const selected = report.selectedClauses ?? [];
+            const selected = report.selectedClauses ?? [0, 1, 2, 3, 4, 5];
             return (
               <div dir="rtl" className="rounded-2xl border-2 border-primary/20 bg-card p-4 space-y-3">
                 <h3 className="font-bold text-sm text-primary">הערות וסייגים לדוח</h3>

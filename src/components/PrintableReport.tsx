@@ -575,19 +575,22 @@ export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, sett
           </div>
         )}
 
-        {/* Disclaimer clauses — general_safety only */}
-        {report.surveyType === "general_safety" && (report.selectedClauses?.length ?? 0) > 0 && (
-          <div data-pdf-page-break="" style={{ marginTop: 32, border: "2px solid #1e3a8a", borderRadius: 14, padding: "20px 24px", backgroundColor: "#f0f4ff" }}>
-            <h3 style={{ margin: "0 0 14px", fontSize: 17, fontWeight: 800, color: "#1e3a8a" }}>הערות וסייגים</h3>
-            <ol style={{ margin: 0, paddingRight: 20, listStyleType: "decimal", direction: "rtl" }}>
-              {(report.selectedClauses ?? []).slice().sort((a, b) => a - b).map((idx) => (
-                <li key={idx} style={{ fontSize: 13, lineHeight: 1.8, color: "#1e293b", marginBottom: 4 }}>
-                  {SAFETY_CLAUSES[idx]}
-                </li>
-              ))}
-            </ol>
-          </div>
-        )}
+        {/* Disclaimer clauses — general_safety only; undefined = all selected by default */}
+        {report.surveyType === "general_safety" && (() => {
+          const active = (report.selectedClauses ?? [0, 1, 2, 3, 4, 5]).slice().sort((a, b) => a - b);
+          return active.length > 0 ? (
+            <div data-pdf-page-break="" style={{ marginTop: 32, border: "2px solid #1e3a8a", borderRadius: 14, padding: "20px 24px", backgroundColor: "#f0f4ff" }}>
+              <h3 style={{ margin: "0 0 14px", fontSize: 17, fontWeight: 800, color: "#1e3a8a" }}>הערות וסייגים</h3>
+              <ol style={{ margin: 0, paddingRight: 20, listStyleType: "decimal", direction: "rtl" }}>
+                {active.map((idx) => (
+                  <li key={idx} style={{ fontSize: 13, lineHeight: 1.8, color: "#1e293b", marginBottom: 4 }}>
+                    {SAFETY_CLAUSES[idx]}
+                  </li>
+                ))}
+              </ol>
+            </div>
+          ) : null;
+        })()}
 
         {/* CLOSING: general notes + professional sign-off */}
         {(report.generalNotes || fmt.professionalName || settings.consultantName || fmt.signatureImage || report.signatureDataUrl || fmt.stampImage) && (
