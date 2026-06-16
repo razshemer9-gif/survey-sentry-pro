@@ -19,14 +19,14 @@ export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, sett
   const surveyConfig = getSurveyType(report.surveyType);
   const fmt = getFormat(settings, report);
 
-  const SAFETY_CLAUSES = [
-    "במקום נבדק באזורים המיועדים להימצאות קהל בלבד.",
+  const SAFETY_CLAUSES_FIXED = [
+    "המקום נבדק באזורים המיועדים להימצאות קהל בלבד.",
     "מובהר בזאת כי האישור שנמסר הינו עבור השירות שהתקבל ונכון לרגע הבדיקה בלבד.",
-    "במידה ונותר כל שינוי במקום לאחר הבדיקה, יש לעצור את הפעילות ולזמן בדיקה מחודשת.",
+    "במידה ובוצע כל שינוי במקום לאחר הבדיקה, יש לעצור את הפעילות ולזמן בדיקה מחודשת.",
     "במידה וקיימות מערכות חשמל ו/או גז, מחובת המזמין לזמן בדיקה.",
     "אין לעשות כל שינוי במבנים אלא בידיעת הבודק ובאישורו. כל שינוי/שימוש שיעשה ללא אישור יהיה באחריות המזמין בלבד ותוקף האישור יבוטל.",
-    "אין האישור מתייחס לבטיחות המשתמשים אלא לבטיחות הסביבה.",
   ];
+  const SAFETY_CLAUSE_6 = "אין האישור מתייחס לבטיחות המשתמשים אלא לבטיחות הסביבה.";
 
   const itemTotal = (i: typeof report.items[0]) => (Number(i.estimatedCost) || 0) * (i.quantity ?? 1);
   const totalCost = report.items
@@ -575,22 +575,26 @@ export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, sett
           </div>
         )}
 
-        {/* Disclaimer clauses — general_safety only; undefined = all selected by default */}
-        {report.surveyType === "general_safety" && (() => {
-          const active = (report.selectedClauses ?? [0, 1, 2, 3, 4, 5]).slice().sort((a, b) => a - b);
-          return active.length > 0 ? (
-            <div data-pdf-page-break="" style={{ marginTop: 32, border: "2px solid #1e3a8a", borderRadius: 14, padding: "20px 24px", backgroundColor: "#f0f4ff" }}>
-              <h3 style={{ margin: "0 0 14px", fontSize: 17, fontWeight: 800, color: "#1e3a8a" }}>הערות וסייגים</h3>
-              <ol style={{ margin: 0, paddingRight: 20, listStyleType: "decimal", direction: "rtl" }}>
-                {active.map((idx) => (
-                  <li key={idx} style={{ fontSize: 13, lineHeight: 1.8, color: "#1e293b", marginBottom: 4 }}>
-                    {SAFETY_CLAUSES[idx]}
-                  </li>
-                ))}
-              </ol>
+        {/* Disclaimer clauses — general_safety: 1-5 always, 6 conditional */}
+        {report.surveyType === "general_safety" && (
+          <div data-pdf-page-break="" style={{ marginTop: 32, border: "2px solid #1e3a8a", borderRadius: 14, padding: "20px 24px", backgroundColor: "#f0f4ff" }}>
+            <h3 style={{ margin: "0 0 14px", fontSize: 17, fontWeight: 800, color: "#1e3a8a" }}>הערות וסייגים</h3>
+            <div style={{ direction: "rtl" }}>
+              {SAFETY_CLAUSES_FIXED.map((clause, idx) => (
+                <div key={idx} style={{ display: "flex", alignItems: "flex-start", marginBottom: 6, gap: 8 }}>
+                  <span style={{ flexShrink: 0, fontWeight: 700, minWidth: 22, textAlign: "right", fontSize: 13, color: "#1e293b" }}>{idx + 1}.</span>
+                  <span style={{ flex: 1, fontSize: 13, lineHeight: 1.8, color: "#1e293b" }}>{clause}</span>
+                </div>
+              ))}
+              {(report.selectedClauses === undefined || report.selectedClauses.includes(5)) && (
+                <div style={{ display: "flex", alignItems: "flex-start", marginBottom: 6, gap: 8 }}>
+                  <span style={{ flexShrink: 0, fontWeight: 700, minWidth: 22, textAlign: "right", fontSize: 13, color: "#1e293b" }}>6.</span>
+                  <span style={{ flex: 1, fontSize: 13, lineHeight: 1.8, color: "#1e293b" }}>{SAFETY_CLAUSE_6}</span>
+                </div>
+              )}
             </div>
-          ) : null;
-        })()}
+          </div>
+        )}
 
         {/* CLOSING: general notes + professional sign-off */}
         {(report.generalNotes || fmt.professionalName || settings.consultantName || fmt.signatureImage || report.signatureDataUrl || fmt.stampImage) && (
