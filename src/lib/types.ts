@@ -33,7 +33,7 @@ export const SURVEY_TYPES: SurveyTypeConfig[] = [
     id: "general_safety",
     label: "סקר בטיחות כללי",
     shortLabel: "בטיחות כללית",
-    pdfTitle: "סקר בטיחות כללי",
+    pdfTitle: "סקר בטיחות",
     filePrefix: "סקר-בטיחות",
     color: "#1e3a8a",
   },
@@ -116,6 +116,8 @@ export interface SurveyReport {
   reportMode?: "survey" | "approval";
   // Required approvals (general_safety only)
   requiredApprovals?: string[];
+  // Predefined disclaimer clauses (general_safety only) — indices of selected clauses
+  selectedClauses?: number[];
 }
 
 export interface ReferencePhotoEntry {
