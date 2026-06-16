@@ -508,7 +508,7 @@ export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, sett
             <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 14, direction: "rtl" }}>
               <thead>
                 <tr style={{ backgroundColor: "#1e3a8a", color: "#ffffff" }}>
-                  <th style={{ padding: "8px 12px", textAlign: "right", fontWeight: 700, border: "1px solid #1e3a8a" }}>אישור</th>
+                  <th style={{ padding: "8px 12px", textAlign: "right", fontWeight: 700, border: "1px solid #1e3a8a" }}></th>
                   <th style={{ padding: "8px 12px", textAlign: "center", fontWeight: 700, border: "1px solid #1e3a8a", width: 70 }}>נדרש</th>
                 </tr>
               </thead>
