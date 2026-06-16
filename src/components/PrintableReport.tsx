@@ -19,14 +19,14 @@ export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, sett
   const surveyConfig = getSurveyType(report.surveyType);
   const fmt = getFormat(settings, report);
 
-  const SAFETY_CLAUSES = [
-    "במקום נבדק באזורים המיועדים להימצאות קהל בלבד.",
+  const SAFETY_CLAUSES_FIXED = [
+    "המקום נבדק באזורים המיועדים להימצאות קהל בלבד.",
     "מובהר בזאת כי האישור שנמסר הינו עבור השירות שהתקבל ונכון לרגע הבדיקה בלבד.",
-    "במידה ונותר כל שינוי במקום לאחר הבדיקה, יש לעצור את הפעילות ולזמן בדיקה מחודשת.",
+    "במידה ובוצע כל שינוי במקום לאחר הבדיקה, יש לעצור את הפעילות ולזמן בדיקה מחודשת.",
     "במידה וקיימות מערכות חשמל ו/או גז, מחובת המזמין לזמן בדיקה.",
     "אין לעשות כל שינוי במבנים אלא בידיעת הבודק ובאישורו. כל שינוי/שימוש שיעשה ללא אישור יהיה באחריות המזמין בלבד ותוקף האישור יבוטל.",
-    "אין האישור מתייחס לבטיחות המשתמשים אלא לבטיחות הסביבה.",
   ];
+  const SAFETY_CLAUSE_6 = "אין האישור מתייחס לבטיחות המשתמשים אלא לבטיחות הסביבה.";
 
   const itemTotal = (i: typeof report.items[0]) => (Number(i.estimatedCost) || 0) * (i.quantity ?? 1);
   const totalCost = report.items
@@ -512,11 +512,31 @@ export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, sett
           }
         </div>
 
+        {/* Disclaimer clauses — general_safety: 1-5 always, 6 conditional */}
+        {report.surveyType === "general_safety" && (
+          <div data-pdf-page-break="" style={{ marginTop: 32, border: "2px solid #1e3a8a", borderRadius: 14, padding: "20px 24px", backgroundColor: "#f0f4ff" }}>
+            <h3 style={{ margin: "0 0 14px", fontSize: 17, fontWeight: 800, color: "#1e3a8a" }}>הערות וסייגים</h3>
+            <div style={{ direction: "rtl" }}>
+              {SAFETY_CLAUSES_FIXED.map((clause, idx) => (
+                <div key={idx} style={{ display: "flex", alignItems: "flex-start", marginBottom: 6, gap: 8 }}>
+                  <span style={{ flexShrink: 0, fontWeight: 700, minWidth: 22, textAlign: "right", fontSize: 13, color: "#1e293b" }}>{idx + 1}.</span>
+                  <span style={{ flex: 1, fontSize: 13, lineHeight: 1.8, color: "#1e293b" }}>{clause}</span>
+                </div>
+              ))}
+              {(report.selectedClauses === undefined || report.selectedClauses.includes(5)) && (
+                <div style={{ display: "flex", alignItems: "flex-start", marginBottom: 6, gap: 8 }}>
+                  <span style={{ flexShrink: 0, fontWeight: 700, minWidth: 22, textAlign: "right", fontSize: 13, color: "#1e293b" }}>6.</span>
+                  <span style={{ flex: 1, fontSize: 13, lineHeight: 1.8, color: "#1e293b" }}>{SAFETY_CLAUSE_6}</span>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
         {/* Required approvals — general_safety only */}
         {report.surveyType === "general_safety" && (report.requiredApprovals?.length ?? 0) > 0 && (
           <div data-pdf-page-break="" style={{ marginTop: 32, border: "2px solid #1e3a8a", borderRadius: 14, padding: "20px 24px", backgroundColor: "#f0f4ff" }}>
             <h3 style={{ margin: "0 0 12px", fontSize: 17, fontWeight: 800, color: "#1e3a8a" }}>אישורים נדרשים</h3>
-            {/* div-based grid — html2canvas handles divs more reliably than <table> */}
             <div style={{ direction: "rtl", fontSize: 14, border: "1px solid #1e3a8a", borderRadius: 6, overflow: "hidden" }}>
               <div style={{ display: "flex", backgroundColor: "#1e3a8a", color: "#ffffff", fontWeight: 700 }}>
                 <div style={{ flex: 1, padding: "8px 12px", textAlign: "right" }}></div>
@@ -543,7 +563,7 @@ export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, sett
             {report.surveyType === "general_safety" ? (
               <div style={{ marginTop: 8 }}>
                 {[
-                  { value: "yes", label: "המקום נמצא בטיחותי", selectedBg: "#dcfce7", selectedColor: "#15803d", selectedBorder: "#16a34a" },
+                  { value: "yes", label: "המקום נמצא בטיחותי - האישור מותנה בהמצאת האישורים הנדרשים", selectedBg: "#dcfce7", selectedColor: "#15803d", selectedBorder: "#16a34a" },
                   { value: "no", label: "לאחר טיפול בליקויים יש לזמן ביקורת נוספת", selectedBg: "#fee2e2", selectedColor: "#b91c1c", selectedBorder: "#dc2626" },
                 ].map(({ value, label, selectedBg, selectedColor, selectedBorder }, idx) => {
                   const selected = report.accessibilityComplianceStatus === value;
@@ -572,20 +592,6 @@ export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, sett
                 </div>
               </>
             )}
-          </div>
-        )}
-
-        {/* Disclaimer clauses — general_safety only */}
-        {report.surveyType === "general_safety" && (report.selectedClauses?.length ?? 0) > 0 && (
-          <div data-pdf-page-break="" style={{ marginTop: 32, border: "2px solid #1e3a8a", borderRadius: 14, padding: "20px 24px", backgroundColor: "#f0f4ff" }}>
-            <h3 style={{ margin: "0 0 14px", fontSize: 17, fontWeight: 800, color: "#1e3a8a" }}>הערות וסייגים</h3>
-            <ol style={{ margin: 0, paddingRight: 20, listStyleType: "decimal", direction: "rtl" }}>
-              {(report.selectedClauses ?? []).slice().sort((a, b) => a - b).map((idx) => (
-                <li key={idx} style={{ fontSize: 13, lineHeight: 1.8, color: "#1e293b", marginBottom: 4 }}>
-                  {SAFETY_CLAUSES[idx]}
-                </li>
-              ))}
-            </ol>
           </div>
         )}
 

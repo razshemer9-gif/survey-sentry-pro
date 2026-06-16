@@ -611,7 +611,7 @@ export default function ReportEditor() {
                         : "border-border bg-background text-muted-foreground hover:border-success/50 hover:text-success"
                     )}
                   >
-                    המקום נמצא בטיחותי
+                    המקום נמצא בטיחותי - האישור מותנה בהמצאת האישורים הנדרשים
                   </button>
                   <button
                     onClick={() => update({ accessibilityComplianceStatus: report.accessibilityComplianceStatus === "no" ? undefined : "no" })}
@@ -660,38 +660,34 @@ export default function ReportEditor() {
             )}
           </div>
           {/* Disclaimer clauses — general_safety only */}
-          {report.surveyType === "general_safety" && (() => {
-            const CLAUSES = [
-              "במקום נבדק באזורים המיועדים להימצאות קהל בלבד.",
-              "מובהר בזאת כי האישור שנמסר הינו עבור השירות שהתקבל ונכון לרגע הבדיקה בלבד.",
-              "במידה ונותר כל שינוי במקום לאחר הבדיקה, יש לעצור את הפעילות ולזמן בדיקה מחודשת.",
-              "במידה וקיימות מערכות חשמל ו/או גז, מחובת המזמין לזמן בדיקה.",
-              "אין לעשות כל שינוי במבנים אלא בידיעת הבודק ובאישורו. כל שינוי/שימוש שיעשה ללא אישור יהיה באחריות המזמין בלבד ותוקף האישור יבוטל.",
-              "אין האישור מתייחס לבטיחות המשתמשים אלא לבטיחות הסביבה.",
-            ];
-            const selected = report.selectedClauses ?? [];
-            return (
-              <div dir="rtl" className="rounded-2xl border-2 border-primary/20 bg-card p-4 space-y-3">
-                <h3 className="font-bold text-sm text-primary">הערות וסייגים לדוח</h3>
-                {CLAUSES.map((clause, idx) => (
-                  <label key={idx} className="flex items-start gap-2.5 cursor-pointer select-none">
-                    <input
-                      type="checkbox"
-                      checked={selected.includes(idx)}
-                      onChange={(e) => {
-                        const next = e.target.checked
-                          ? [...selected, idx]
-                          : selected.filter((i) => i !== idx);
-                        update({ selectedClauses: next });
-                      }}
-                      className="mt-0.5 h-4 w-4 shrink-0 accent-primary"
-                    />
-                    <span className="text-sm leading-relaxed">{clause}</span>
-                  </label>
-                ))}
-              </div>
-            );
-          })()}
+          {report.surveyType === "general_safety" && (
+            <div dir="rtl" className="rounded-2xl border-2 border-primary/20 bg-card p-4 space-y-2">
+              <h3 className="font-bold text-sm text-primary">הערות וסייגים לדוח</h3>
+              {[
+                "המקום נבדק באזורים המיועדים להימצאות קהל בלבד.",
+                "מובהר בזאת כי האישור שנמסר הינו עבור השירות שהתקבל ונכון לרגע הבדיקה בלבד.",
+                "במידה ובוצע כל שינוי במקום לאחר הבדיקה, יש לעצור את הפעילות ולזמן בדיקה מחודשת.",
+                "במידה וקיימות מערכות חשמל ו/או גז, מחובת המזמין לזמן בדיקה.",
+                "אין לעשות כל שינוי במבנים אלא בידיעת הבודק ובאישורו. כל שינוי/שימוש שיעשה ללא אישור יהיה באחריות המזמין בלבד ותוקף האישור יבוטל.",
+              ].map((clause, idx) => (
+                <div key={idx} className="flex items-start gap-2 text-sm text-muted-foreground">
+                  <span className="shrink-0 font-semibold">{idx + 1}.</span>
+                  <span className="leading-relaxed">{clause}</span>
+                </div>
+              ))}
+              <label className="flex items-start gap-2.5 cursor-pointer select-none pt-1 border-t border-border mt-1">
+                <input
+                  type="checkbox"
+                  checked={report.selectedClauses === undefined || report.selectedClauses.includes(5)}
+                  onChange={(e) => {
+                    update({ selectedClauses: e.target.checked ? [5] : [] });
+                  }}
+                  className="mt-0.5 h-4 w-4 shrink-0 accent-primary"
+                />
+                <span className="text-sm leading-relaxed">אין האישור מתייחס לבטיחות המשתמשים אלא לבטיחות הסביבה.</span>
+              </label>
+            </div>
+          )}
 
           <Button
             variant="outline"
