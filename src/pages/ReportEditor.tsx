@@ -460,12 +460,12 @@ export default function ReportEditor() {
                         key={p}
                         onClick={() => updateItem(item.id, { priority: item.priority === p ? undefined : p })}
                         className={cn(
-                          "h-8 w-10 rounded-lg text-xs font-bold border transition-colors",
-                          item.priority === p
-                            ? p === 0 ? "bg-red-500 text-white border-red-500"
-                            : p === 1 ? "bg-orange-400 text-white border-orange-400"
-                            : "bg-yellow-400 text-white border-yellow-400"
-                            : "bg-background text-muted-foreground border-border hover:border-primary/50"
+                          "h-8 w-10 rounded-lg text-xs font-bold border-2 transition-colors",
+                          p === 0
+                            ? item.priority === 0 ? "bg-red-500 text-white border-red-500" : "bg-red-100 text-red-600 border-red-400"
+                            : p === 1
+                            ? item.priority === 1 ? "bg-orange-400 text-white border-orange-400" : "bg-orange-100 text-orange-600 border-orange-400"
+                            : item.priority === 2 ? "bg-yellow-400 text-white border-yellow-400" : "bg-yellow-100 text-yellow-600 border-yellow-400"
                         )}
                       >
                         {p}
@@ -515,7 +515,7 @@ export default function ReportEditor() {
             );
           })}
 
-          <Button onClick={addItem} variant="outline" className="w-full gap-2 rounded-2xl border-dashed">
+          <Button onClick={addItem} variant="outline" className="w-full gap-2 rounded-2xl border-2 border-[#1e3a8a] text-[#1e3a8a] font-bold hover:bg-[#1e3a8a]/10">
             <Plus className="h-4 w-4" /> ממצא חדש
           </Button>
 
