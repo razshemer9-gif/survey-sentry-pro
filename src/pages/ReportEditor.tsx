@@ -14,7 +14,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Select,
   SelectContent,
@@ -259,16 +258,10 @@ export default function ReportEditor() {
         <h1 className="mt-3 truncate text-xl font-bold">{report.placeName || "סקר ללא שם"}</h1>
       </header>
 
-      <Tabs defaultValue="cover" className="px-4 pt-4">
-        <TabsList className="grid w-full grid-cols-2 rounded-2xl">
-          <TabsTrigger value="cover" className="rounded-xl">שער</TabsTrigger>
-          <TabsTrigger value="checklist" className="rounded-xl">
-            ממצאים ({report.items.length})
-          </TabsTrigger>
-        </TabsList>
+      <div className="px-4 pt-4 space-y-4">
 
-        {/* COVER TAB */}
-        <TabsContent value="cover" className="mt-4 space-y-4">
+        {/* COVER SECTION */}
+        <div className="space-y-4">
           {(() => {
             const isEdu = report.surveyType === "education_safety";
             return (
@@ -380,10 +373,15 @@ export default function ReportEditor() {
               </>
             );
           })()}
-        </TabsContent>
+        </div>
 
-        {/* CHECKLIST TAB */}
-        <TabsContent value="checklist" className="mt-4 space-y-3 pb-20">
+        {/* CHECKLIST SECTION */}
+        <div className="space-y-3 pb-20">
+          <div className="flex items-center gap-3 pt-2">
+            <div className="flex-1 h-px bg-border" />
+            <span className="text-xs font-semibold text-muted-foreground">ממצאים ({report.items.length})</span>
+            <div className="flex-1 h-px bg-border" />
+          </div>
           {report.items.map((item, idx) => {
             const refPhotos = item.referencePhotos && item.referencePhotos.length > 0
               ? item.referencePhotos
@@ -698,8 +696,8 @@ export default function ReportEditor() {
             {zipping ? <Loader2 className="h-4 w-4 animate-spin" /> : <Images className="h-4 w-4" />}
             {zipping ? "יוצר קובץ..." : "שמור את כל התמונות למכשיר"}
           </Button>
-        </TabsContent>
-      </Tabs>
+        </div>
+      </div>
 
       {/* Bottom action bar */}
       <div className="fixed inset-x-0 z-30 mx-auto max-w-lg px-4" style={{ bottom: 'calc(3.5rem + env(safe-area-inset-bottom, 0px))' }}>
