@@ -112,6 +112,7 @@ export async function generateReportPdf(
 
   const PX_TO_MM = 25.4 / 96;
   const pageWmm  = elWidth * PX_TO_MM;
+  const A4_H_MM  = 297; // standard A4 height — keeps full page width when printing
 
   // ── Capture each slice via the "marginTop slide" technique ───────────────
   // The container (#pdf-print-mount) is position:fixed; top:100vh — always
@@ -155,12 +156,14 @@ export async function generateReportPdf(
         pdf = new jsPDF({
           orientation: "portrait",
           unit:        "mm",
-          format:      [pageWmm, pageHmm],
+          format:      [pageWmm, A4_H_MM],
         });
       } else {
-        (pdf as any).addPage([pageWmm, pageHmm]);
+        (pdf as any).addPage([pageWmm, A4_H_MM]);
       }
 
+      // Content sits at the top; any remaining space on the page is white.
+      // Using A4_H_MM as page height ensures printers never scale down the width.
       pdf.addImage(imgData, "JPEG", 0, 0, pageWmm, pageHmm, undefined, "FAST");
     }
   } finally {
