@@ -52,10 +52,7 @@ export async function generateReportPdf(
   const scale    = isMobile ? 1 : 2;
   const MAX_PX   = isMobile ? 3_500_000 : 14_000_000;
   const MAX_H    = isMobile ? 3_500     : 7_000;
-  // Cap at A4 height so each PDF page is exactly 210×297mm and prints at full width
-  const A4_H_PX  = Math.round(297 * 96 / 25.4); // 1122px ≈ 297mm at 96dpi
-  const A4_H_MM  = 297;
-  const PAGE_H   = Math.min(A4_H_PX, MAX_H, Math.floor(MAX_PX / (elWidth * scale)));
+  const PAGE_H   = Math.min(MAX_H, Math.floor(MAX_PX / (elWidth * scale)));
 
   // Positions of [data-pdf-no-break] cards relative to the element's top.
   // Must be computed before any marginTop manipulation.
@@ -115,7 +112,6 @@ export async function generateReportPdf(
 
   const PX_TO_MM = 25.4 / 96;
   const pageWmm  = elWidth * PX_TO_MM;
-  const A4_H_MM  = 297; // standard A4 height — keeps full page width when printing
 
   // ── Capture each slice via the "marginTop slide" technique ───────────────
   // The container (#pdf-print-mount) is position:fixed; top:100vh — always
@@ -159,14 +155,12 @@ export async function generateReportPdf(
         pdf = new jsPDF({
           orientation: "portrait",
           unit:        "mm",
-          format:      [pageWmm, A4_H_MM],
+          format:      [pageWmm, pageHmm],
         });
       } else {
-        (pdf as any).addPage([pageWmm, A4_H_MM]);
+        (pdf as any).addPage([pageWmm, pageHmm]);
       }
 
-      // pageHmm ≤ A4_H_MM (guaranteed by PAGE_H cap above).
-      // Content sits at top; last page gets white space at the bottom.
       pdf.addImage(imgData, "JPEG", 0, 0, pageWmm, pageHmm, undefined, "FAST");
     }
   } finally {
