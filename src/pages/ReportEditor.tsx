@@ -612,6 +612,17 @@ export default function ReportEditor() {
                     המקום נמצא בטיחותי - האישור מותנה בהמצאת האישורים הנדרשים
                   </button>
                   <button
+                    onClick={() => update({ accessibilityComplianceStatus: report.accessibilityComplianceStatus === "safe" ? undefined : "safe" })}
+                    className={cn(
+                      "rounded-xl border-2 py-3 px-4 text-sm font-bold text-right transition-colors",
+                      report.accessibilityComplianceStatus === "safe"
+                        ? "border-success bg-success/15 text-success ring-2 ring-success/40"
+                        : "border-border bg-background text-muted-foreground hover:border-success/50 hover:text-success"
+                    )}
+                  >
+                    המקום נמצא בטיחותי !
+                  </button>
+                  <button
                     onClick={() => update({ accessibilityComplianceStatus: report.accessibilityComplianceStatus === "no" ? undefined : "no" })}
                     className={cn(
                       "rounded-xl border-2 py-3 px-4 text-sm font-bold text-right transition-colors",

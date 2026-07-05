@@ -111,7 +111,7 @@ export interface SurveyReport {
   signatureDate?: string;
   signatureConsultantName?: string;
   // Opinion summary
-  accessibilityComplianceStatus?: "yes" | "no";
+  accessibilityComplianceStatus?: "yes" | "no" | "safe";
   // Document mode
   reportMode?: "survey" | "approval";
   // Required approvals (general_safety only)
