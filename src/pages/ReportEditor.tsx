@@ -30,6 +30,7 @@ import {
 } from "@/components/ui/dialog";
 
 import { ChecklistItem, ConsultantSettings, DEFAULT_SETTINGS, ReferencePhotoEntry, SurveyReport } from "@/lib/types";
+import { EDU_INSPECTION_TABLE } from "@/lib/edu-inspection-table";
 import { getReport, loadUserSettings, saveReport, saveUserSettings } from "@/lib/storage";
 import { useAuth } from "@/contexts/AuthContext";
 import { buildPdfFileName, generateReportPdf } from "@/lib/pdf";
@@ -697,6 +698,44 @@ export default function ReportEditor() {
               </label>
             </div>
           )}
+
+          {/* Education safety inspection table — only rows the user checks appear in PDF */}
+          {report.surveyType === "education_safety" && (() => {
+            const selected = report.eduInspectionRows ?? [];
+            const toggle = (n: number) => {
+              const next = selected.includes(n) ? selected.filter((x) => x !== n) : [...selected, n];
+              update({ eduInspectionRows: next });
+            };
+            return (
+              <div dir="rtl" className="rounded-2xl border-2 border-primary/20 bg-card p-4 space-y-2">
+                <h3 className="font-bold text-sm text-primary">טבלת בדיקות נוספות — מוסדות חינוך</h3>
+                <p className="text-xs text-muted-foreground mb-2">סמן וי בשורות שיופיעו בדוח המודפס.</p>
+                <div className="space-y-1.5">
+                  {EDU_INSPECTION_TABLE.map((row) => {
+                    const isChecked = selected.includes(row.num);
+                    return (
+                      <label key={row.num} className="flex items-start gap-2.5 cursor-pointer select-none p-2 rounded-lg hover:bg-muted/40">
+                        <input
+                          type="checkbox"
+                          checked={isChecked}
+                          onChange={() => toggle(row.num)}
+                          className="mt-0.5 h-4 w-4 shrink-0 accent-primary"
+                        />
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-baseline gap-1.5">
+                            <span className="text-xs font-bold text-primary shrink-0">{row.num}.</span>
+                            <span className="text-sm font-semibold leading-snug">{row.area}</span>
+                          </div>
+                          <div className="text-xs text-muted-foreground mt-0.5 whitespace-pre-line">{row.frequency}</div>
+                          <div className="text-xs text-muted-foreground mt-0.5 whitespace-pre-line">{row.authority}</div>
+                        </div>
+                      </label>
+                    );
+                  })}
+                </div>
+              </div>
+            );
+          })()}
 
           <Button
             variant="outline"

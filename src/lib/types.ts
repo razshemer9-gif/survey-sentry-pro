@@ -118,6 +118,8 @@ export interface SurveyReport {
   requiredApprovals?: string[];
   // Predefined disclaimer clauses (general_safety only) — indices of selected clauses
   selectedClauses?: number[];
+  // Education-safety inspection table — selected row numbers (1..20) that appear in PDF
+  eduInspectionRows?: number[];
 }
 
 export interface ReferencePhotoEntry {
