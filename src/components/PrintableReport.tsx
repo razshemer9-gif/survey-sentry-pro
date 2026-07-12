@@ -1,5 +1,6 @@
 import { ConsultantSettings, getSurveyType, SurveyReport, SurveyReportFormat } from "@/lib/types";
 import { formatCurrency, formatHebrewDate } from "@/lib/pdf";
+import { EDU_INSPECTION_TABLE } from "@/lib/edu-inspection-table";
 import React, { forwardRef } from "react";
 
 interface Props {
@@ -699,6 +700,29 @@ export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, sett
                   <div style={{ fontSize: 11, color: "#64748b", marginTop: 2 }}>חותמת</div>
                 </div>
               )}
+            </div>
+          </div>
+        )}
+
+        {/* Education-safety inspection table — only selected rows appear */}
+        {report.surveyType === "education_safety" && (report.eduInspectionRows?.length ?? 0) > 0 && (
+          <div data-pdf-page-break="" style={{ marginTop: 40 }}>
+            <h3 style={{ margin: "0 0 12px", fontSize: 20, fontWeight: 800, color: "#1e3a8a" }}>טבלת בדיקות נוספות</h3>
+            <div style={{ border: "1px solid #1e3a8a", borderRadius: 6, overflow: "hidden", direction: "rtl" }}>
+              <div style={{ display: "flex", backgroundColor: "#1e3a8a", color: "#ffffff", fontWeight: 700, fontSize: 13 }}>
+                <div style={{ width: 40, padding: "10px 8px", textAlign: "center", borderLeft: "1px solid rgba(255,255,255,0.3)" }}>מס'</div>
+                <div style={{ flex: 2, padding: "10px 10px", textAlign: "right", borderLeft: "1px solid rgba(255,255,255,0.3)" }}>תחום הבדיקה</div>
+                <div style={{ flex: 2, padding: "10px 10px", textAlign: "right", borderLeft: "1px solid rgba(255,255,255,0.3)" }}>תדירות</div>
+                <div style={{ flex: 2, padding: "10px 10px", textAlign: "right" }}>הגוף המקצועי הבודק והמאשר</div>
+              </div>
+              {EDU_INSPECTION_TABLE.filter((row) => report.eduInspectionRows?.includes(row.num)).map((row, i) => (
+                <div key={row.num} data-pdf-no-break="" style={{ display: "flex", backgroundColor: i % 2 === 0 ? "#ffffff" : "#f8fafc", borderTop: "1px solid #cbd5e1", fontSize: 12, lineHeight: 1.55 }}>
+                  <div style={{ width: 40, padding: "10px 8px", textAlign: "center", borderLeft: "1px solid #cbd5e1", fontWeight: 700 }}>{row.num}</div>
+                  <div style={{ flex: 2, padding: "10px 10px", borderLeft: "1px solid #cbd5e1", whiteSpace: "pre-line" }}>{row.area}</div>
+                  <div style={{ flex: 2, padding: "10px 10px", borderLeft: "1px solid #cbd5e1", whiteSpace: "pre-line" }}>{row.frequency}</div>
+                  <div style={{ flex: 2, padding: "10px 10px", whiteSpace: "pre-line" }}>{row.authority}</div>
+                </div>
+              ))}
             </div>
           </div>
         )}
