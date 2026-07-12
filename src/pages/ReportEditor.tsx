@@ -81,13 +81,20 @@ export default function ReportEditor() {
         return;
       }
       // education_safety reports must not carry accessibility standards items —
-      // strip any item that was pulled from the accessibility requirements library.
+      // strip anything that carries a standards-library signature (id, standard
+      // part/clause, or a suggested correction — the latter three survive when
+      // items were copied via an older user template that lost matchedRequirementId).
       if (r.surveyType === "education_safety") {
-        const cleanItems = r.items.filter((it) => !it.matchedRequirementId);
+        const isStandardsItem = (it: ChecklistItem) =>
+          !!it.matchedRequirementId || !!it.standardPart || !!it.clause || !!it.suggestedCorrection;
+        const cleanItems = r.items.filter((it) => !isStandardsItem(it));
         if (cleanItems.length !== r.items.length) {
           const cleaned = { ...r, items: cleanItems, updatedAt: Date.now() };
           setReport(cleaned);
-          saveReport(cleaned).catch(() => { /* silent */ });
+          saveReport(cleaned).catch((err) => {
+            console.error("[edu-cleanup] failed to persist cleaned report", err);
+            toast.error("שגיאה בשמירת ניקוי הדוח");
+          });
           isFirstLoad.current = true;
           return;
         }
