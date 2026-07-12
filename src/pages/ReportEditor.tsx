@@ -80,6 +80,18 @@ export default function ReportEditor() {
         navigate("/");
         return;
       }
+      // education_safety reports must not carry accessibility standards items —
+      // strip any item that was pulled from the accessibility requirements library.
+      if (r.surveyType === "education_safety") {
+        const cleanItems = r.items.filter((it) => !it.matchedRequirementId);
+        if (cleanItems.length !== r.items.length) {
+          const cleaned = { ...r, items: cleanItems, updatedAt: Date.now() };
+          setReport(cleaned);
+          saveReport(cleaned).catch(() => { /* silent */ });
+          isFirstLoad.current = true;
+          return;
+        }
+      }
       setReport(r);
       isFirstLoad.current = true;
     });
