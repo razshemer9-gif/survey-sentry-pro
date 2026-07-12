@@ -120,6 +120,10 @@ export interface SurveyReport {
   selectedClauses?: number[];
   // Education-safety inspection table — selected row numbers (1..20) that appear in PDF
   eduInspectionRows?: number[];
+  // Education-safety free-text notes (appears above the inspection table in PDF)
+  eduNotes?: string;
+  // Education-safety final approval status (appears above the inspection table in PDF)
+  eduApprovalStatus?: "approve" | "reject";
 }
 
 export interface ReferencePhotoEntry {

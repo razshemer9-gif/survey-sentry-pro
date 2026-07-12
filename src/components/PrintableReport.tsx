@@ -704,6 +704,40 @@ export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, sett
           </div>
         )}
 
+        {/* Education-safety notes + approval summary — appears above the inspection table */}
+        {report.surveyType === "education_safety" && (report.eduNotes || report.eduApprovalStatus) && (
+          <div data-pdf-no-break="" style={{ marginTop: 40, direction: "rtl" }}>
+            <p style={{ margin: "0 0 14px", fontSize: 12, color: "#334155" }}>* דוח זה מתייחס לליקויים שהתגלו ביום הבדיקה בלבד.</p>
+            {report.eduNotes && (
+              <div style={{ marginBottom: 16 }}>
+                <div style={{ fontSize: 14, fontWeight: 800, color: "#1e3a8a", textDecoration: "underline", marginBottom: 6 }}>הערות:</div>
+                <div style={{ whiteSpace: "pre-wrap", fontSize: 13, lineHeight: 1.7, color: "#0f172a", borderBottom: "1px solid #94a3b8", paddingBottom: 8 }}>{report.eduNotes}</div>
+              </div>
+            )}
+            {report.eduApprovalStatus && (
+              <div style={{ marginBottom: 8 }}>
+                <div style={{ fontSize: 14, fontWeight: 800, color: "#1e3a8a", textDecoration: "underline", marginBottom: 6 }}>סיכום:</div>
+                <div style={{ display: "flex", alignItems: "center", gap: 14, fontSize: 13, color: "#0f172a" }}>
+                  <span>הריני</span>
+                  <span style={{ display: "flex", alignItems: "center", gap: 4 }}>
+                    <span style={{ display: "inline-block", width: 14, height: 14, border: "1px solid #0f172a", textAlign: "center", lineHeight: "12px", fontSize: 12, fontWeight: 700 }}>
+                      {report.eduApprovalStatus === "approve" ? "✓" : ""}
+                    </span>
+                    <span>מאשר</span>
+                  </span>
+                  <span style={{ display: "flex", alignItems: "center", gap: 4 }}>
+                    <span style={{ display: "inline-block", width: 14, height: 14, border: "1px solid #0f172a", textAlign: "center", lineHeight: "12px", fontSize: 12, fontWeight: 700 }}>
+                      {report.eduApprovalStatus === "reject" ? "✓" : ""}
+                    </span>
+                    <span>איני מאשר</span>
+                  </span>
+                  <span style={{ color: "#64748b", fontSize: 12 }}>(יש לסמן את הנכון)</span>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
         {/* Education-safety inspection table — only selected rows appear */}
         {report.surveyType === "education_safety" && (report.eduInspectionRows?.length ?? 0) > 0 && (
           <div data-pdf-page-break="" style={{ marginTop: 40 }}>
