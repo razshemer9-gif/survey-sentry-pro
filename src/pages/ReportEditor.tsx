@@ -284,9 +284,66 @@ export default function ReportEditor() {
         <div className="space-y-4">
           {(() => {
             const isEdu = report.surveyType === "education_safety";
+            const isWelfare = report.surveyType === "welfare_inspection";
             return (
               <>
-                {isEdu ? (
+                {isWelfare ? (
+                  <>
+                    <Field label="שם המסגרת">
+                      <Input value={report.placeName} onChange={(e) => update({ placeName: e.target.value })} placeholder="שם המסגרת שנבדקה" autoComplete="organization" />
+                    </Field>
+                    <Field label="לפרט את סוג המסגרת (לשמש כ...)">
+                      <Input value={report.welfareFrameworkPurpose || ""} onChange={(e) => update({ welfareFrameworkPurpose: e.target.value })} placeholder="לדוגמה: פנימייה / מעון" />
+                    </Field>
+                    <Field label="סמל מסגרת">
+                      <Input value={report.welfareFrameworkSymbol || ""} onChange={(e) => update({ welfareFrameworkSymbol: e.target.value })} />
+                    </Field>
+                    <Field label="שאלה פרטית">
+                      <Input value={report.welfareInquiry || ""} onChange={(e) => update({ welfareInquiry: e.target.value })} />
+                    </Field>
+                    <Field label="כתובת (עיר, רחוב, מספר)">
+                      <Input value={report.address} onChange={(e) => update({ address: e.target.value })} autoComplete="street-address" />
+                    </Field>
+                    <Field label="בעלות הנכס">
+                      <Input value={report.welfarePropertyOwner || ""} onChange={(e) => update({ welfarePropertyOwner: e.target.value })} />
+                    </Field>
+                    <Field label="שם המנהל">
+                      <Input value={report.welfareManagerName || ""} onChange={(e) => update({ welfareManagerName: e.target.value })} />
+                    </Field>
+                    <Field label="נייד המנהל">
+                      <Input value={report.welfareManagerPhone || ""} onChange={(e) => update({ welfareManagerPhone: e.target.value })} dir="ltr" />
+                    </Field>
+                    <Field label="ייעוד המסגרת">
+                      <div className="flex gap-2 flex-wrap">
+                        {([
+                          { v: "outside_home", label: "מסגרת חוץ ביתית" },
+                          { v: "daily", label: "מסגרת יומית" },
+                          { v: "other", label: "אחר" },
+                        ] as const).map(({ v, label }) => (
+                          <button
+                            key={v}
+                            type="button"
+                            onClick={() => update({ welfarePurposeType: report.welfarePurposeType === v ? undefined : v })}
+                            className={cn(
+                              "rounded-lg border py-2 px-3 text-sm font-semibold transition-colors",
+                              report.welfarePurposeType === v
+                                ? "bg-primary text-primary-foreground border-primary"
+                                : "bg-background text-muted-foreground border-border hover:border-primary/50"
+                            )}
+                          >
+                            {label}
+                          </button>
+                        ))}
+                      </div>
+                      {report.welfarePurposeType === "other" && (
+                        <Input className="mt-2" value={report.welfarePurposeOther || ""} onChange={(e) => update({ welfarePurposeOther: e.target.value })} placeholder="פרט..." />
+                      )}
+                    </Field>
+                    <Field label="תאריך המבדק">
+                      <Input type="date" value={report.surveyDate} onChange={(e) => update({ surveyDate: e.target.value })} />
+                    </Field>
+                  </>
+                ) : isEdu ? (
                   <>
                     <Field label="הישוב">
                       <Input value={report.city || ""} onChange={(e) => update({ city: e.target.value })} placeholder="לדוגמה: זכרון יעקב" />
@@ -799,6 +856,223 @@ export default function ReportEditor() {
                   })}
                 </div>
               </div>
+            );
+          })()}
+
+          {/* Welfare inspection — approvals table, defects status, summary, inspector details */}
+          {report.surveyType === "welfare_inspection" && (() => {
+            const approvals = report.welfareApprovals ?? [];
+            const getA = (i: number) => approvals[i] ?? {};
+            const setA = (i: number, patch: { presented?: "yes" | "no" | "na"; dateGiven?: string; validUntil?: string }) => {
+              const next = [...approvals];
+              while (next.length <= i) next.push({});
+              next[i] = { ...next[i], ...patch };
+              update({ welfareApprovals: next });
+            };
+            const APPROVAL_ROWS = [
+              { title: "מוכנות אמצעי כיבוי למניעת דליקות, ואמצעי מילוט", authority: "הרשות לכיבוי אש", refresh: 'ע"פ דרישת רשות כבאות והצלה' },
+              { title: "תעודת גמר (טופס 4) של כל המבנים באתר או אישור של הרשות המקומית", authority: "רשות מקומית", refresh: "חד פעמי" },
+              { title: "מתקני משחקים, ספורט וכו' (במידה וקיימים)", authority: 'מעבדה מוסמכת / בודק שנתי לתקן 1498', refresh: "12 חודשים" },
+              { title: "בדיקת יציבות מבנים", authority: "מהנדס מבנים (קונסטרוקטור) עם רישיון בתוקף", refresh: "60 חודשים" },
+            ];
+            return (
+              <>
+                {/* Approvals table (א. אישורים) */}
+                <div dir="rtl" className="rounded-2xl border-2 border-primary/20 bg-card p-4 space-y-3">
+                  <h3 className="font-bold text-sm text-primary">א. אישורים</h3>
+                  {APPROVAL_ROWS.map((row, i) => {
+                    const a = getA(i);
+                    return (
+                      <div key={i} className="border border-border rounded-lg p-3 space-y-2 bg-muted/30">
+                        <div className="text-sm font-semibold text-foreground">{i + 1}. {row.title}</div>
+                        <div className="text-xs text-muted-foreground">
+                          <span className="font-semibold">הגורם המאשר: </span>{row.authority}
+                        </div>
+                        <div className="text-xs text-muted-foreground">
+                          <span className="font-semibold">יש לחדש כל: </span>{row.refresh}
+                        </div>
+                        <div className="flex flex-wrap gap-2">
+                          {([
+                            { v: "yes", label: "הוצג אישור" },
+                            { v: "no", label: "לא הוצג" },
+                            { v: "na", label: "לא רלוונטי" },
+                          ] as const).map(({ v, label }) => (
+                            <button
+                              key={v}
+                              type="button"
+                              onClick={() => setA(i, { presented: a.presented === v ? undefined : v })}
+                              className={cn(
+                                "rounded-lg border py-1.5 px-3 text-xs font-semibold transition-colors",
+                                a.presented === v
+                                  ? "bg-primary text-primary-foreground border-primary"
+                                  : "bg-background text-muted-foreground border-border hover:border-primary/50"
+                              )}
+                            >
+                              {label}
+                            </button>
+                          ))}
+                        </div>
+                        <div className="grid grid-cols-2 gap-2">
+                          <div>
+                            <Label className="text-xs text-muted-foreground">תאריך מתן האישור</Label>
+                            <Input type="date" value={a.dateGiven || ""} onChange={(e) => setA(i, { dateGiven: e.target.value })} className="h-9" />
+                          </div>
+                          <div>
+                            <Label className="text-xs text-muted-foreground">בתוקף עד</Label>
+                            <Input type="date" value={a.validUntil || ""} onChange={(e) => setA(i, { validUntil: e.target.value })} className="h-9" />
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+
+                {/* ב. פערים */}
+                <div dir="rtl" className="rounded-2xl border-2 border-primary/20 bg-card p-4 space-y-3">
+                  <h3 className="font-bold text-sm text-primary">ב. פערים</h3>
+                  <div className="flex flex-col gap-2">
+                    <button
+                      type="button"
+                      onClick={() => update({ welfareDefectsStatus: report.welfareDefectsStatus === "none" ? undefined : "none" })}
+                      className={cn(
+                        "rounded-lg border-2 py-2 px-3 text-sm font-semibold text-right transition-colors",
+                        report.welfareDefectsStatus === "none"
+                          ? "border-success bg-success/15 text-success ring-2 ring-success/40"
+                          : "border-border bg-background text-muted-foreground hover:border-success/50"
+                      )}
+                    >
+                      לא התגלו פערים ביחס לדרישות הבטיחות.
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => update({ welfareDefectsStatus: report.welfareDefectsStatus === "found" ? undefined : "found" })}
+                      className={cn(
+                        "rounded-lg border-2 py-2 px-3 text-sm font-semibold text-right transition-colors",
+                        report.welfareDefectsStatus === "found"
+                          ? "border-destructive bg-destructive/10 text-destructive ring-2 ring-destructive/30"
+                          : "border-border bg-background text-muted-foreground hover:border-destructive/50"
+                      )}
+                    >
+                      התגלו פערים ביחס לדרישות הבטיחות.
+                    </button>
+                  </div>
+                </div>
+
+                {/* Signatory (מורשה חתימה מטעם המסגרת) */}
+                <div dir="rtl" className="rounded-2xl border-2 border-primary/20 bg-card p-4 space-y-3">
+                  <h3 className="font-bold text-sm text-primary">שם מורשה החתימה מטעם המסגרת</h3>
+                  <Field label='"אני..."'>
+                    <Input value={report.welfareSignatoryName || ""} onChange={(e) => update({ welfareSignatoryName: e.target.value })} placeholder="שם המורשה החתום מטעם המסגרת" />
+                  </Field>
+                </div>
+
+                {/* סיכום */}
+                <div dir="rtl" className="rounded-2xl border-2 border-primary/20 bg-card p-4 space-y-3">
+                  <h3 className="font-bold text-sm text-primary">סיכום</h3>
+                  <div className="space-y-3">
+                    <button
+                      type="button"
+                      onClick={() => update({ welfareSummaryStatus: report.welfareSummaryStatus === "no_impediment" ? undefined : "no_impediment" })}
+                      className={cn(
+                        "w-full rounded-lg border-2 py-2 px-3 text-sm font-semibold text-right transition-colors",
+                        report.welfareSummaryStatus === "no_impediment"
+                          ? "border-success bg-success/15 text-success ring-2 ring-success/40"
+                          : "border-border bg-background text-muted-foreground hover:border-success/50"
+                      )}
+                    >
+                      אין מניעה כי המתקן שנבדק ישמש כ...
+                    </button>
+                    {report.welfareSummaryStatus === "no_impediment" && (
+                      <Input value={report.welfareSummaryUsage || ""} onChange={(e) => update({ welfareSummaryUsage: e.target.value })} placeholder="למה ישמש המתקן" />
+                    )}
+                    <button
+                      type="button"
+                      onClick={() => update({ welfareSummaryStatus: report.welfareSummaryStatus === "after_repair" ? undefined : "after_repair" })}
+                      className={cn(
+                        "w-full rounded-lg border-2 py-2 px-3 text-sm font-semibold text-right transition-colors",
+                        report.welfareSummaryStatus === "after_repair"
+                          ? "border-destructive bg-destructive/10 text-destructive ring-2 ring-destructive/30"
+                          : "border-border bg-background text-muted-foreground hover:border-destructive/50"
+                      )}
+                    >
+                      ניתן יהיה להמשיך שימוש במתקן לאחר תיקון הליקויים הבאים:
+                    </button>
+                    {report.welfareSummaryStatus === "after_repair" && (
+                      <div className="space-y-2">
+                        {(["א", "ב", "ג"] as const).map((letter, idx) => (
+                          <div key={letter} className="flex items-center gap-2">
+                            <span className="text-xs font-bold text-muted-foreground w-4">{letter}.</span>
+                            <Input
+                              value={report.welfareRepairList?.[idx] || ""}
+                              onChange={(e) => {
+                                const cur: [string, string, string] = report.welfareRepairList
+                                  ? [...report.welfareRepairList] as [string, string, string]
+                                  : ["", "", ""];
+                                cur[idx] = e.target.value;
+                                update({ welfareRepairList: cur });
+                              }}
+                              className="h-9"
+                            />
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* פרטי עורך המבדק */}
+                <div dir="rtl" className="rounded-2xl border-2 border-primary/20 bg-card p-4 space-y-3">
+                  <h3 className="font-bold text-sm text-primary">פרטי עורך המבדק</h3>
+                  <div className="grid grid-cols-2 gap-2">
+                    <Field label="שם משפחה">
+                      <Input value={report.welfareInspectorLastName || ""} onChange={(e) => update({ welfareInspectorLastName: e.target.value })} />
+                    </Field>
+                    <Field label="שם פרטי">
+                      <Input value={report.welfareInspectorFirstName || ""} onChange={(e) => update({ welfareInspectorFirstName: e.target.value })} />
+                    </Field>
+                  </div>
+                  <Field label="מספר תעודת זהות">
+                    <Input value={report.welfareInspectorId || ""} onChange={(e) => update({ welfareInspectorId: e.target.value })} dir="ltr" />
+                  </Field>
+                  <Field label="הגדרת הכשירות">
+                    <div className="flex flex-col gap-2">
+                      {([
+                        { v: "safety_engineer", label: "מהנדס בטיחות רשום" },
+                        { v: "safety_officer", label: "ממונה על הבטיחות (יש לצרף אישור כשירות בתוקף)" },
+                        { v: "school_safety_inspector", label: "עורך מבדקי בטיחות של מוסדות חינוך" },
+                      ] as const).map(({ v, label }) => (
+                        <button
+                          key={v}
+                          type="button"
+                          onClick={() => update({ welfareQualification: report.welfareQualification === v ? undefined : v })}
+                          className={cn(
+                            "rounded-lg border py-2 px-3 text-xs font-semibold text-right transition-colors",
+                            report.welfareQualification === v
+                              ? "bg-primary text-primary-foreground border-primary"
+                              : "bg-background text-muted-foreground border-border hover:border-primary/50"
+                          )}
+                        >
+                          {label}
+                        </button>
+                      ))}
+                    </div>
+                  </Field>
+                  <Field label="מספר תעודת רישום">
+                    <Input value={report.welfareRegistrationNum || ""} onChange={(e) => update({ welfareRegistrationNum: e.target.value })} />
+                  </Field>
+                  <div className="grid grid-cols-2 gap-2">
+                    <Field label="טלפון נייד">
+                      <Input value={report.welfareInspectorPhone || ""} onChange={(e) => update({ welfareInspectorPhone: e.target.value })} dir="ltr" />
+                    </Field>
+                    <Field label="דוא״ל">
+                      <Input value={report.welfareInspectorEmail || ""} onChange={(e) => update({ welfareInspectorEmail: e.target.value })} dir="ltr" />
+                    </Field>
+                  </div>
+                  <Field label="שנות ותק">
+                    <Input value={report.welfareInspectorYearsExperience || ""} onChange={(e) => update({ welfareInspectorYearsExperience: e.target.value })} placeholder='למשל: 6' />
+                  </Field>
+                </div>
+              </>
             );
           })()}
 

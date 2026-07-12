@@ -120,7 +120,7 @@ export function newReport(
         ...(i.standardPart && { standardPart: i.standardPart }),
         ...(i.clause && { clause: i.clause }),
       }))
-    : surveyType === "education_safety"
+    : surveyType === "education_safety" || surveyType === "welfare_inspection"
     ? [{
         id: uuid(),
         title: "",

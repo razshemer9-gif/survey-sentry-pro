@@ -130,6 +130,269 @@ export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, sett
     );
   };
 
+  // ── Welfare inspection: government form layout ────────────────────────────
+  if (report.surveyType === "welfare_inspection") {
+    const headerColor = "#0891b2";
+    const inspectorFull = `${report.welfareInspectorFirstName ?? ""} ${report.welfareInspectorLastName ?? ""}`.trim();
+
+    const APPROVAL_ROWS = [
+      { title: "מוכנות אמצעי כיבוי למניעת דליקות, ואמצעי מילוט", authority: "הרשות לכיבוי אש", refresh: 'ע"פ דרישת רשות כבאות והצלה' },
+      { title: "תעודת גמר (טופס 4) של כל המבנים באתר או אישור של הרשות המקומית", authority: "רשות מקומית", refresh: "חד פעמי" },
+      { title: "מתקני משחקים, ספורט וכו' (במידה וקיימים)", authority: 'מעבדה מוסמכת / בודק שנתי לתקן 1498', refresh: "12 חודשים" },
+      { title: "בדיקת יציבות מבנים", authority: "מהנדס מבנים (קונסטרוקטור) עם רישיון בתוקף", refresh: "60 חודשים" },
+    ];
+
+    const purposeLabel = (() => {
+      if (report.welfarePurposeType === "outside_home") return "מסגרת חוץ ביתית";
+      if (report.welfarePurposeType === "daily") return "מסגרת יומית";
+      if (report.welfarePurposeType === "other") return report.welfarePurposeOther || "אחר";
+      return "";
+    })();
+
+    const qualLabel = (() => {
+      if (report.welfareQualification === "safety_engineer") return "מהנדס בטיחות רשום";
+      if (report.welfareQualification === "safety_officer") return "ממונה על הבטיחות";
+      if (report.welfareQualification === "school_safety_inspector") return "עורך מבדקי בטיחות של מוסדות חינוך";
+      return "";
+    })();
+
+    const Line = ({ label, value }: { label: string; value?: string }) => (
+      <div style={{ display: "flex", alignItems: "flex-end", gap: 6, marginBottom: 10, fontSize: 13, direction: "rtl" }}>
+        <span style={{ fontWeight: 700, flexShrink: 0 }}>{label}:</span>
+        <span style={{ flex: 1, borderBottom: "1px solid #94a3b8", paddingBottom: 2, minHeight: 18 }}>{value || ""}</span>
+      </div>
+    );
+    const CheckBox = ({ checked }: { checked: boolean }) => (
+      <span style={{ display: "inline-block", width: 14, height: 14, border: "1px solid #0f172a", textAlign: "center", lineHeight: "12px", fontSize: 11, fontWeight: 700, flexShrink: 0, marginTop: 2 }}>
+        {checked ? "✓" : ""}
+      </span>
+    );
+
+    return (
+      <div ref={ref} dir="rtl" lang="he"
+        style={{ width: "794px", background: "#ffffff", color: "#0f172a", fontFamily: "Heebo, Assistant, sans-serif" }}>
+
+        {/* Page 1: Header + כללי */}
+        <section style={{ padding: "40px 56px", background: "#fff" }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 30 }}>
+            <div style={{ width: 60, height: 60, background: headerColor, borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontWeight: 800, fontSize: 22 }}>♥</div>
+            <div style={{ textAlign: "right" }}>
+              <div style={{ fontSize: 15, fontWeight: 800, color: headerColor }}>משרד העבודה הרווחה</div>
+              <div style={{ fontSize: 15, fontWeight: 800, color: headerColor }}>והשירותים החברתיים</div>
+              <div style={{ fontSize: 11, color: "#64748b", marginTop: 3 }}>חוסן חברתי לישראל</div>
+            </div>
+          </div>
+
+          <h1 style={{ textAlign: "center", fontSize: 22, fontWeight: 800, margin: "20px 0 30px", color: "#0f172a" }}>
+            נספח בדיקת עמידה בדרישות בטיחות
+          </h1>
+
+          <h2 style={{ fontSize: 16, fontWeight: 800, textDecoration: "underline", marginBottom: 12, textAlign: "right" }}>כללי</h2>
+          <div style={{ fontSize: 12, lineHeight: 1.7, marginBottom: 18 }}>
+            <div style={{ fontWeight: 700, marginBottom: 6 }}>קריטריונים בעלי סמכות לביצוע המבדק</div>
+            <div>1. המסמך ימולא ויאושר על-ידי בודק שהוא אחד מאלה:</div>
+            <ul style={{ paddingRight: 24, margin: "6px 0" }}>
+              <li>מהנדס בטיחות רשום בפנקס המהנדסים והאדריכלים במדור בטיחות אש ומניעתה או במדור בטיחות כללית.</li>
+              <li>ממונה על בטיחות המוסמך ע"י משרד הכלכלה עם ותק של 5 שנים לפחות מיום קבלת ההסמכה וביצע לפחות 50 מבדקי בטיחות במסגרות ציבוריות.</li>
+              <li>עורך מבדקי בטיחות של מוסדות חינוך עם ותק של 5 שנים לפחות מיום קבלת ההסמכה וביצע לפחות 50 מבדקי בטיחות במסגרות ציבוריות.</li>
+            </ul>
+            <div>2. הנספח ייחתם הן על ידי הבודק עצמו והן על ידי מורשה חתימה מטעם מפעיל המסגרת.</div>
+          </div>
+
+          <Line label="בתאריך" value={formatHebrewDate(report.surveyDate)} />
+          <Line label="קיימתי מבדק בטיחות במסגרת המיועדת לשמש כ (לפרט את סוג המסגרת)" value={report.welfareFrameworkPurpose} />
+          <Line label="סמל מסגרת" value={report.welfareFrameworkSymbol} />
+          <Line label="שאלה פרטית" value={report.welfareInquiry} />
+          <Line label="כתובת (עיר, רחוב, מספר)" value={report.address} />
+          <Line label="בעלות הנכס" value={report.welfarePropertyOwner} />
+          <div style={{ display: "flex", gap: 12 }}>
+            <div style={{ flex: 1 }}><Line label="פרטי המנהל" value={report.welfareManagerName} /></div>
+            <div style={{ width: 200 }}><Line label="נייד" value={report.welfareManagerPhone} /></div>
+          </div>
+          <Line label="ייעוד המסגרת (מסגרת חוץ ביתית/מסגרת יומית/אחר)" value={purposeLabel} />
+        </section>
+
+        {/* Page 2: ממצאים / א. אישורים */}
+        <section data-pdf-page-break="" style={{ padding: "40px 56px", background: "#fff" }}>
+          <h2 style={{ fontSize: 16, fontWeight: 800, textDecoration: "underline", marginBottom: 8 }}>ממצאים</h2>
+          <div style={{ fontSize: 13, marginBottom: 12 }}>במבדק עלו הממצאים הבאים:</div>
+
+          <h3 style={{ fontSize: 15, fontWeight: 800, textDecoration: "underline", marginTop: 12, marginBottom: 8 }}>א. אישורים</h3>
+          <div style={{ fontSize: 12, marginBottom: 10 }}>על הבודק למלא את הטבלה בהתאם לאישורים שהוצגו בפניו:</div>
+
+          <div style={{ direction: "rtl", border: "1px solid #0f172a", fontSize: 11 }}>
+            <div style={{ display: "grid", gridTemplateColumns: "40px 1.6fr 1.4fr 1fr 90px 90px 90px", background: "#e0f2fe", fontWeight: 700 }}>
+              <div style={{ padding: "6px 4px", borderLeft: "1px solid #0f172a", textAlign: "center" }}>מספר</div>
+              <div style={{ padding: "6px 4px", borderLeft: "1px solid #0f172a" }}>נושא האישור</div>
+              <div style={{ padding: "6px 4px", borderLeft: "1px solid #0f172a" }}>הגורם המאשר</div>
+              <div style={{ padding: "6px 4px", borderLeft: "1px solid #0f172a" }}>יש לחדש כל</div>
+              <div style={{ padding: "6px 4px", borderLeft: "1px solid #0f172a", textAlign: "center" }}>הוצג / לא הוצג / לא רלוונטי</div>
+              <div style={{ padding: "6px 4px", borderLeft: "1px solid #0f172a", textAlign: "center" }}>תאריך מתן האישור</div>
+              <div style={{ padding: "6px 4px", textAlign: "center" }}>בתוקף עד</div>
+            </div>
+            {APPROVAL_ROWS.map((row, i) => {
+              const a = report.welfareApprovals?.[i] ?? {};
+              const presentedLabel = a.presented === "yes" ? "הוצג" : a.presented === "no" ? "לא הוצג" : a.presented === "na" ? "לא רלוונטי" : "";
+              return (
+                <div key={i} style={{ display: "grid", gridTemplateColumns: "40px 1.6fr 1.4fr 1fr 90px 90px 90px", borderTop: "1px solid #0f172a" }}>
+                  <div style={{ padding: "8px 4px", borderLeft: "1px solid #0f172a", textAlign: "center", fontWeight: 700 }}>{i + 1}</div>
+                  <div style={{ padding: "8px 4px", borderLeft: "1px solid #0f172a" }}>{row.title}</div>
+                  <div style={{ padding: "8px 4px", borderLeft: "1px solid #0f172a" }}>{row.authority}</div>
+                  <div style={{ padding: "8px 4px", borderLeft: "1px solid #0f172a" }}>{row.refresh}</div>
+                  <div style={{ padding: "8px 4px", borderLeft: "1px solid #0f172a", textAlign: "center" }}>{presentedLabel}</div>
+                  <div style={{ padding: "8px 4px", borderLeft: "1px solid #0f172a", textAlign: "center" }}>{a.dateGiven ? formatHebrewDate(a.dateGiven) : ""}</div>
+                  <div style={{ padding: "8px 4px", textAlign: "center" }}>{a.validUntil ? formatHebrewDate(a.validUntil) : ""}</div>
+                </div>
+              );
+            })}
+          </div>
+        </section>
+
+        {/* Page 3: ב. פערים + ג. דרישות */}
+        <section data-pdf-page-break="" style={{ padding: "40px 56px", background: "#fff" }}>
+          <h3 style={{ fontSize: 15, fontWeight: 800, textDecoration: "underline", marginBottom: 8 }}>ב. פערים:</h3>
+          <div style={{ fontSize: 12, marginBottom: 8 }}>(סמן ב- ✓ את המשבצת המתאימה)</div>
+          <div style={{ display: "flex", alignItems: "flex-start", gap: 8, marginBottom: 6, fontSize: 13 }}>
+            <CheckBox checked={report.welfareDefectsStatus === "none"} />
+            <span>לא התגלו פערים ביחס לדרישות הבטיחות.</span>
+          </div>
+          <div style={{ display: "flex", alignItems: "flex-start", gap: 8, marginBottom: 16, fontSize: 13 }}>
+            <CheckBox checked={report.welfareDefectsStatus === "found"} />
+            <span>התגלו פערים (ראה בטבלה להלן) ביחס לדרישות הבטיחות.</span>
+          </div>
+
+          <h3 style={{ fontSize: 15, fontWeight: 800, textDecoration: "underline", marginTop: 20, marginBottom: 8 }}>ג. דרישות לביצוע ביחס לפערים שהתגלו</h3>
+          <div style={{ fontSize: 12, marginBottom: 10 }}>פירוט הפעולות שיינקטו (להלן-פעולות מתקנות) לתיקון הפערים ביחס לדרישות הבטיחות, שמפעיל המסגרת התחייב ליישמן בלוחות הזמנים המפורטים בטבלה הבאה:</div>
+
+          <div style={{ direction: "rtl", border: "1px solid #0f172a", fontSize: 11 }}>
+            <div style={{ display: "grid", gridTemplateColumns: "40px 1fr 1fr 1fr 110px", background: "#e0f2fe", fontWeight: 700 }}>
+              <div style={{ padding: "6px 4px", borderLeft: "1px solid #0f172a", textAlign: "center" }}>מספר</div>
+              <div style={{ padding: "6px 4px", borderLeft: "1px solid #0f172a" }}>הדרישה</div>
+              <div style={{ padding: "6px 4px", borderLeft: "1px solid #0f172a" }}>מהות הפער</div>
+              <div style={{ padding: "6px 4px", borderLeft: "1px solid #0f172a" }}>הפעולה המתקנת</div>
+              <div style={{ padding: "6px 4px", textAlign: "center" }}>מועדי סיום ליישום</div>
+            </div>
+            {report.items.map((item, i) => (
+              <div key={item.id} data-pdf-no-break="" style={{ display: "grid", gridTemplateColumns: "40px 1fr 1fr 1fr 110px", borderTop: "1px solid #0f172a" }}>
+                <div style={{ padding: "8px 4px", borderLeft: "1px solid #0f172a", textAlign: "center", fontWeight: 700 }}>{i + 1}</div>
+                <div style={{ padding: "8px 4px", borderLeft: "1px solid #0f172a" }}>{item.title}</div>
+                <div style={{ padding: "8px 4px", borderLeft: "1px solid #0f172a" }}>{item.notes || item.fieldNotes || ""}</div>
+                <div style={{ padding: "8px 4px", borderLeft: "1px solid #0f172a" }}>{item.suggestedCorrection || ""}</div>
+                <div style={{ padding: "8px 4px", textAlign: "center" }}>{item.clause || ""}</div>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        {/* Page 4: הצהרת מורשה חתימה + סיכום + פרטי מבדק */}
+        <section data-pdf-page-break="" style={{ padding: "40px 56px", background: "#fff" }}>
+          <div style={{ display: "flex", alignItems: "baseline", gap: 8, marginBottom: 12 }}>
+            <span style={{ fontWeight: 700, fontSize: 14 }}>אני</span>
+            <span style={{ flex: 1, borderBottom: "1px solid #0f172a", paddingBottom: 2, minHeight: 20, fontSize: 14 }}>{report.welfareSignatoryName || ""}</span>
+          </div>
+          <div style={{ fontSize: 12, marginBottom: 12 }}>(מורשה חתימה מטעם מפעיל המסגרת), מצהיר ומתחייב בזאת כי:</div>
+          <ol style={{ paddingRight: 22, fontSize: 12, lineHeight: 1.75, margin: "8px 0" }}>
+            <li>לא התווספו מבנים או מתקנים מאז קבלת האישור ליציבות מבנים (שורה 4 בטבלת האישורים).</li>
+            <li>כל האישורים שניתנו על-ידי הרשויות למיניהם (רשות כבאות, רשות מקומית, מעבדה מוסמכת וכו') הינם בתוקף ולא נשללו על-ידי גורם כלשהו.</li>
+            <li>כל הליקויים שנמצאו במסגרת בדיקת בטיחות זו, יתוקנו במסגרת לוח הזמנים שנקבע לעיל.</li>
+            <li>באחריות הספק להזמין את הבודק שביצע את הבדיקה (ככל שניתן) לבצע בדיקה חוזרת לאחר המועד האחרון להשלמת הפערים ולאשר את תיקון הפערים ותקינות / אי תקינות המסגרת.</li>
+            <li>באחריות הספק להמציא אישור בודק בטיחות לאחר תיקון כל הליקויים שהתגלו במסמך זה.</li>
+            <li>ידוע לי כי נספח חתום ותקין זה הינו תנאי לחידוש הסכם / חוזה — תנאי לאישור המסגרת על ידי משרד העבודה, הרווחה והשירותים החברתיים.</li>
+          </ol>
+          <div style={{ marginTop: 30, textAlign: "center", fontSize: 12 }}>שם וחתימת מורשה החתימה מטעם המסגרת</div>
+          <div style={{ margin: "6px auto 24px", width: 260, borderBottom: "1px solid #0f172a", height: 30, textAlign: "center", fontSize: 14, paddingTop: 4 }}>{report.welfareSignatoryName || ""}</div>
+
+          <h3 style={{ fontSize: 15, fontWeight: 800, textDecoration: "underline", marginTop: 20, marginBottom: 10 }}>סיכום</h3>
+          <div style={{ fontSize: 12, marginBottom: 10 }}>1. לאור ממצאי המבדק, הערכת הסיכונים והתכנית לשיפורי בטיחות, הנני קובע כי מהבחינה הבטיחותית (סמן ✓ במשבצת המתאימה):</div>
+          <div style={{ display: "flex", alignItems: "flex-start", gap: 8, marginBottom: 8, fontSize: 13 }}>
+            <CheckBox checked={report.welfareSummaryStatus === "no_impediment"} />
+            <span style={{ display: "flex", alignItems: "baseline", gap: 6, flex: 1 }}>
+              <span>אין מניעה כי המתקן שנבדק ישמש כ</span>
+              <span style={{ flex: 1, borderBottom: "1px solid #94a3b8", minHeight: 16, paddingBottom: 1 }}>{report.welfareSummaryUsage || ""}</span>
+            </span>
+          </div>
+          <div style={{ display: "flex", alignItems: "flex-start", gap: 8, marginBottom: 8, fontSize: 13 }}>
+            <CheckBox checked={report.welfareSummaryStatus === "after_repair"} />
+            <span>ניתן יהיה להמשיך לעשות שימוש במתקן לאחר תיקון הליקויים הבאים:</span>
+          </div>
+          {(["א", "ב", "ג"] as const).map((letter, idx) => (
+            <div key={letter} style={{ display: "flex", alignItems: "baseline", gap: 6, marginBottom: 6, marginRight: 22, fontSize: 12 }}>
+              <span style={{ fontWeight: 700 }}>{letter}.</span>
+              <span style={{ flex: 1, borderBottom: "1px solid #94a3b8", minHeight: 16, paddingBottom: 1 }}>{report.welfareRepairList?.[idx] || ""}</span>
+            </div>
+          ))}
+
+          <h3 style={{ fontSize: 15, fontWeight: 800, textDecoration: "underline", marginTop: 24, marginBottom: 10 }}>פרטי עורך המבדק וחתימתו</h3>
+          <div style={{ display: "flex", gap: 16, marginBottom: 12 }}>
+            <div style={{ flex: 1 }}><Line label="שם משפחה" value={report.welfareInspectorLastName} /></div>
+            <div style={{ flex: 1 }}><Line label="שם פרטי" value={report.welfareInspectorFirstName} /></div>
+          </div>
+          <Line label="מספר תעודת זהות" value={report.welfareInspectorId} />
+        </section>
+
+        {/* Page 5: הגדרת הכשירות */}
+        <section data-pdf-page-break="" style={{ padding: "40px 56px", background: "#fff" }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 20 }}>
+            <div style={{ width: 60, height: 60, background: headerColor, borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontWeight: 800, fontSize: 22 }}>♥</div>
+            <div style={{ textAlign: "right" }}>
+              <div style={{ fontSize: 15, fontWeight: 800, color: headerColor }}>משרד העבודה הרווחה</div>
+              <div style={{ fontSize: 15, fontWeight: 800, color: headerColor }}>והשירותים החברתיים</div>
+            </div>
+          </div>
+
+          <h3 style={{ fontSize: 14, fontWeight: 800, marginTop: 20, marginBottom: 10 }}>הגדרת הכשירות (סמן ✓ במשבצת המתאימה וצרף העתק של התעודה):</h3>
+          {[
+            { v: "safety_engineer", label: "מהנדס בטיחות רשום" },
+            { v: "safety_officer", label: "ממונה על הבטיחות (יש לצרף אישור כשירות בתוקף)" },
+            { v: "school_safety_inspector", label: "עורך מבדקי בטיחות של מוסדות חינוך" },
+          ].map(({ v, label }) => (
+            <div key={v} style={{ display: "flex", alignItems: "flex-start", gap: 8, marginBottom: 6, fontSize: 13 }}>
+              <CheckBox checked={report.welfareQualification === v} />
+              <span>{label}</span>
+            </div>
+          ))}
+
+          <div style={{ marginTop: 20, display: "flex", gap: 16 }}>
+            <div style={{ flex: 1 }}><Line label="מספר תעודת הרישום" value={report.welfareRegistrationNum} /></div>
+            <div style={{ flex: 1 }}><Line label="טלפון נייד" value={report.welfareInspectorPhone} /></div>
+          </div>
+          <Line label="כתובת דואר אלקטרוני" value={report.welfareInspectorEmail} />
+
+          <div style={{ marginTop: 20 }}>
+            <Line label="אני" value={inspectorFull} />
+            <Line label="ת.ז." value={report.welfareInspectorId} />
+            <div style={{ fontSize: 12, lineHeight: 1.7, marginTop: 4 }}>
+              מצהיר בזאת כי הנני בעל/ת וותק של <span style={{ display: "inline-block", minWidth: 60, borderBottom: "1px solid #94a3b8", textAlign: "center", padding: "0 6px" }}>{report.welfareInspectorYearsExperience || ""}</span> שנים מיום קבלת הסמכה בתחום הבטיחות וביצעתי לפחות 50 מבדקי בטיחות במסגרות ציבוריות.
+            </div>
+          </div>
+
+          <div style={{ display: "flex", justifyContent: "flex-end", gap: 30, marginTop: 40 }}>
+            <div>
+              <div style={{ fontSize: 12, marginBottom: 4 }}>תאריך:</div>
+              <div style={{ width: 180, borderBottom: "1px solid #0f172a", height: 24, textAlign: "center", fontSize: 13, paddingTop: 4 }}>{formatHebrewDate(report.surveyDate)}</div>
+            </div>
+            <div>
+              <div style={{ fontSize: 12, marginBottom: 4 }}>חתימת עורך המבדק:</div>
+              {report.signatureDataUrl ? (
+                <img src={report.signatureDataUrl} alt="חתימה" crossOrigin="anonymous"
+                  style={{ maxHeight: 40, maxWidth: 180, height: "auto", display: "block", borderBottom: "1px solid #0f172a" }} />
+              ) : (
+                <div style={{ width: 180, borderBottom: "1px solid #0f172a", height: 24 }} />
+              )}
+            </div>
+          </div>
+
+          <div style={{ marginTop: 60, textAlign: "center", fontSize: 10, color: "#64748b" }}>
+            <div style={{ fontWeight: 700, color: headerColor }}>האגף לשירותים חברתיים ואישיים | שירות ילד ונוער</div>
+            <div>www.molsa.gov.il | www.gov.il — אתר ממשל זמין</div>
+            <div>רחוב ירמיהו 39, מגדלי הבירה, ירושלים | טלפון: 02-5085601, פקס: 02-5085947</div>
+          </div>
+        </section>
+
+      </div>
+    );
+  }
+
   // ── Education Safety: bespoke table layout ────────────────────────────────
   if (report.surveyType === "education_safety") {
     const inspectorName = fmt.professionalName || settings.consultantName;
