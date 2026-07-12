@@ -298,7 +298,7 @@ export default function ReportEditor() {
                     <Field label="סמל מסגרת">
                       <Input value={report.welfareFrameworkSymbol || ""} onChange={(e) => update({ welfareFrameworkSymbol: e.target.value })} />
                     </Field>
-                    <Field label="שאלה פרטית">
+                    <Field label="שאלה פרטיה">
                       <Input value={report.welfareInquiry || ""} onChange={(e) => update({ welfareInquiry: e.target.value })} />
                     </Field>
                     <Field label="כתובת (עיר, רחוב, מספר)">

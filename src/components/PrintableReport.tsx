@@ -202,7 +202,7 @@ export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, sett
           <Line label="בתאריך" value={formatHebrewDate(report.surveyDate)} />
           <Line label="קיימתי מבדק בטיחות במסגרת המיועדת לשמש כ (לפרט את סוג המסגרת)" value={report.welfareFrameworkPurpose} />
           <Line label="סמל מסגרת" value={report.welfareFrameworkSymbol} />
-          <Line label="שאלה פרטית" value={report.welfareInquiry} />
+          <Line label="שאלה פרטיה" value={report.welfareInquiry} />
           <Line label="כתובת (עיר, רחוב, מספר)" value={report.address} />
           <Line label="בעלות הנכס" value={report.welfarePropertyOwner} />
           <div style={{ display: "flex", gap: 12 }}>
