@@ -699,6 +699,53 @@ export default function ReportEditor() {
             </div>
           )}
 
+          {/* Education safety — notes + approval summary (appears above the inspection table in PDF) */}
+          {report.surveyType === "education_safety" && (
+            <div dir="rtl" className="rounded-2xl border-2 border-primary/20 bg-card p-4 space-y-4">
+              <p className="text-xs text-muted-foreground">* דוח זה מתייחס לליקויים שהתגלו ביום הבדיקה בלבד.</p>
+              <div>
+                <Label className="text-sm font-bold text-primary">הערות:</Label>
+                <Textarea
+                  value={report.eduNotes || ""}
+                  onChange={(e) => update({ eduNotes: e.target.value })}
+                  rows={4}
+                  placeholder="הזן הערות שיופיעו בדוח..."
+                  className="mt-1"
+                />
+              </div>
+              <div>
+                <Label className="text-sm font-bold text-primary">סיכום:</Label>
+                <div className="mt-2 flex items-center gap-3">
+                  <span className="text-sm font-semibold">הריני</span>
+                  <button
+                    type="button"
+                    onClick={() => update({ eduApprovalStatus: report.eduApprovalStatus === "approve" ? undefined : "approve" })}
+                    className={cn(
+                      "rounded-lg border-2 py-1.5 px-4 text-sm font-bold transition-colors",
+                      report.eduApprovalStatus === "approve"
+                        ? "border-success bg-success/15 text-success ring-2 ring-success/40"
+                        : "border-border bg-background text-muted-foreground hover:border-success/50"
+                    )}
+                  >
+                    מאשר
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => update({ eduApprovalStatus: report.eduApprovalStatus === "reject" ? undefined : "reject" })}
+                    className={cn(
+                      "rounded-lg border-2 py-1.5 px-4 text-sm font-bold transition-colors",
+                      report.eduApprovalStatus === "reject"
+                        ? "border-destructive bg-destructive/10 text-destructive ring-2 ring-destructive/30"
+                        : "border-border bg-background text-muted-foreground hover:border-destructive/50"
+                    )}
+                  >
+                    איני מאשר
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* Education safety inspection table — only rows the user checks appear in PDF */}
           {report.surveyType === "education_safety" && (() => {
             const selected = report.eduInspectionRows ?? [];
