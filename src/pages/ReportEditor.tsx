@@ -734,31 +734,30 @@ export default function ReportEditor() {
               </div>
               <div>
                 <Label className="text-sm font-bold text-primary">סיכום:</Label>
-                <div className="mt-2 flex items-center gap-3">
-                  <span className="text-sm font-semibold">הריני</span>
+                <div className="mt-2 flex flex-col gap-2">
                   <button
                     type="button"
                     onClick={() => update({ eduApprovalStatus: report.eduApprovalStatus === "approve" ? undefined : "approve" })}
                     className={cn(
-                      "rounded-lg border-2 py-1.5 px-4 text-sm font-bold transition-colors",
+                      "rounded-lg border-2 py-2.5 px-3 text-xs font-semibold text-right leading-relaxed transition-colors whitespace-pre-line",
                       report.eduApprovalStatus === "approve"
                         ? "border-success bg-success/15 text-success ring-2 ring-success/40"
                         : "border-border bg-background text-muted-foreground hover:border-success/50"
                     )}
                   >
-                    מאשר
+                    {"ע״פ המבדק והערכת הסיכונים אין במוסד מפגעים בקדימות 0 ו-1 המהווים סכנה ברורה ומיידית לפגיעה באדם במגע מקרי או לא מכוון.\nפערים שנתגלו בקדימות 2, יוסרו באחריות הרשות/בעלות במסגרת תכנית שנתית/רב שנתית."}
                   </button>
                   <button
                     type="button"
                     onClick={() => update({ eduApprovalStatus: report.eduApprovalStatus === "reject" ? undefined : "reject" })}
                     className={cn(
-                      "rounded-lg border-2 py-1.5 px-4 text-sm font-bold transition-colors",
+                      "rounded-lg border-2 py-2.5 px-3 text-xs font-semibold text-right leading-relaxed transition-colors whitespace-pre-line",
                       report.eduApprovalStatus === "reject"
                         ? "border-destructive bg-destructive/10 text-destructive ring-2 ring-destructive/30"
                         : "border-border bg-background text-muted-foreground hover:border-destructive/50"
                     )}
                   >
-                    איני מאשר
+                    {"ע״פ המבדק והערכת הסיכונים יש במוסד מפגעים בקדימות 0 ו-1 המהווים סכנה ברורה ומיידית לפגיעה באדם במגע מקרי או לא מכוון.\nפערים שנתגלו בקדימות 2, יוסרו באחריות הרשות/בעלות במסגרת תכנית שנתית/רב שנתית."}
                   </button>
                 </div>
               </div>

@@ -716,22 +716,13 @@ export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, sett
             )}
             {report.eduApprovalStatus && (
               <div style={{ marginBottom: 8 }}>
-                <div style={{ fontSize: 14, fontWeight: 800, color: "#1e3a8a", textDecoration: "underline", marginBottom: 6 }}>סיכום:</div>
-                <div style={{ display: "flex", alignItems: "center", gap: 14, fontSize: 13, color: "#0f172a" }}>
-                  <span>הריני</span>
-                  <span style={{ display: "flex", alignItems: "center", gap: 4 }}>
-                    <span style={{ display: "inline-block", width: 14, height: 14, border: "1px solid #0f172a", textAlign: "center", lineHeight: "12px", fontSize: 12, fontWeight: 700 }}>
-                      {report.eduApprovalStatus === "approve" ? "✓" : ""}
-                    </span>
-                    <span>מאשר</span>
+                <div style={{ fontSize: 14, fontWeight: 800, color: "#1e3a8a", textDecoration: "underline", marginBottom: 8 }}>סיכום:</div>
+                <div style={{ display: "flex", alignItems: "flex-start", gap: 8, fontSize: 13, lineHeight: 1.7, color: "#0f172a", whiteSpace: "pre-line" }}>
+                  <span style={{ display: "inline-block", width: 14, height: 14, border: "1px solid #0f172a", textAlign: "center", lineHeight: "12px", fontSize: 12, fontWeight: 700, flexShrink: 0, marginTop: 2 }}>✓</span>
+                  <span>{report.eduApprovalStatus === "approve"
+                    ? "ע״פ המבדק והערכת הסיכונים אין במוסד מפגעים בקדימות 0 ו-1 המהווים סכנה ברורה ומיידית לפגיעה באדם במגע מקרי או לא מכוון.\nפערים שנתגלו בקדימות 2, יוסרו באחריות הרשות/בעלות במסגרת תכנית שנתית/רב שנתית."
+                    : "ע״פ המבדק והערכת הסיכונים יש במוסד מפגעים בקדימות 0 ו-1 המהווים סכנה ברורה ומיידית לפגיעה באדם במגע מקרי או לא מכוון.\nפערים שנתגלו בקדימות 2, יוסרו באחריות הרשות/בעלות במסגרת תכנית שנתית/רב שנתית."}
                   </span>
-                  <span style={{ display: "flex", alignItems: "center", gap: 4 }}>
-                    <span style={{ display: "inline-block", width: 14, height: 14, border: "1px solid #0f172a", textAlign: "center", lineHeight: "12px", fontSize: 12, fontWeight: 700 }}>
-                      {report.eduApprovalStatus === "reject" ? "✓" : ""}
-                    </span>
-                    <span>איני מאשר</span>
-                  </span>
-                  <span style={{ color: "#64748b", fontSize: 12 }}>(יש לסמן את הנכון)</span>
                 </div>
               </div>
             )}
