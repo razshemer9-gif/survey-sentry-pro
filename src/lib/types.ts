@@ -1,7 +1,7 @@
 export type ComplianceStatus = "compliant" | "non_compliant" | "not_applicable" | "pending";
 
 // ── Survey types registry ──────────────────────────────────────────────────
-export type SurveyType = "accessibility" | "education_safety" | "general_safety";
+export type SurveyType = "accessibility" | "education_safety" | "general_safety" | "welfare_inspection";
 
 export interface SurveyTypeConfig {
   id: SurveyType;
@@ -36,6 +36,14 @@ export const SURVEY_TYPES: SurveyTypeConfig[] = [
     pdfTitle: "סקר בטיחות",
     filePrefix: "סקר-בטיחות",
     color: "#1e3a8a",
+  },
+  {
+    id: "welfare_inspection",
+    label: "דוח מבדק משרד הרווחה",
+    shortLabel: "רווחה",
+    pdfTitle: "נספח בדיקת עמידה בדרישות בטיחות",
+    filePrefix: "מבדק-רווחה",
+    color: "#0891b2",
   },
 ];
 
@@ -124,6 +132,33 @@ export interface SurveyReport {
   eduNotes?: string;
   // Education-safety final approval status (appears above the inspection table in PDF)
   eduApprovalStatus?: "approve" | "reject";
+  // ── Welfare inspection (משרד הרווחה) ─────────────────────────────────────
+  welfareFrameworkPurpose?: string;   // "לשמש כ __"
+  welfareFrameworkSymbol?: string;    // סמל מסגרת
+  welfareInquiry?: string;            // שאלה פרטית
+  welfarePropertyOwner?: string;      // בעלות הנכס
+  welfareManagerName?: string;        // פרטי המנהל
+  welfareManagerPhone?: string;       // נייד המנהל
+  welfarePurposeType?: "outside_home" | "daily" | "other";
+  welfarePurposeOther?: string;
+  welfareApprovals?: Array<{
+    presented?: "yes" | "no" | "na";
+    dateGiven?: string;
+    validUntil?: string;
+  }>;
+  welfareDefectsStatus?: "none" | "found";
+  welfareSummaryStatus?: "no_impediment" | "after_repair";
+  welfareSummaryUsage?: string;
+  welfareRepairList?: [string, string, string];
+  welfareSignatoryName?: string;
+  welfareInspectorFirstName?: string;
+  welfareInspectorLastName?: string;
+  welfareInspectorId?: string;
+  welfareQualification?: "safety_engineer" | "safety_officer" | "school_safety_inspector";
+  welfareRegistrationNum?: string;
+  welfareInspectorPhone?: string;
+  welfareInspectorEmail?: string;
+  welfareInspectorYearsExperience?: string;
 }
 
 export interface ReferencePhotoEntry {
