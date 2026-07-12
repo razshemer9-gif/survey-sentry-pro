@@ -120,6 +120,14 @@ export function newReport(
         ...(i.standardPart && { standardPart: i.standardPart }),
         ...(i.clause && { clause: i.clause }),
       }))
+    : surveyType === "education_safety"
+    ? [{
+        id: uuid(),
+        title: "",
+        status: "non_compliant" as const,
+        notes: "",
+        estimatedCost: 0,
+      }]
     : DEFAULT_CHECKLIST.map((i) => ({
         id: uuid(),
         title: i.title,
