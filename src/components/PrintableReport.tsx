@@ -361,19 +361,21 @@ export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, sett
             <div style={{ flex: 1 }}><Line label="שם פרטי" value={report.welfareInspectorFirstName} /></div>
           </div>
           <Line label="מספר תעודת זהות" value={report.welfareInspectorId} />
-        </section>
 
-        {/* Page 5: הגדרת הכשירות */}
-        <section data-pdf-page-break="" style={{ padding: "24px 56px", background: "#fff" }}>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 20 }}>
+          {/* Ministry logo + big header block — directly under פרטי עורך המבדק */}
+          <div data-pdf-no-break="" style={{ marginTop: 40, display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
             <div style={{ width: 60, height: 60, background: headerColor, borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontWeight: 800, fontSize: 22 }}>♥</div>
             <div style={{ textAlign: "right" }}>
               <div style={{ fontSize: 15, fontWeight: 800, color: headerColor }}>משרד העבודה הרווחה</div>
               <div style={{ fontSize: 15, fontWeight: 800, color: headerColor }}>והשירותים החברתיים</div>
+              <div style={{ fontSize: 11, color: "#64748b", marginTop: 3 }}>חוסן חברתי לישראל</div>
             </div>
           </div>
+        </section>
 
-          <h3 style={{ fontSize: 14, fontWeight: 800, marginTop: 20, marginBottom: 10 }}>הגדרת הכשירות (סמן ✓ במשבצת המתאימה וצרף העתק של התעודה):</h3>
+        {/* Page 5: הגדרת הכשירות */}
+        <section data-pdf-page-break="" style={{ padding: "24px 56px", background: "#fff" }}>
+          <h3 style={{ fontSize: 14, fontWeight: 800, marginTop: 4, marginBottom: 10 }}>הגדרת הכשירות (סמן ✓ במשבצת המתאימה וצרף העתק של התעודה):</h3>
           {[
             { v: "safety_engineer", label: "מהנדס בטיחות רשום" },
             { v: "safety_officer", label: "ממונה על הבטיחות (יש לצרף אישור כשירות בתוקף)" },
