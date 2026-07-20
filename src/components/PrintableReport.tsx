@@ -296,7 +296,7 @@ export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, sett
               <div style={{ padding: "6px 4px", borderLeft: "1px solid #0f172a" }}>הדרישה</div>
               <div style={{ padding: "6px 4px", borderLeft: "1px solid #0f172a" }}>מהות הפער</div>
               <div style={{ padding: "6px 4px", borderLeft: "1px solid #0f172a" }}>הפעולה המתקנת</div>
-              <div style={{ padding: "6px 4px", textAlign: "center" }}>מועדי סיום ליישום</div>
+              <div style={{ padding: "6px 4px", textAlign: "center" }}>מועדי סיום ליישום פעולות מתקנות על פי התחייבות מפעיל המסגרת</div>
             </div>
             {report.items.map((item, i) => (
               <div key={item.id} data-pdf-no-break="" style={{ display: "grid", gridTemplateColumns: "40px 1fr 1fr 1fr 110px", borderTop: "1px solid #0f172a" }}>
