@@ -1,6 +1,7 @@
 import { ConsultantSettings, getSurveyType, SurveyReport, SurveyReportFormat } from "@/lib/types";
 import { formatCurrency, formatHebrewDate } from "@/lib/pdf";
 import { EDU_INSPECTION_TABLE } from "@/lib/edu-inspection-table";
+import { ISRAEL_STATE_EMBLEM, MOLSA_HEADER_LOGO } from "@/lib/welfare-logos";
 import React, { forwardRef } from "react";
 
 interface Props {
@@ -168,30 +169,15 @@ export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, sett
       </span>
     );
 
-    // Israeli state emblem — blue shield with menorah, as on the original footer
+    // Original state emblem image from the official form footer
     const GovEmblem = () => (
-      <div style={{ width: 42, height: 50, backgroundColor: "#eaf3fb", border: "2px solid #1b75bc", borderRadius: "3px 3px 14px 14px", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 22, lineHeight: 1, flexShrink: 0 }}>
-        🕎
-      </div>
+      <img src={ISRAEL_STATE_EMBLEM} alt="סמל המדינה" style={{ width: 41, height: 50, flexShrink: 0, display: "block" }} />
     );
 
-    // Ministry logo — two interlocking blue loops (approximation of the original knot mark)
-    const MolsaLogo = () => (
-      <div style={{ position: "relative", width: 62, height: 62, flexShrink: 0 }}>
-        <div style={{ position: "absolute", top: 3, right: 3, width: 32, height: 32, border: "9px solid #29abe2", borderRadius: 10, transform: "rotate(45deg)" }} />
-        <div style={{ position: "absolute", bottom: 3, left: 3, width: 32, height: 32, border: "9px solid #1b75bc", borderRadius: 10, transform: "rotate(45deg)" }} />
-      </div>
-    );
-
-    // Ministry header — logo on the right, text to its left, block centered (as in the original)
+    // Original ministry header block (logo + name), centered as in the form
     const MinistryHeader = () => (
-      <div style={{ display: "flex", justifyContent: "center", alignItems: "flex-start", gap: 12, marginBottom: 26, direction: "rtl" }}>
-        <MolsaLogo />
-        <div style={{ textAlign: "right" }}>
-          <div style={{ fontSize: 17, fontWeight: 800, color: "#1b75bc", lineHeight: 1.3 }}>משרד העבודה הרווחה</div>
-          <div style={{ fontSize: 17, fontWeight: 800, color: "#1b75bc", lineHeight: 1.3 }}>והשירותים החברתיים</div>
-          <div style={{ fontSize: 13, color: "#8a8f98", marginTop: 2 }}>חוסן חברתי לישראל</div>
-        </div>
+      <div style={{ display: "flex", justifyContent: "center", marginBottom: 26 }}>
+        <img src={MOLSA_HEADER_LOGO} alt="משרד העבודה הרווחה והשירותים החברתיים" style={{ width: 320, height: "auto", display: "block" }} />
       </div>
     );
 
