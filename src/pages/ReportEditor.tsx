@@ -298,7 +298,7 @@ export default function ReportEditor() {
                     <Field label="סמל מסגרת">
                       <Input value={report.welfareFrameworkSymbol || ""} onChange={(e) => update({ welfareFrameworkSymbol: e.target.value })} />
                     </Field>
-                    <Field label="שאלה פרטית">
+                    <Field label="שאלה פרטיה">
                       <Input value={report.welfareInquiry || ""} onChange={(e) => update({ welfareInquiry: e.target.value })} />
                     </Field>
                     <Field label="כתובת (עיר, רחוב, מספר)">
@@ -871,8 +871,8 @@ export default function ReportEditor() {
             };
             const APPROVAL_ROWS = [
               { title: "מוכנות אמצעי כיבוי למניעת דליקות, ואמצעי מילוט", authority: "הרשות לכיבוי אש", refresh: 'ע"פ דרישת רשות כבאות והצלה' },
-              { title: "תעודת גמר (טופס 4) של כל המבנים באתר או אישור של הרשות המקומית", authority: "רשות מקומית", refresh: "חד פעמי" },
-              { title: "מתקני משחקים, ספורט וכו' (במידה וקיימים)", authority: 'מעבדה מוסמכת / בודק שנתי לתקן 1498', refresh: "12 חודשים" },
+              { title: "תעודת גמר (טופס 4) של כל המבנים באתר או אישור של הרשות המקומית, בשטחה ממוקמת המסגרת, בדבר התאמת המבנה לייעודה של המסגרת המופעלת בו.", authority: "רשות מקומית", refresh: "חד פעמי" },
+              { title: "מתקני משחקים, ספורט וכו' (במידה וקיימים)", authority: "מעבדה מוסמכת להתקנה ותחזוקת המתקנים או בודק שנתי למתקני משחקים בעל רישיון בהתאם לתקן הישראלי 1498", refresh: "12 חודשים" },
               { title: "בדיקת יציבות מבנים", authority: "מהנדס מבנים (קונסטרוקטור) עם רישיון בתוקף", refresh: "60 חודשים" },
             ];
             return (
@@ -894,7 +894,7 @@ export default function ReportEditor() {
                         <div className="flex flex-wrap gap-2">
                           {([
                             { v: "yes", label: "הוצג אישור" },
-                            { v: "no", label: "לא הוצג" },
+                            { v: "no", label: "לא הוצג אישור" },
                             { v: "na", label: "לא רלוונטי" },
                           ] as const).map(({ v, label }) => (
                             <button

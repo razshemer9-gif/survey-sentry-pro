@@ -135,7 +135,7 @@ export interface SurveyReport {
   // ── Welfare inspection (משרד הרווחה) ─────────────────────────────────────
   welfareFrameworkPurpose?: string;   // "לשמש כ __"
   welfareFrameworkSymbol?: string;    // סמל מסגרת
-  welfareInquiry?: string;            // שאלה פרטית
+  welfareInquiry?: string;            // שאלה פרטיה
   welfarePropertyOwner?: string;      // בעלות הנכס
   welfareManagerName?: string;        // פרטי המנהל
   welfareManagerPhone?: string;       // נייד המנהל
