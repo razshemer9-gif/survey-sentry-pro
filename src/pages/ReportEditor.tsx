@@ -894,7 +894,7 @@ export default function ReportEditor() {
                         <div className="flex flex-wrap gap-2">
                           {([
                             { v: "yes", label: "הוצג אישור" },
-                            { v: "no", label: "לא הוצג" },
+                            { v: "no", label: "לא הוצג אישור" },
                             { v: "na", label: "לא רלוונטי" },
                           ] as const).map(({ v, label }) => (
                             <button

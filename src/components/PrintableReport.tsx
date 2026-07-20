@@ -233,13 +233,13 @@ export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, sett
               <div style={{ padding: "6px 4px", borderLeft: "1px solid #0f172a" }}>נושא האישור</div>
               <div style={{ padding: "6px 4px", borderLeft: "1px solid #0f172a" }}>הגורם המאשר</div>
               <div style={{ padding: "6px 4px", borderLeft: "1px solid #0f172a" }}>יש לחדש כל</div>
-              <div style={{ padding: "6px 4px", borderLeft: "1px solid #0f172a", textAlign: "center" }}>הוצג / לא הוצג / לא רלוונטי</div>
+              <div style={{ padding: "6px 4px", borderLeft: "1px solid #0f172a", textAlign: "center" }}>הוצג אישור / לא הוצג אישור / לא רלוונטי</div>
               <div style={{ padding: "6px 4px", borderLeft: "1px solid #0f172a", textAlign: "center" }}>תאריך מתן האישור</div>
               <div style={{ padding: "6px 4px", textAlign: "center" }}>בתוקף עד</div>
             </div>
             {APPROVAL_ROWS.map((row, i) => {
               const a = report.welfareApprovals?.[i] ?? {};
-              const presentedLabel = a.presented === "yes" ? "הוצג" : a.presented === "no" ? "לא הוצג" : a.presented === "na" ? "לא רלוונטי" : "";
+              const presentedLabel = a.presented === "yes" ? "הוצג אישור" : a.presented === "no" ? "לא הוצג אישור" : a.presented === "na" ? "לא רלוונטי" : "";
               return (
                 <div key={i} style={{ display: "grid", gridTemplateColumns: "40px 1.6fr 1.4fr 1fr 90px 90px 90px", borderTop: "1px solid #0f172a" }}>
                   <div style={{ padding: "8px 4px", borderLeft: "1px solid #0f172a", textAlign: "center", fontWeight: 700 }}>{i + 1}</div>
