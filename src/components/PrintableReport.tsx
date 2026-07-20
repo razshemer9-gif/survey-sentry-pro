@@ -138,8 +138,8 @@ export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, sett
     const APPROVAL_ROWS = [
       { title: "מוכנות אמצעי כיבוי למניעת דליקות, ואמצעי מילוט", authority: "הרשות לכיבוי אש", refresh: 'ע"פ דרישת רשות כבאות והצלה' },
       { title: "תעודת גמר (טופס 4) של כל המבנים באתר או אישור של הרשות המקומית, בשטחה ממוקמת המסגרת, בדבר התאמת המבנה לייעודה של המסגרת המופעלת בו.", authority: "רשות מקומית", refresh: "חד פעמי" },
-      { title: "מתקני משחקים, ספורט וכו' (במידה וקיימים)", authority: "מעבדה מוסמכת להתקנה ותחזוקת המתקנים או בודק שנתי למתקני משחקים בעל רישיון בהתאם לתקן הישראלי 1498", refresh: "12 חודשים" },
-      { title: "בדיקת יציבות מבנים", authority: "מהנדס מבנים (קונסטרוקטור) עם רישיון בתוקף", refresh: "60 חודשים" },
+      { title: "מתקני משחקים, ספורט וכו' * (במידה וקיימים)", authority: "מעבדה מוסמכת להתקנה ותחזוקת המתקנים או בודק שנתי למתקני משחקים בעל רישיון בהתאם לתקן הישראלי 1498", refresh: "12 חודשים" },
+      { title: "בדיקת יציבות מבנים **", authority: "מהנדס מבנים (קונסטרוקטור) עם רישיון בתוקף", refresh: "60 חודשים" },
     ];
 
     const purposeLabel = (() => {
@@ -252,6 +252,25 @@ export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, sett
                 </div>
               );
             })}
+          </div>
+
+          {/* Footnotes referencing rows 3 and 4 */}
+          <div style={{ marginTop: 14, fontSize: 11, lineHeight: 1.7, direction: "rtl" }}>
+            <div style={{ display: "flex", gap: 6 }}>
+              <span style={{ fontWeight: 700 }}>*</span>
+              <span>לרבות מתקני משחקים, מתקני ספורט, וילונות חלוקה באולמות, מתקני כושר בחצר, מגרשים, חדרים ואולמות.</span>
+            </div>
+            <div style={{ display: "flex", gap: 6, marginTop: 4 }}>
+              <span style={{ fontWeight: 700 }}>**</span>
+              <span>כל סוגי המבנים לרבות מבנים יבילים, תקרות תלויות, עמודי תאורה, יחידות מיזוג תלויות, מערכות סולאריות 'סככות הצללה.</span>
+            </div>
+          </div>
+
+          {/* Ministry footer */}
+          <div style={{ marginTop: 24, paddingTop: 12, borderTop: "1px solid #cbd5e1", textAlign: "center", fontSize: 10, color: "#334155", direction: "rtl" }}>
+            <div style={{ fontWeight: 700, color: "#0891b2" }}>האגף לשירותים חברתיים ואישיים | שירות ילד ונוער</div>
+            <div>www.molsa.gov.il | www.gov.il — אתר ממשל זמין</div>
+            <div>רחוב ירמיהו 39, מגדלי הבירה, ירושלים | טלפון: 02-5085601, פקס: 02-5085947</div>
           </div>
         </section>
 
