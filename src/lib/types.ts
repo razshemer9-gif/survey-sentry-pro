@@ -1,7 +1,7 @@
 export type ComplianceStatus = "compliant" | "non_compliant" | "not_applicable" | "pending";
 
 // ── Survey types registry ──────────────────────────────────────────────────
-export type SurveyType = "accessibility" | "education_safety" | "general_safety" | "welfare_inspection";
+export type SurveyType = "accessibility" | "education_safety" | "general_safety" | "welfare_inspection" | "element_stability";
 
 export interface SurveyTypeConfig {
   id: SurveyType;
@@ -44,6 +44,14 @@ export const SURVEY_TYPES: SurveyTypeConfig[] = [
     pdfTitle: "נספח בדיקת עמידה בדרישות בטיחות",
     filePrefix: "מבדק-רווחה",
     color: "#0891b2",
+  },
+  {
+    id: "element_stability",
+    label: "דוח בדיקת יציבות אלמנטים",
+    shortLabel: "יציבות אלמנטים",
+    pdfTitle: "דוח בדיקת יציבות אלמנטים",
+    filePrefix: "דוח-יציבות-אלמנטים",
+    color: "#0f766e",
   },
 ];
 
@@ -159,6 +167,15 @@ export interface SurveyReport {
   welfareInspectorPhone?: string;
   welfareInspectorEmail?: string;
   welfareInspectorYearsExperience?: string;
+  // ── Element stability inspection (דוח בדיקת יציבות אלמנטים) ───────────────
+  elementInspectorName?: string;   // שם הבודק
+  elementIntroText?: string;       // "בתאריך:" free text intro
+  elementNotes?: string;           // הערות (free text below the table)
+  elementStabilityStatus?: "stable" | "unstable"; // המתקנים נמצאו יציבים/לא יציבים
+  elementValidUntil?: string;      // date filled into the last default clause
+  // Editable list of fixed terms shown below the result (per-report override).
+  // undefined ⇒ use ELEMENT_STABILITY_DEFAULT_TERMS.
+  stabilityTerms?: string[];
 }
 
 export interface ReferencePhotoEntry {
