@@ -220,14 +220,14 @@ export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, sett
         </section>
 
         {/* Page 2: ממצאים / א. אישורים */}
-        <section data-pdf-page-break="" style={{ padding: "40px 56px", background: "#fff" }}>
+        <section data-pdf-page-break="" style={{ padding: "24px 56px", background: "#fff" }}>
           <h2 style={{ fontSize: 16, fontWeight: 800, textDecoration: "underline", marginBottom: 8 }}>ממצאים</h2>
           <div style={{ fontSize: 13, marginBottom: 12 }}>במבדק עלו הממצאים הבאים:</div>
 
           <h3 style={{ fontSize: 15, fontWeight: 800, textDecoration: "underline", marginTop: 12, marginBottom: 8 }}>א. אישורים</h3>
           <div style={{ fontSize: 12, marginBottom: 10 }}>על הבודק למלא את הטבלה בהתאם לאישורים שהוצגו בפניו:</div>
 
-          <div style={{ direction: "rtl", border: "1px solid #0f172a", fontSize: 11 }}>
+          <div data-pdf-no-break="" style={{ direction: "rtl", border: "1px solid #0f172a", fontSize: 11 }}>
             <div style={{ display: "grid", gridTemplateColumns: "40px 1.6fr 1.4fr 1fr 90px 90px 90px", background: "#e0f2fe", fontWeight: 700 }}>
               <div style={{ padding: "6px 4px", borderLeft: "1px solid #0f172a", textAlign: "center" }}>מספר</div>
               <div style={{ padding: "6px 4px", borderLeft: "1px solid #0f172a" }}>נושא האישור</div>
@@ -256,7 +256,7 @@ export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, sett
         </section>
 
         {/* Page 3: ב. פערים + ג. דרישות */}
-        <section data-pdf-page-break="" style={{ padding: "40px 56px", background: "#fff" }}>
+        <section data-pdf-page-break="" style={{ padding: "24px 56px", background: "#fff" }}>
           <h3 style={{ fontSize: 15, fontWeight: 800, textDecoration: "underline", marginBottom: 8 }}>ב. פערים:</h3>
           <div style={{ fontSize: 12, marginBottom: 8 }}>(סמן ב- ✓ את המשבצת המתאימה)</div>
           <div style={{ display: "flex", alignItems: "flex-start", gap: 8, marginBottom: 6, fontSize: 13 }}>
@@ -292,7 +292,7 @@ export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, sett
         </section>
 
         {/* Page 4: הצהרת מורשה חתימה + סיכום + פרטי מבדק */}
-        <section data-pdf-page-break="" style={{ padding: "40px 56px", background: "#fff" }}>
+        <section data-pdf-page-break="" style={{ padding: "24px 56px", background: "#fff" }}>
           <div style={{ display: "flex", alignItems: "baseline", gap: 8, marginBottom: 12 }}>
             <span style={{ fontWeight: 700, fontSize: 14 }}>אני</span>
             <span style={{ flex: 1, borderBottom: "1px solid #0f172a", paddingBottom: 2, minHeight: 20, fontSize: 14 }}>{report.welfareSignatoryName || ""}</span>
@@ -338,7 +338,7 @@ export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, sett
         </section>
 
         {/* Page 5: הגדרת הכשירות */}
-        <section data-pdf-page-break="" style={{ padding: "40px 56px", background: "#fff" }}>
+        <section data-pdf-page-break="" style={{ padding: "24px 56px", background: "#fff" }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 20 }}>
             <div style={{ width: 60, height: 60, background: headerColor, borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontWeight: 800, fontSize: 22 }}>♥</div>
             <div style={{ textAlign: "right" }}>
