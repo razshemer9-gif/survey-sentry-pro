@@ -168,6 +168,24 @@ export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, sett
       </span>
     );
 
+    // Israeli government emblem — shield-shaped block with menorah symbol
+    const GovEmblem = () => (
+      <div style={{ width: 34, height: 42, background: "#1e40af", borderRadius: "4px 4px 8px 8px", display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontSize: 22, fontWeight: 800, lineHeight: 1, flexShrink: 0 }}>
+        <span style={{ fontSize: 20 }}>🕎</span>
+      </div>
+    );
+
+    const MinistryFooter = ({ headerColor: hc, marginTop = 24 }: { headerColor: string; marginTop?: number }) => (
+      <div data-pdf-no-break="" style={{ marginTop, paddingTop: 12, borderTop: "1px solid #cbd5e1", display: "flex", alignItems: "center", justifyContent: "flex-start", gap: 12, direction: "rtl" }}>
+        <GovEmblem />
+        <div style={{ fontSize: 10, color: "#334155", textAlign: "right", flex: 1 }}>
+          <div style={{ fontWeight: 700, color: hc, fontSize: 11 }}>האגף לשירותים חברתיים ואישיים | שירות ילד ונוער</div>
+          <div>www.molsa.gov.il | www.gov.il — אתר ממשל זמין</div>
+          <div>רחוב ירמיהו 39, מגדלי הבירה, ירושלים | טלפון: 02-5085601, פקס: 02-5085947</div>
+        </div>
+      </div>
+    );
+
     return (
       <div ref={ref} dir="rtl" lang="he"
         style={{ width: "794px", background: "#ffffff", color: "#0f172a", fontFamily: "Heebo, Assistant, sans-serif" }}>
@@ -266,12 +284,7 @@ export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, sett
             </div>
           </div>
 
-          {/* Ministry footer */}
-          <div style={{ marginTop: 24, paddingTop: 12, borderTop: "1px solid #cbd5e1", textAlign: "center", fontSize: 10, color: "#334155", direction: "rtl" }}>
-            <div style={{ fontWeight: 700, color: "#0891b2" }}>האגף לשירותים חברתיים ואישיים | שירות ילד ונוער</div>
-            <div>www.molsa.gov.il | www.gov.il — אתר ממשל זמין</div>
-            <div>רחוב ירמיהו 39, מגדלי הבירה, ירושלים | טלפון: 02-5085601, פקס: 02-5085947</div>
-          </div>
+          <MinistryFooter headerColor={headerColor} />
         </section>
 
         {/* Page 3: ב. פערים + ג. דרישות */}
@@ -362,8 +375,13 @@ export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, sett
           </div>
           <Line label="מספר תעודת זהות" value={report.welfareInspectorId} />
 
-          {/* Ministry logo + big header block — directly under פרטי עורך המבדק */}
-          <div data-pdf-no-break="" style={{ marginTop: 40, display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+          {/* Ministry footer with government emblem — end of page 4 */}
+          <MinistryFooter headerColor={headerColor} />
+        </section>
+
+        {/* Page 5: הגדרת הכשירות */}
+        <section data-pdf-page-break="" style={{ padding: "24px 56px", background: "#fff" }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 20 }}>
             <div style={{ width: 60, height: 60, background: headerColor, borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontWeight: 800, fontSize: 22 }}>♥</div>
             <div style={{ textAlign: "right" }}>
               <div style={{ fontSize: 15, fontWeight: 800, color: headerColor }}>משרד העבודה הרווחה</div>
@@ -371,11 +389,8 @@ export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, sett
               <div style={{ fontSize: 11, color: "#64748b", marginTop: 3 }}>חוסן חברתי לישראל</div>
             </div>
           </div>
-        </section>
 
-        {/* Page 5: הגדרת הכשירות */}
-        <section data-pdf-page-break="" style={{ padding: "24px 56px", background: "#fff" }}>
-          <h3 style={{ fontSize: 14, fontWeight: 800, marginTop: 4, marginBottom: 10 }}>הגדרת הכשירות (סמן ✓ במשבצת המתאימה וצרף העתק של התעודה):</h3>
+          <h3 style={{ fontSize: 14, fontWeight: 800, marginTop: 20, marginBottom: 10 }}>הגדרת הכשירות (סמן ✓ במשבצת המתאימה וצרף העתק של התעודה):</h3>
           {[
             { v: "safety_engineer", label: "מהנדס בטיחות רשום" },
             { v: "safety_officer", label: "ממונה על הבטיחות (יש לצרף אישור כשירות בתוקף)" },
@@ -417,11 +432,7 @@ export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, sett
             </div>
           </div>
 
-          <div style={{ marginTop: 60, textAlign: "center", fontSize: 10, color: "#64748b" }}>
-            <div style={{ fontWeight: 700, color: headerColor }}>האגף לשירותים חברתיים ואישיים | שירות ילד ונוער</div>
-            <div>www.molsa.gov.il | www.gov.il — אתר ממשל זמין</div>
-            <div>רחוב ירמיהו 39, מגדלי הבירה, ירושלים | טלפון: 02-5085601, פקס: 02-5085947</div>
-          </div>
+          <MinistryFooter headerColor={headerColor} marginTop={60} />
         </section>
 
       </div>
