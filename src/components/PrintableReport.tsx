@@ -140,7 +140,7 @@ export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, sett
       { title: "מוכנות אמצעי כיבוי למניעת דליקות, ואמצעי מילוט", authority: "הרשות לכיבוי אש", refresh: 'ע"פ דרישת רשות כבאות והצלה' },
       { title: "תעודת גמר (טופס 4) של כל המבנים באתר או אישור של הרשות המקומית, בשטחה ממוקמת המסגרת, בדבר התאמת המבנה לייעודה של המסגרת המופעלת בו.", authority: "רשות מקומית", refresh: "חד פעמי" },
       { title: "מתקני משחקים, ספורט וכו' * (במידה וקיימים)", authority: "מעבדה מוסמכת להתקנה ותחזוקת המתקנים או בודק שנתי למתקני משחקים בעל רישיון בהתאם לתקן הישראלי 1498", refresh: "12 חודשים" },
-      { title: "בדיקת יציבות מבנים **", authority: "מהנדס מבנים (קונסטרוקטור) עם רישיון בתוקף", refresh: "60 חודשים" },
+      { title: "**בדיקת יציבות מבנים", authority: "מהנדס מבנים (קונסטרוקטור) עם רישיון בתוקף", refresh: "60 חודשים" },
     ];
 
     const purposeLabel = (() => {
@@ -157,10 +157,11 @@ export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, sett
       return "";
     })();
 
+    // Renders label exactly as given (colon included only where the original form has one)
     const Line = ({ label, value }: { label: string; value?: string }) => (
-      <div style={{ display: "flex", alignItems: "flex-end", gap: 6, marginBottom: 10, fontSize: 13, direction: "rtl" }}>
-        <span style={{ fontWeight: 700, flexShrink: 0 }}>{label}:</span>
-        <span style={{ flex: 1, borderBottom: "1px solid #94a3b8", paddingBottom: 2, minHeight: 18 }}>{value || ""}</span>
+      <div style={{ display: "flex", alignItems: "flex-end", gap: 6, marginBottom: 16, fontSize: 13, direction: "rtl" }}>
+        <span style={{ fontWeight: 700, flexShrink: 0 }}>{label}</span>
+        <span style={{ flex: 1, borderBottom: "1px solid #000000", paddingBottom: 2, minHeight: 18 }}>{value || ""}</span>
       </div>
     );
     const CheckBox = ({ checked }: { checked: boolean }) => (
@@ -228,15 +229,21 @@ export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, sett
 
           <Line label="בתאריך" value={formatHebrewDate(report.surveyDate)} />
           <Line label="קיימתי מבדק בטיחות במסגרת המיועדת לשמש כ (לפרט את סוג המסגרת)" value={report.welfareFrameworkPurpose} />
-          <Line label="סמל מסגרת" value={report.welfareFrameworkSymbol} />
-          <Line label="שאלה פרטיה" value={report.welfareInquiry} />
-          <Line label="כתובת (עיר, רחוב, מספר)" value={report.address} />
-          <Line label="בעלות הנכס" value={report.welfarePropertyOwner} />
+          <Line label="סמל מסגרת:" value={report.welfareFrameworkSymbol} />
+          <Line label="שאלה פרטיה:" value={report.welfareInquiry} />
+          <Line label="כתובת: (עיר, רחוב, מספר)" value={report.address} />
+          <Line label="בעלות הנכס:" value={report.welfarePropertyOwner} />
           <div style={{ display: "flex", gap: 12 }}>
-            <div style={{ flex: 1 }}><Line label="פרטי המנהל" value={report.welfareManagerName} /></div>
-            <div style={{ width: 200 }}><Line label="נייד" value={report.welfareManagerPhone} /></div>
+            <div style={{ flex: 1 }}><Line label="פרטי המנהל:" value={report.welfareManagerName} /></div>
+            <div style={{ width: 200 }}><Line label="נייד:" value={report.welfareManagerPhone} /></div>
           </div>
-          <Line label="ייעוד המסגרת (מסגרת חוץ ביתית/מסגרת יומית/אחר)" value={purposeLabel} />
+          <div style={{ marginBottom: 16 }}>
+            <div style={{ display: "flex", alignItems: "flex-end", gap: 6, fontSize: 13, direction: "rtl" }}>
+              <span style={{ fontWeight: 700, flexShrink: 0 }}>ייעוד המסגרת:</span>
+              <span style={{ flex: 1, borderBottom: "1px solid #000000", paddingBottom: 2, minHeight: 18 }}>{purposeLabel}</span>
+            </div>
+            <div style={{ fontSize: 12, marginTop: 2 }}>(מסגרת חוץ ביתית/מסגרת יומית/אחר)</div>
+          </div>
         </section>
 
         {/* Page 2: ממצאים / א. אישורים */}
@@ -252,8 +259,8 @@ export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, sett
               <div style={{ padding: "6px 4px", borderLeft: "1px solid #000000", textAlign: "center" }}>מספר</div>
               <div style={{ padding: "6px 4px", borderLeft: "1px solid #000000", textAlign: "center" }}>נושא האישור</div>
               <div style={{ padding: "6px 4px", borderLeft: "1px solid #000000", textAlign: "center" }}>הגורם המאשר</div>
-              <div style={{ padding: "6px 4px", borderLeft: "1px solid #000000", textAlign: "center" }}>יש לחדש כל</div>
-              <div style={{ padding: "6px 4px", borderLeft: "1px solid #000000", textAlign: "center" }}>הוצג אישור / לא הוצג אישור / לא רלוונטי</div>
+              <div style={{ padding: "6px 4px", borderLeft: "1px solid #000000", textAlign: "center" }}>יש לחדש כל -</div>
+              <div style={{ padding: "6px 4px", borderLeft: "1px solid #000000", textAlign: "center" }}>הוצג אישור /לא הוצג אישור/לא רלוונטי</div>
               <div style={{ padding: "6px 4px", borderLeft: "1px solid #000000", textAlign: "center" }}>תאריך מתן האישור</div>
               <div style={{ padding: "6px 4px", textAlign: "center" }}>בתוקף עד</div>
             </div>
@@ -268,7 +275,15 @@ export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, sett
                   <div style={{ padding: "8px 4px", borderLeft: "1px solid #000000", textAlign: "center" }}>{row.refresh}</div>
                   <div style={{ padding: "8px 4px", borderLeft: "1px solid #000000", textAlign: "center" }}>{presentedLabel}</div>
                   <div style={{ padding: "8px 4px", borderLeft: "1px solid #000000", textAlign: "center" }}>{a.dateGiven ? formatHebrewDate(a.dateGiven) : "___/___/___"}</div>
-                  <div style={{ padding: "8px 4px", textAlign: "center" }}>{a.validUntil ? formatHebrewDate(a.validUntil) : "___/___/___"}</div>
+                  <div style={{ padding: "8px 4px", textAlign: "center" }}>
+                    {/* Row 2 (טופס 4, חד פעמי) has no expiry in the original form */}
+                    {i === 1 ? (a.validUntil ? formatHebrewDate(a.validUntil) : "") : (
+                      <>
+                        {a.validUntil ? formatHebrewDate(a.validUntil) : "___/___/___"}
+                        {i === 0 && <div style={{ marginTop: 6 }}>אם הוגבל בתוקף</div>}
+                      </>
+                    )}
+                  </div>
                 </div>
               );
             })}
@@ -313,16 +328,25 @@ export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, sett
               <div style={{ padding: "6px 4px", borderLeft: "1px solid #000000", textAlign: "center" }}>הפעולה המתקנת</div>
               <div style={{ padding: "6px 4px", textAlign: "center" }}>מועדי סיום ליישום פעולות מתקנות על פי התחייבות מפעיל המסגרת</div>
             </div>
-            {report.items.map((item, i) => (
-              <div key={item.id} data-pdf-no-break="" style={{ display: "grid", gridTemplateColumns: "40px 1fr 1.1fr 1.1fr 150px", borderTop: "1px solid #000000" }}>
-                <div style={{ padding: "8px 4px", borderLeft: "1px solid #000000", textAlign: "center", fontWeight: 700 }}>{i + 1}.</div>
-                <div style={{ padding: "8px 4px", borderLeft: "1px solid #000000" }}>{item.title}</div>
-                <div style={{ padding: "8px 4px", borderLeft: "1px solid #000000" }}>{item.notes || item.fieldNotes || ""}</div>
-                <div style={{ padding: "8px 4px", borderLeft: "1px solid #000000" }}>{item.suggestedCorrection || ""}</div>
-                <div style={{ padding: "8px 4px", textAlign: "center" }}>{item.clause || ""}</div>
-              </div>
-            ))}
+            {/* Always render at least 5 rows like the original form */}
+            {Array.from({ length: Math.max(report.items.length, 5) }, (_, i) => {
+              const item = report.items[i];
+              return (
+                <div key={item?.id ?? `empty-${i}`} data-pdf-no-break="" style={{ display: "grid", gridTemplateColumns: "40px 1fr 1.1fr 1.1fr 150px", borderTop: "1px solid #000000" }}>
+                  <div style={{ padding: "8px 4px", borderLeft: "1px solid #000000", textAlign: "center", fontWeight: 700 }}>{i + 1}.</div>
+                  <div style={{ padding: "8px 4px", borderLeft: "1px solid #000000", minHeight: 46 }}>{item?.title || ""}</div>
+                  <div style={{ padding: "8px 4px", borderLeft: "1px solid #000000" }}>{item ? (item.notes || item.fieldNotes || "") : ""}</div>
+                  <div style={{ padding: "8px 4px", borderLeft: "1px solid #000000" }}>{item?.suggestedCorrection || ""}</div>
+                  <div style={{ padding: "8px 4px", textAlign: "center" }}>
+                    <div>לא יאוחר מ</div>
+                    <div>{item?.clause || "___/___/___"}</div>
+                  </div>
+                </div>
+              );
+            })}
           </div>
+
+          <MinistryFooter />
         </section>
 
         {/* Page 4: הצהרת מורשה חתימה + סיכום + פרטי מבדק */}
@@ -336,10 +360,10 @@ export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, sett
             {[
               "לא התווספו מבנים או מתקנים מאז קבלת האישור ליציבות מבנים (שורה 4 בטבלת האישורים).",
               "כל האישורים שניתנו על-ידי הרשויות למיניהם (רשות כבאות, רשות מקומית, מעבדה מוסמכת וכו') הינם בתוקף ולא נשללו על-ידי גורם כלשהו.",
-              "כל הליקויים שנמצאו במסגרת בדיקת בטיחות זו, יתוקנו במסגרת לוח הזמנים שנקבע לעיל.",
+              "כל הליקויים שנמצאו במסגרת בדיקת בטיחות זו, יתוקנו במסגרת לוח הזמנים שנקבע דלעיל.",
               "באחריות הספק להזמין את הבודק שביצע את הבדיקה (ככל שניתן) לבצע בדיקה חוזרת לאחר המועד האחרון להשלמת הפערים ולאשר את תיקון הפערים ותקינות / אי תקינות המסגרת.",
               "באחריות הספק להמציא אישור בודק בטיחות לאחר תיקון כל הליקויים שהתגלו במסמך זה.",
-              "ידוע לי כי נספח חתום ותקין זה הינו תנאי לחידוש הסכם / חוזה — תנאי לאישור המסגרת על ידי משרד העבודה, הרווחה והשירותים החברתיים.",
+              "ידוע לי כי נספח חתום ותקין זה הינו תנאי לחידוש הסכם / חוזה – תנאי לאישור המסגרת על ידי משרד העבודה, הרווחה והשירותים החברתיים.",
             ].map((text, idx) => (
               <div key={idx} style={{ display: "flex", alignItems: "flex-start", gap: 8, marginBottom: 6 }}>
                 <span style={{ flexShrink: 0, fontWeight: 700, minWidth: 20, textAlign: "right" }}>{idx + 1}.</span>
@@ -372,10 +396,10 @@ export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, sett
 
           <h3 style={{ fontSize: 15, fontWeight: 800, textDecoration: "underline", marginTop: 24, marginBottom: 10 }}>פרטי עורך המבדק וחתימתו</h3>
           <div style={{ display: "flex", gap: 16, marginBottom: 12 }}>
-            <div style={{ flex: 1 }}><Line label="שם משפחה" value={report.welfareInspectorLastName} /></div>
-            <div style={{ flex: 1 }}><Line label="שם פרטי" value={report.welfareInspectorFirstName} /></div>
+            <div style={{ flex: 1 }}><Line label="שם משפחה:" value={report.welfareInspectorLastName} /></div>
+            <div style={{ flex: 1 }}><Line label="שם פרטי:" value={report.welfareInspectorFirstName} /></div>
           </div>
-          <Line label="מספר תעודת זהות" value={report.welfareInspectorId} />
+          <Line label="מספר תעודת זהות:" value={report.welfareInspectorId} />
 
           {/* Ministry footer with government emblem — end of page 4 */}
           <MinistryFooter />
@@ -398,32 +422,34 @@ export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, sett
           ))}
 
           <div style={{ marginTop: 20, display: "flex", gap: 16 }}>
-            <div style={{ flex: 1 }}><Line label="מספר תעודת הרישום" value={report.welfareRegistrationNum} /></div>
-            <div style={{ flex: 1 }}><Line label="טלפון נייד" value={report.welfareInspectorPhone} /></div>
+            <div style={{ flex: 1 }}><Line label="מספר תעודת הרישום :" value={report.welfareRegistrationNum} /></div>
+            <div style={{ flex: 1 }}><Line label="טלפון נייד:" value={report.welfareInspectorPhone} /></div>
           </div>
-          <Line label="כתובת דואר אלקטרוני" value={report.welfareInspectorEmail} />
+          <Line label="כתובת דואר אלקטרוני:" value={report.welfareInspectorEmail} />
 
           <div style={{ marginTop: 20 }}>
             <Line label="אני" value={inspectorFull} />
             <Line label="ת.ז." value={report.welfareInspectorId} />
-            <div style={{ fontSize: 12, lineHeight: 1.7, marginTop: 4 }}>
-              מצהיר בזאת כי הנני בעל/ת וותק של <span style={{ display: "inline-block", minWidth: 60, borderBottom: "1px solid #94a3b8", textAlign: "center", padding: "0 6px" }}>{report.welfareInspectorYearsExperience || ""}</span> שנים מיום קבלת הסמכה בתחום הבטיחות וביצעתי לפחות 50 מבדקי בטיחות במסגרות ציבוריות.
+            <Line label="מצהיר בזאת כי הנני בעל/ת וותק של" value={report.welfareInspectorYearsExperience} />
+            <div style={{ fontSize: 13, lineHeight: 1.7 }}>
+              שנים מיום קבלת הסמכה בתחום בטיחות וביצעתי לפחות 50 מבדקי בטיחות במסגרות ציבוריות.
             </div>
           </div>
 
-          <div style={{ display: "flex", justifyContent: "flex-end", gap: 30, marginTop: 40 }}>
-            <div>
-              <div style={{ fontSize: 12, marginBottom: 4 }}>תאריך:</div>
-              <div style={{ width: 180, borderBottom: "1px solid #0f172a", height: 24, textAlign: "center", fontSize: 13, paddingTop: 4 }}>{formatHebrewDate(report.surveyDate)}</div>
-            </div>
-            <div>
-              <div style={{ fontSize: 12, marginBottom: 4 }}>חתימת עורך המבדק:</div>
+          {/* One row: signature (right) and date (left), as in the original */}
+          <div style={{ display: "flex", gap: 40, marginTop: 40, fontSize: 13, direction: "rtl" }}>
+            <div style={{ display: "flex", alignItems: "flex-end", gap: 6, flex: 1.2 }}>
+              <span style={{ fontWeight: 700, flexShrink: 0 }}>חתימת עורך המבדק:</span>
               {report.signatureDataUrl ? (
                 <img src={report.signatureDataUrl} alt="חתימה" crossOrigin="anonymous"
-                  style={{ maxHeight: 40, maxWidth: 180, height: "auto", display: "block", borderBottom: "1px solid #0f172a" }} />
+                  style={{ maxHeight: 36, maxWidth: 160, height: "auto", display: "block", borderBottom: "1px solid #000000", flexShrink: 0 }} />
               ) : (
-                <div style={{ width: 180, borderBottom: "1px solid #0f172a", height: 24 }} />
+                <span style={{ flex: 1, borderBottom: "1px solid #000000", minHeight: 18 }} />
               )}
+            </div>
+            <div style={{ display: "flex", alignItems: "flex-end", gap: 6, flex: 1 }}>
+              <span style={{ fontWeight: 700, flexShrink: 0 }}>תאריך:</span>
+              <span style={{ flex: 1, borderBottom: "1px solid #000000", minHeight: 18, textAlign: "center", paddingBottom: 2 }}>{formatHebrewDate(report.surveyDate)}</span>
             </div>
           </div>
 
