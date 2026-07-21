@@ -2,6 +2,12 @@ import { ConsultantSettings, getSurveyType, SurveyReport, SurveyReportFormat } f
 import { formatCurrency, formatHebrewDate } from "@/lib/pdf";
 import { EDU_INSPECTION_TABLE } from "@/lib/edu-inspection-table";
 import { ISRAEL_STATE_EMBLEM, MOLSA_HEADER_LOGO } from "@/lib/welfare-logos";
+import {
+  ELEMENT_STABILITY_FOOTER,
+  ELEMENT_STABILITY_RESULT_STABLE,
+  ELEMENT_STABILITY_RESULT_UNSTABLE,
+  resolveStabilityTerms,
+} from "@/lib/element-stability";
 import React, { forwardRef } from "react";
 
 interface Props {
@@ -130,6 +136,163 @@ export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, sett
       </div>
     );
   };
+
+  // ── Element stability inspection: דוח בדיקת יציבות אלמנטים ─────────────────
+  if (report.surveyType === "element_stability") {
+    const accent = "#0f766e";
+    const inspectorName = report.elementInspectorName || sigName;
+
+    // Footer pulls from consultant settings when available, else reference defaults.
+    const footer = {
+      company: settings.companyName || ELEMENT_STABILITY_FOOTER.company,
+      phone: settings.phone || ELEMENT_STABILITY_FOOTER.phone,
+      email: settings.email || ELEMENT_STABILITY_FOOTER.email,
+      website: ELEMENT_STABILITY_FOOTER.website,
+    };
+    const ElementFooter = () => (
+      <div data-pdf-no-break="" style={{ marginTop: 28, direction: "rtl" }}>
+        <div style={{ height: 3, background: "#2f5eb3", borderRadius: 2, marginBottom: 6 }} />
+        <div style={{ textAlign: "center", fontSize: 11, color: "#0f172a", lineHeight: 1.7 }}>
+          <div style={{ fontWeight: 700 }}>{footer.company}{footer.phone ? `, נייד : ${footer.phone}` : ""}</div>
+          <div>
+            <span style={{ fontWeight: 700 }}>דוא"ל: </span>
+            <span style={{ color: "#1d4ed8", textDecoration: "underline" }}>{footer.email}</span>
+            {footer.website ? (
+              <>
+                {"  אתר : "}
+                <span style={{ color: "#1d4ed8", textDecoration: "underline" }}>{footer.website}</span>
+              </>
+            ) : null}
+          </div>
+        </div>
+      </div>
+    );
+
+    const terms = resolveStabilityTerms(report.stabilityTerms, report.elementValidUntil ? formatHebrewDate(report.elementValidUntil) : undefined);
+    const resultText = report.elementStabilityStatus === "unstable"
+      ? ELEMENT_STABILITY_RESULT_UNSTABLE
+      : ELEMENT_STABILITY_RESULT_STABLE;
+    const stampImg = fmt.stampImage;
+    const sigImg = report.signatureDataUrl || fmt.signatureImage;
+
+    const CoverLine = ({ label, value }: { label: string; value?: string }) => (
+      <div style={{ display: "flex", alignItems: "flex-end", gap: 6, marginBottom: 10, fontSize: 14, direction: "rtl" }}>
+        <span style={{ fontWeight: 700, flexShrink: 0 }}>{label}:</span>
+        <span style={{ flex: 1, borderBottom: "1px solid #cbd5e1", paddingBottom: 2, minHeight: 18 }}>{value || ""}</span>
+      </div>
+    );
+
+    return (
+      <div ref={ref} dir="rtl" lang="he"
+        style={{ width: "794px", background: "#ffffff", color: "#0f172a", fontFamily: "Heebo, Assistant, sans-serif" }}>
+        <section style={{ padding: "40px 56px 28px", background: "#fff" }}>
+          {coverLogo && (
+            <div style={{ textAlign: "center", marginBottom: 12 }}>
+              <img src={coverLogo} alt="logo" crossOrigin="anonymous" style={{ maxHeight: 80, maxWidth: "100%", height: "auto", display: "inline-block" }} />
+            </div>
+          )}
+
+          {/* 1. Title */}
+          <h1 style={{ textAlign: "center", fontSize: 26, fontWeight: 800, color: accent, margin: "6px 0 24px", borderBottom: `3px solid ${accent}`, paddingBottom: 12 }}>
+            דוח בדיקת יציבות אלמנטים
+          </h1>
+
+          {/* 2. Report details */}
+          <CoverLine label="שם המזמין" value={report.clientName} />
+          <CoverLine label="שם הבודק" value={inspectorName} />
+          <CoverLine label="מיקום" value={report.address} />
+          <CoverLine label="תאריך הבדיקה" value={report.surveyDate ? formatHebrewDate(report.surveyDate) : ""} />
+
+          {report.elementIntroText && (
+            <div style={{ marginTop: 14, fontSize: 14, lineHeight: 1.8, whiteSpace: "pre-wrap", direction: "rtl" }}>
+              <span style={{ fontWeight: 700 }}>בתאריך: </span>{report.elementIntroText}
+            </div>
+          )}
+
+          {/* 3. Elements table — container may span pages; individual rows never split */}
+          <div style={{ marginTop: 22, border: "1px solid #0f172a", direction: "rtl", fontSize: 13 }}>
+            <div data-pdf-no-break="" style={{ display: "grid", gridTemplateColumns: "60px 1.6fr 1fr", background: "#e6f4f1", fontWeight: 800 }}>
+              <div style={{ padding: "8px 6px", borderLeft: "1px solid #0f172a", textAlign: "center" }}>מס׳ סד׳</div>
+              <div style={{ padding: "8px 6px", borderLeft: "1px solid #0f172a", textAlign: "center" }}>תיאור האלמנט / תמונה</div>
+              <div style={{ padding: "8px 6px", textAlign: "center" }}>תקין / לא תקין</div>
+            </div>
+            {report.items.map((item, i) => {
+              const ok = item.status === "compliant";
+              return (
+                <div key={item.id} data-pdf-no-break="" style={{ display: "grid", gridTemplateColumns: "60px 1.6fr 1fr", borderTop: "1px solid #0f172a" }}>
+                  <div style={{ padding: "10px 6px", borderLeft: "1px solid #0f172a", textAlign: "center", fontWeight: 700 }}>{i + 1}</div>
+                  <div style={{ padding: "10px 10px", borderLeft: "1px solid #0f172a" }}>
+                    {item.title && (
+                      <div style={{ fontSize: 14, lineHeight: 1.7, whiteSpace: "pre-wrap", marginBottom: item.photo ? 8 : 0 }}>{item.title}</div>
+                    )}
+                    {item.photo && (
+                      <img src={item.photo} alt={item.title || `אלמנט ${i + 1}`} crossOrigin="anonymous"
+                        style={{ maxWidth: "100%", height: "auto", display: "block", borderRadius: 6, border: "1px solid #e2e8f0" }} />
+                    )}
+                  </div>
+                  <div style={{ padding: "10px 10px", textAlign: "center" }}>
+                    <div style={{ display: "inline-block", fontWeight: 800, fontSize: 14, color: ok ? "#15803d" : "#b91c1c", border: `2px solid ${ok ? "#16a34a" : "#dc2626"}`, borderRadius: 8, padding: "3px 14px" }}>
+                      {ok ? "תקין" : "לא תקין"}
+                    </div>
+                    {item.fieldNotes && (
+                      <div style={{ marginTop: 8, fontSize: 13, lineHeight: 1.7, color: "#0f172a", whiteSpace: "pre-wrap", textAlign: "right", unicodeBidi: "plaintext" }}>
+                        {item.fieldNotes}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+          {/* 5. Notes */}
+          {report.elementNotes && (
+            <div data-pdf-no-break="" style={{ marginTop: 20 }}>
+              <h3 style={{ fontSize: 16, fontWeight: 800, color: accent, margin: "0 0 6px" }}>הערות:</h3>
+              <div style={{ fontSize: 14, lineHeight: 1.8, whiteSpace: "pre-wrap", direction: "rtl", unicodeBidi: "plaintext" }}>{report.elementNotes}</div>
+            </div>
+          )}
+
+          {/* 6+7. Result + fixed terms — kept together on one page */}
+          <div data-pdf-no-break="" style={{ marginTop: 24 }}>
+            <h3 style={{ fontSize: 18, fontWeight: 800, color: report.elementStabilityStatus === "unstable" ? "#b91c1c" : "#15803d", margin: "0 0 10px" }}>
+              {resultText}
+            </h3>
+            <div style={{ direction: "rtl" }}>
+              {terms.map((t, i) => (
+                <div key={i} style={{ display: "flex", alignItems: "flex-start", gap: 8, marginBottom: 6, fontSize: 13, lineHeight: 1.7 }}>
+                  <span style={{ flexShrink: 0, fontWeight: 700, minWidth: 20, textAlign: "right" }}>{i + 1}.</span>
+                  <span style={{ flex: 1, whiteSpace: "pre-wrap", unicodeBidi: "plaintext" }}>{t}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* 9. Signature + stamp — only on the last page, only when present */}
+          {(sigImg || stampImg) && (
+            <div data-pdf-no-break="" style={{ marginTop: 48, display: "flex", justifyContent: "flex-start", gap: 48, direction: "rtl" }}>
+              {sigImg && (
+                <div style={{ textAlign: "center" }}>
+                  <img src={sigImg} alt="חתימה" crossOrigin="anonymous" style={{ maxHeight: 70, maxWidth: 200, height: "auto", display: "block", margin: "0 auto" }} />
+                  <div style={{ borderTop: "1px solid #0f172a", marginTop: 4, paddingTop: 4, fontSize: 12, color: "#64748b" }}>
+                    חתימת הבודק{inspectorName ? ` — ${inspectorName}` : ""}
+                  </div>
+                </div>
+              )}
+              {stampImg && (
+                <div style={{ textAlign: "center" }}>
+                  <img src={stampImg} alt="חותמת" crossOrigin="anonymous" style={{ maxHeight: 90, maxWidth: 130, height: "auto", display: "block", margin: "0 auto" }} />
+                  <div style={{ marginTop: 4, fontSize: 12, color: "#64748b" }}>חותמת</div>
+                </div>
+              )}
+            </div>
+          )}
+
+          <ElementFooter />
+        </section>
+      </div>
+    );
+  }
 
   // ── Welfare inspection: government form layout ────────────────────────────
   if (report.surveyType === "welfare_inspection") {

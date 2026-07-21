@@ -31,6 +31,7 @@ import {
 
 import { ChecklistItem, ConsultantSettings, DEFAULT_SETTINGS, ReferencePhotoEntry, SurveyReport } from "@/lib/types";
 import { EDU_INSPECTION_TABLE } from "@/lib/edu-inspection-table";
+import { ELEMENT_STABILITY_DEFAULT_TERMS } from "@/lib/element-stability";
 import { getReport, loadUserSettings, saveReport, saveUserSettings } from "@/lib/storage";
 import { useAuth } from "@/contexts/AuthContext";
 import { buildPdfFileName, generateReportPdf } from "@/lib/pdf";
@@ -149,7 +150,7 @@ export default function ReportEditor() {
             ...r,
             items: [
               ...r.items,
-              { id: uuid(), title: "ממצא חדש", status: "non_compliant", notes: "", estimatedCost: 0 },
+              { id: uuid(), title: r.surveyType === "element_stability" ? "" : "ממצא חדש", status: "non_compliant", notes: "", estimatedCost: 0 },
             ],
           }
         : r,
@@ -157,6 +158,27 @@ export default function ReportEditor() {
 
   const removeItem = (itemId: string) =>
     setReport((r) => (r ? { ...r, items: r.items.filter((it) => it.id !== itemId) } : r));
+
+  const duplicateItem = (itemId: string) =>
+    setReport((r) => {
+      if (!r) return r;
+      const idx = r.items.findIndex((it) => it.id === itemId);
+      if (idx === -1) return r;
+      const copy = { ...r.items[idx], id: uuid() };
+      const items = [...r.items.slice(0, idx + 1), copy, ...r.items.slice(idx + 1)];
+      return { ...r, items };
+    });
+
+  const moveItem = (itemId: string, dir: -1 | 1) =>
+    setReport((r) => {
+      if (!r) return r;
+      const idx = r.items.findIndex((it) => it.id === itemId);
+      const to = idx + dir;
+      if (idx === -1 || to < 0 || to >= r.items.length) return r;
+      const items = [...r.items];
+      [items[idx], items[to]] = [items[to], items[idx]];
+      return { ...r, items };
+    });
 
   const handleSave = async () => {
     if (!report) return;
@@ -285,9 +307,28 @@ export default function ReportEditor() {
           {(() => {
             const isEdu = report.surveyType === "education_safety";
             const isWelfare = report.surveyType === "welfare_inspection";
+            const isElement = report.surveyType === "element_stability";
             return (
               <>
-                {isWelfare ? (
+                {isElement ? (
+                  <>
+                    <Field label="שם המזמין">
+                      <Input value={report.clientName} onChange={(e) => update({ clientName: e.target.value })} autoComplete="organization" />
+                    </Field>
+                    <Field label="שם הבודק">
+                      <Input value={report.elementInspectorName || ""} onChange={(e) => update({ elementInspectorName: e.target.value })} />
+                    </Field>
+                    <Field label="מיקום">
+                      <Input value={report.address} onChange={(e) => update({ address: e.target.value })} autoComplete="street-address" />
+                    </Field>
+                    <Field label="תאריך הבדיקה">
+                      <Input type="date" value={report.surveyDate} onChange={(e) => update({ surveyDate: e.target.value })} />
+                    </Field>
+                    <Field label="בתאריך (טקסט חופשי)">
+                      <Textarea value={report.elementIntroText || ""} onChange={(e) => update({ elementIntroText: e.target.value })} rows={3} placeholder="פסקת פתיחה חופשית שתופיע מתחת לפרטי הדוח" />
+                    </Field>
+                  </>
+                ) : isWelfare ? (
                   <>
                     <Field label="שם המסגרת">
                       <Input value={report.placeName} onChange={(e) => update({ placeName: e.target.value })} placeholder="שם המסגרת שנבדקה" autoComplete="organization" />
@@ -456,13 +497,63 @@ export default function ReportEditor() {
         <div className="space-y-3 pb-20">
           <div className="flex items-center gap-3 pt-2">
             <div className="flex-1 h-px bg-border" />
-            <span className="text-xs font-semibold text-muted-foreground">ממצאים ({report.items.length})</span>
+            <span className="text-xs font-semibold text-muted-foreground">
+              {report.surveyType === "element_stability" ? "אלמנטים" : "ממצאים"} ({report.items.length})
+            </span>
             <div className="flex-1 h-px bg-border" />
           </div>
           {report.items.map((item, idx) => {
             const refPhotos = item.referencePhotos && item.referencePhotos.length > 0
               ? item.referencePhotos
               : (item.referencePhoto ? [item.referencePhoto] : []);
+            // ── Element stability: dedicated element card ──
+            if (report.surveyType === "element_stability") {
+              const isOk = item.status === "compliant";
+              return (
+                <div key={item.id} className="rounded-2xl border border-border border-r-4 border-r-[#0f766e] bg-card shadow-soft animate-fade-in overflow-hidden">
+                  <div className="px-4 pt-3 pb-2 bg-muted/30 border-b border-border/60 flex items-center justify-between gap-2">
+                    <span className="text-xs font-semibold text-muted-foreground">מס׳ סד׳ {idx + 1}</span>
+                    <div className="flex items-center gap-1.5">
+                      <button onClick={() => moveItem(item.id, -1)} disabled={idx === 0} className="text-muted-foreground hover:text-foreground disabled:opacity-30 text-sm px-1" aria-label="הזז למעלה">▲</button>
+                      <button onClick={() => moveItem(item.id, 1)} disabled={idx === report.items.length - 1} className="text-muted-foreground hover:text-foreground disabled:opacity-30 text-sm px-1" aria-label="הזז למטה">▼</button>
+                      <button onClick={() => duplicateItem(item.id)} className="text-muted-foreground hover:text-primary text-xs px-1" aria-label="שכפל">⧉</button>
+                      <button onClick={() => removeItem(item.id)} className="text-muted-foreground hover:text-destructive" aria-label="מחק"><Trash2 className="h-4 w-4" /></button>
+                    </div>
+                  </div>
+                  <div className="px-4 py-3 space-y-3">
+                    <div>
+                      <Label className="mb-1 block text-xs font-semibold text-foreground">תיאור האלמנט</Label>
+                      <Textarea value={item.title} onChange={(e) => updateItem(item.id, { title: e.target.value })} placeholder="תיאור האלמנט שנבדק..." rows={2} />
+                    </div>
+                    <div>
+                      <Label className="mb-1 block text-xs font-semibold text-foreground">תמונה (אופציונלי)</Label>
+                      <PhotoPicker value={item.photo} onChange={(u) => updateItem(item.id, { photo: u })} label="צרף תמונת האלמנט" />
+                    </div>
+                    <div>
+                      <Label className="mb-1 block text-xs font-semibold text-foreground">סטטוס</Label>
+                      <div className="flex gap-2">
+                        <button
+                          type="button"
+                          onClick={() => updateItem(item.id, { status: "compliant" })}
+                          className={cn("flex-1 rounded-lg border-2 py-2 text-sm font-bold transition-colors",
+                            isOk ? "border-success bg-success/15 text-success ring-2 ring-success/40" : "border-border bg-background text-muted-foreground hover:border-success/50")}
+                        >תקין</button>
+                        <button
+                          type="button"
+                          onClick={() => updateItem(item.id, { status: "non_compliant" })}
+                          className={cn("flex-1 rounded-lg border-2 py-2 text-sm font-bold transition-colors",
+                            item.status === "non_compliant" ? "border-destructive bg-destructive/10 text-destructive ring-2 ring-destructive/30" : "border-border bg-background text-muted-foreground hover:border-destructive/50")}
+                        >לא תקין</button>
+                      </div>
+                    </div>
+                    <div>
+                      <Label className="mb-1 block text-xs font-semibold text-foreground">חישוב / מלל טכני (אופציונלי)</Label>
+                      <Textarea value={item.fieldNotes || ""} onChange={(e) => updateItem(item.id, { fieldNotes: e.target.value })} placeholder="נוסחאות, חישובים, יחידות — כל תווי המקלדת נתמכים..." rows={3} dir="rtl" style={{ unicodeBidi: "plaintext" }} />
+                    </div>
+                  </div>
+                </div>
+              );
+            }
             return (
               <div key={item.id} className="rounded-2xl border border-border border-r-4 border-r-destructive bg-card shadow-soft animate-fade-in overflow-hidden">
 
@@ -593,15 +684,68 @@ export default function ReportEditor() {
           })}
 
           <Button onClick={addItem} variant="outline" className="w-full gap-2 rounded-2xl border-2 border-[#1e3a8a] text-[#1e3a8a] font-bold hover:bg-[#1e3a8a]/10">
-            <Plus className="h-4 w-4" /> ממצא חדש
+            <Plus className="h-4 w-4" /> {report.surveyType === "element_stability" ? "אלמנט חדש" : "ממצא חדש"}
           </Button>
 
+          {report.surveyType !== "element_stability" && (
           <div className="rounded-2xl bg-primary text-primary-foreground p-4 shadow-glow">
             <div className="flex items-center justify-between">
               <span className="text-sm opacity-90">אומדן תיקונים כולל</span>
               <strong className="text-xl">{formatCurrency(totalCost)}</strong>
             </div>
           </div>
+          )}
+
+          {/* Element stability — notes, result, editable terms, valid-until */}
+          {report.surveyType === "element_stability" && (() => {
+            const terms = report.stabilityTerms ?? [...ELEMENT_STABILITY_DEFAULT_TERMS];
+            const setTerms = (next: string[]) => update({ stabilityTerms: next });
+            return (
+              <div className="space-y-4">
+                <div dir="rtl" className="rounded-2xl border-2 border-primary/20 bg-card p-4 space-y-2">
+                  <h3 className="font-bold text-sm text-primary">הערות</h3>
+                  <Textarea value={report.elementNotes || ""} onChange={(e) => update({ elementNotes: e.target.value })} rows={4} placeholder="טקסט חופשי — פסקאות, רשימות, סימנים מיוחדים..." dir="rtl" style={{ unicodeBidi: "plaintext" }} />
+                </div>
+
+                <div dir="rtl" className="rounded-2xl border-2 border-primary/20 bg-card p-4 space-y-3">
+                  <h3 className="font-bold text-sm text-primary">תוצאת הבדיקה</h3>
+                  <div className="flex gap-2">
+                    <button type="button" onClick={() => update({ elementStabilityStatus: "stable" })}
+                      className={cn("flex-1 rounded-lg border-2 py-2.5 text-sm font-bold transition-colors",
+                        report.elementStabilityStatus === "stable" ? "border-success bg-success/15 text-success ring-2 ring-success/40" : "border-border bg-background text-muted-foreground hover:border-success/50")}
+                    >המתקנים נמצאו יציבים</button>
+                    <button type="button" onClick={() => update({ elementStabilityStatus: "unstable" })}
+                      className={cn("flex-1 rounded-lg border-2 py-2.5 text-sm font-bold transition-colors",
+                        report.elementStabilityStatus === "unstable" ? "border-destructive bg-destructive/10 text-destructive ring-2 ring-destructive/30" : "border-border bg-background text-muted-foreground hover:border-destructive/50")}
+                    >המתקנים נמצאו לא יציבים</button>
+                  </div>
+                  <Field label="תוקף הבדיקה עד תאריך (סעיף 8 ברשימה)">
+                    <Input type="date" value={report.elementValidUntil || ""} onChange={(e) => update({ elementValidUntil: e.target.value })} />
+                  </Field>
+                </div>
+
+                <div dir="rtl" className="rounded-2xl border-2 border-primary/20 bg-card p-4 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <h3 className="font-bold text-sm text-primary">רשימת התנאים הקבועה</h3>
+                    <button type="button" onClick={() => update({ stabilityTerms: undefined })} className="text-xs text-muted-foreground underline hover:text-primary">שחזר ברירת מחדל</button>
+                  </div>
+                  <p className="text-xs text-muted-foreground">ניתן לערוך, להוסיף, למחוק ולשנות סדר. הכיתוב "{"{validUntil}"}" יוחלף בתאריך התוקף.</p>
+                  {terms.map((t, i) => (
+                    <div key={i} className="flex items-start gap-1.5">
+                      <span className="text-xs font-bold text-muted-foreground pt-2 w-4 shrink-0">{i + 1}.</span>
+                      <Textarea value={t} onChange={(e) => { const n = [...terms]; n[i] = e.target.value; setTerms(n); }} rows={2} className="flex-1" dir="rtl" style={{ unicodeBidi: "plaintext" }} />
+                      <div className="flex flex-col gap-0.5 pt-1">
+                        <button type="button" onClick={() => { if (i === 0) return; const n = [...terms]; [n[i - 1], n[i]] = [n[i], n[i - 1]]; setTerms(n); }} disabled={i === 0} className="text-muted-foreground hover:text-foreground disabled:opacity-30 text-xs">▲</button>
+                        <button type="button" onClick={() => { if (i === terms.length - 1) return; const n = [...terms]; [n[i + 1], n[i]] = [n[i], n[i + 1]]; setTerms(n); }} disabled={i === terms.length - 1} className="text-muted-foreground hover:text-foreground disabled:opacity-30 text-xs">▼</button>
+                        <button type="button" onClick={() => setTerms(terms.filter((_, j) => j !== i))} className="text-muted-foreground hover:text-destructive text-xs">✕</button>
+                      </div>
+                    </div>
+                  ))}
+                  <button type="button" onClick={() => setTerms([...terms, ""])} className="w-full rounded-lg border border-dashed border-border py-2 text-xs font-semibold text-muted-foreground hover:border-primary/50 hover:text-primary">+ הוסף סעיף</button>
+                </div>
+              </div>
+            );
+          })()}
 
           {/* Required approvals — general_safety only */}
           {report.surveyType === "general_safety" && (() => {
