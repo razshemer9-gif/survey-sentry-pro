@@ -698,7 +698,8 @@ export default function ReportEditor() {
 
           {/* Element stability — notes, result, editable terms, valid-until */}
           {report.surveyType === "element_stability" && (() => {
-            const terms = report.stabilityTerms ?? [...ELEMENT_STABILITY_DEFAULT_TERMS];
+            const settingsDefaults = settings.reportFormats?.element_stability?.stabilityTermsDefault;
+            const terms = report.stabilityTerms ?? settingsDefaults ?? [...ELEMENT_STABILITY_DEFAULT_TERMS];
             const setTerms = (next: string[]) => update({ stabilityTerms: next });
             return (
               <div className="space-y-4">

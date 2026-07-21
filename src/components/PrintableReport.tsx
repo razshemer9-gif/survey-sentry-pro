@@ -149,31 +149,46 @@ export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, sett
       email: settings.email || ELEMENT_STABILITY_FOOTER.email,
       website: ELEMENT_STABILITY_FOOTER.website,
     };
+    // Marked with data-pdf-page-footer so pdf.ts stamps it on EVERY page.
+    // A custom footer image (from settings) takes precedence when provided.
+    const footerImg = fmt.footerImage;
     const ElementFooter = () => (
-      <div data-pdf-no-break="" style={{ marginTop: 28, direction: "rtl" }}>
-        <div style={{ height: 3, background: "#2f5eb3", borderRadius: 2, marginBottom: 6 }} />
-        <div style={{ textAlign: "center", fontSize: 11, color: "#0f172a", lineHeight: 1.7 }}>
-          <div style={{ fontWeight: 700 }}>{footer.company}{footer.phone ? `, נייד : ${footer.phone}` : ""}</div>
-          <div>
-            <span style={{ fontWeight: 700 }}>דוא"ל: </span>
-            <span style={{ color: "#1d4ed8", textDecoration: "underline" }}>{footer.email}</span>
-            {footer.website ? (
-              <>
-                {"  אתר : "}
-                <span style={{ color: "#1d4ed8", textDecoration: "underline" }}>{footer.website}</span>
-              </>
-            ) : null}
-          </div>
-        </div>
+      <div data-pdf-page-footer="" style={{ marginTop: 28, direction: "rtl" }}>
+        {footerImg ? (
+          <img src={footerImg} alt="footer" crossOrigin="anonymous" style={{ width: "100%", height: "auto", display: "block" }} />
+        ) : (
+          <>
+            <div style={{ height: 3, background: "#2f5eb3", borderRadius: 2, marginBottom: 6 }} />
+            <div style={{ textAlign: "center", fontSize: 11, color: "#0f172a", lineHeight: 1.7 }}>
+              <div style={{ fontWeight: 700 }}>{footer.company}{footer.phone ? `, נייד : ${footer.phone}` : ""}</div>
+              <div>
+                <span style={{ fontWeight: 700 }}>דוא"ל: </span>
+                <span style={{ color: "#1d4ed8", textDecoration: "underline" }}>{footer.email}</span>
+                {footer.website ? (
+                  <>
+                    {"  אתר : "}
+                    <span style={{ color: "#1d4ed8", textDecoration: "underline" }}>{footer.website}</span>
+                  </>
+                ) : null}
+              </div>
+            </div>
+          </>
+        )}
       </div>
     );
 
-    const terms = resolveStabilityTerms(report.stabilityTerms, report.elementValidUntil ? formatHebrewDate(report.elementValidUntil) : undefined);
+    const terms = resolveStabilityTerms(
+      report.stabilityTerms ?? fmt.stabilityTermsDefault,
+      report.elementValidUntil ? formatHebrewDate(report.elementValidUntil) : undefined,
+    );
     const resultText = report.elementStabilityStatus === "unstable"
-      ? ELEMENT_STABILITY_RESULT_UNSTABLE
-      : ELEMENT_STABILITY_RESULT_STABLE;
-    const stampImg = fmt.stampImage;
-    const sigImg = report.signatureDataUrl || fmt.signatureImage;
+      ? (fmt.resultUnstableText || ELEMENT_STABILITY_RESULT_UNSTABLE)
+      : (fmt.resultStableText || ELEMENT_STABILITY_RESULT_STABLE);
+    const showStamp = fmt.showStamp !== false;
+    const showSig = fmt.showSignature !== false;
+    const showFooter = fmt.showFooter !== false;
+    const stampImg = showStamp ? fmt.stampImage : undefined;
+    const sigImg = showSig ? (report.signatureDataUrl || fmt.signatureImage) : undefined;
 
     const CoverLine = ({ label, value }: { label: string; value?: string }) => (
       <div style={{ display: "flex", alignItems: "flex-end", gap: 6, marginBottom: 10, fontSize: 14, direction: "rtl" }}>
@@ -288,7 +303,7 @@ export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, sett
             </div>
           )}
 
-          <ElementFooter />
+          {showFooter && <ElementFooter />}
         </section>
       </div>
     );

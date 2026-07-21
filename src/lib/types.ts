@@ -204,6 +204,14 @@ export interface SurveyReportFormat {
   opinionSectionTitle?: string;
   opinionQuestion?: string;
   correctionLabel?: string;
+  // ── Element stability (דוח בדיקת יציבות אלמנטים) type-level defaults ──
+  footerImage?: string;              // dataURL — overrides the text footer
+  stabilityTermsDefault?: string[];  // default fixed terms for new reports
+  resultStableText?: string;         // override "המתקנים נמצאו יציבים"
+  resultUnstableText?: string;       // override "המתקנים נמצאו לא יציבים"
+  showFooter?: boolean;              // default true
+  showSignature?: boolean;           // default true
+  showStamp?: boolean;               // default true
 }
 
 export interface ConsultantSettings {
