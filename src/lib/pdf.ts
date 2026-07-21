@@ -45,6 +45,35 @@ export async function generateReportPdf(
     ),
   );
 
+  const PX_TO_MM = 25.4 / 96;
+
+  // ── Repeating per-page footer (opt-in) ───────────────────────────────────
+  // A report may mark one element with [data-pdf-page-footer]. When present we
+  // capture it once, remove it from the sliced content flow, and stamp it at
+  // the bottom of every page. Reports without such an element are unaffected.
+  const scaleForFooter = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent) ? 1 : 2;
+  const footerEl = element.querySelector<HTMLElement>("[data-pdf-page-footer]");
+  let footerData: string | null = null;
+  let footerHpx = 0;
+  const GAP_PX = 6;
+  if (footerEl) {
+    footerHpx = Math.ceil(footerEl.getBoundingClientRect().height);
+    const fCanvas = await html2canvas(footerEl, {
+      scale: scaleForFooter,
+      backgroundColor: "#ffffff",
+      useCORS: true,
+      windowWidth: element.scrollWidth,
+      width: element.scrollWidth,
+      height: footerHpx,
+    });
+    footerData = fCanvas.toDataURL("image/jpeg", 0.95);
+    // Remove from content flow so it isn't rendered inline in the slices.
+    footerEl.style.display = "none";
+    await new Promise<void>((r) => requestAnimationFrame(() => requestAnimationFrame(() => r())));
+  }
+  const footerHmm = footerHpx * PX_TO_MM;
+  const gapMm = footerEl ? GAP_PX * PX_TO_MM : 0;
+
   // ── Page sizing and smart break calculation ──────────────────────────────
   // iOS Safari limits canvas height to ~4096px and total area to ~16 MP.
   // Use scale=1 on mobile so each canvas stays within those bounds.
@@ -52,7 +81,11 @@ export async function generateReportPdf(
   const scale    = isMobile ? 1 : 2;
   const MAX_PX   = isMobile ? 3_500_000 : 14_000_000;
   const MAX_H    = isMobile ? 3_500     : 7_000;
-  const PAGE_H   = Math.min(MAX_H, Math.floor(MAX_PX / (elWidth * scale)));
+  // Reserve room for the footer so content + footer stays within the canvas cap.
+  const PAGE_H   = Math.max(200, Math.min(MAX_H, Math.floor(MAX_PX / (elWidth * scale))) - footerHpx - GAP_PX);
+
+  // Content height without the (now hidden) footer.
+  const contentHeight = footerEl ? element.scrollHeight : elHeight;
 
   // Positions of [data-pdf-no-break] cards relative to the element's top.
   // Must be computed before any marginTop manipulation.
@@ -73,11 +106,11 @@ export async function generateReportPdf(
   const slices: { top: number; height: number }[] = [];
   let cursor = 0;
 
-  while (cursor < elHeight) {
+  while (cursor < contentHeight) {
     let end = cursor + PAGE_H;
 
-    if (end >= elHeight) {
-      slices.push({ top: cursor, height: elHeight - cursor });
+    if (end >= contentHeight) {
+      slices.push({ top: cursor, height: contentHeight - cursor });
       break;
     }
 
@@ -108,9 +141,8 @@ export async function generateReportPdf(
     cursor = end;
   }
 
-  console.log(`[PDF] scale=${scale}, PAGE_H=${PAGE_H}px, slices=${slices.length}, total=${elHeight}px`);
+  console.log(`[PDF] scale=${scale}, PAGE_H=${PAGE_H}px, slices=${slices.length}, total=${contentHeight}px, footer=${footerHpx}px`);
 
-  const PX_TO_MM = 25.4 / 96;
   const pageWmm  = elWidth * PX_TO_MM;
 
   // ── Capture each slice via the "marginTop slide" technique ───────────────
@@ -129,7 +161,9 @@ export async function generateReportPdf(
   try {
     for (let i = 0; i < slices.length; i++) {
       const { top: pageTop, height: pageH } = slices[i];
-      const pageHmm = pageH * PX_TO_MM;
+      const contentHmm = pageH * PX_TO_MM;
+      // When a repeating footer is used, each page is taller by the footer + gap.
+      const pageHmm = contentHmm + (footerData ? gapMm + footerHmm : 0);
 
       container.style.overflow = "hidden";
       container.style.height   = pageH + "px";
@@ -161,13 +195,19 @@ export async function generateReportPdf(
         (pdf as any).addPage([pageWmm, pageHmm]);
       }
 
-      pdf.addImage(imgData, "JPEG", 0, 0, pageWmm, pageHmm, undefined, "FAST");
+      pdf.addImage(imgData, "JPEG", 0, 0, pageWmm, contentHmm, undefined, "FAST");
+
+      // Stamp the repeating footer at the bottom of every page.
+      if (footerData) {
+        pdf.addImage(footerData, "JPEG", 0, contentHmm + gapMm, pageWmm, footerHmm, undefined, "FAST");
+      }
     }
   } finally {
     // Always restore — even if html2canvas throws
     container.style.overflow = savedOverflow;
     container.style.height   = savedHeight;
     element.style.marginTop  = savedMarginTop;
+    if (footerEl) footerEl.style.display = "";
   }
 
   // ── Download ─────────────────────────────────────────────────────────────

@@ -8,16 +8,19 @@ import { Field } from "@/components/Field";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { PhotoPicker } from "@/components/PhotoPicker";
 import { ConsultantSettings, SurveyReportFormat, SurveyType, SURVEY_TYPES } from "@/lib/types";
+import { ELEMENT_STABILITY_DEFAULT_TERMS } from "@/lib/element-stability";
 import { loadUserSettings, saveUserSettings } from "@/lib/storage";
 import { useAuth } from "@/contexts/AuthContext";
 
 const TAB_ORDER: { id: SurveyType; label: string }[] = [
-  { id: "accessibility",    label: "נגישות" },
-  { id: "general_safety",   label: "בטיחות כללי" },
-  { id: "education_safety", label: 'בטיחות מוס"ח' },
+  { id: "accessibility",     label: "נגישות" },
+  { id: "general_safety",    label: "בטיחות כללי" },
+  { id: "education_safety",  label: 'בטיחות מוס"ח' },
+  { id: "element_stability", label: "יציבות אלמנטים" },
 ];
 
 export default function Settings() {
@@ -328,6 +331,75 @@ export default function Settings() {
                     )}
                   </div>
                 </Field>
+
+                {/* ── Element stability: dedicated settings ── */}
+                {id === "element_stability" && (
+                  <div className="space-y-4 rounded-2xl border-2 border-primary/20 bg-card p-4">
+                    <h3 className="font-bold text-sm text-primary">הגדרות דוח יציבות אלמנטים</h3>
+
+                    <Field label="תמונת Footer (אופציונלי — מחליף את הפוטר הטקסטואלי)">
+                      <div className="space-y-2">
+                        <PhotoPicker value={fmt.footerImage} onChange={(u) => upd({ footerImage: u || undefined })} label="העלה תמונת Footer" />
+                        {fmt.footerImage && (
+                          <Button onClick={() => upd({ footerImage: undefined })} variant="outline" size="sm" className="w-full text-destructive hover:bg-destructive/10">נקה Footer</Button>
+                        )}
+                      </div>
+                    </Field>
+
+                    <div className="space-y-2">
+                      {([
+                        { key: "showFooter", label: "הצג Footer בכל עמוד" },
+                        { key: "showSignature", label: "הצג חתימה בעמוד האחרון" },
+                        { key: "showStamp", label: "הצג חותמת בעמוד האחרון" },
+                      ] as const).map(({ key, label }) => (
+                        <label key={key} className="flex items-center gap-2.5 cursor-pointer select-none text-sm">
+                          <input
+                            type="checkbox"
+                            checked={fmt[key] !== false}
+                            onChange={(e) => upd({ [key]: e.target.checked } as Partial<SurveyReportFormat>)}
+                            className="h-4 w-4 accent-primary"
+                          />
+                          {label}
+                        </label>
+                      ))}
+                    </div>
+
+                    <Field label='נוסח "המתקנים נמצאו יציבים"'>
+                      <Input placeholder="המתקנים נמצאו יציבים" value={fmt.resultStableText ?? ""} onChange={(e) => upd({ resultStableText: e.target.value || undefined })} />
+                    </Field>
+                    <Field label='נוסח "המתקנים נמצאו לא יציבים"'>
+                      <Input placeholder="המתקנים נמצאו לא יציבים" value={fmt.resultUnstableText ?? ""} onChange={(e) => upd({ resultUnstableText: e.target.value || undefined })} />
+                    </Field>
+
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between">
+                        <Label className="text-sm font-bold text-primary">רשימת התנאים — ברירת מחדל לדוחות חדשים</Label>
+                        <button type="button" onClick={() => upd({ stabilityTermsDefault: undefined })} className="text-xs text-muted-foreground underline hover:text-primary">שחזר מקורי</button>
+                      </div>
+                      <p className="text-xs text-muted-foreground">התו {"{validUntil}"} יוחלף בתאריך התוקף שיוזן בדוח.</p>
+                      {(() => {
+                        const terms = fmt.stabilityTermsDefault ?? [...ELEMENT_STABILITY_DEFAULT_TERMS];
+                        const setTerms = (n: string[]) => upd({ stabilityTermsDefault: n });
+                        return (
+                          <>
+                            {terms.map((t, i) => (
+                              <div key={i} className="flex items-start gap-1.5">
+                                <span className="text-xs font-bold text-muted-foreground pt-2 w-4 shrink-0">{i + 1}.</span>
+                                <Textarea value={t} onChange={(e) => { const n = [...terms]; n[i] = e.target.value; setTerms(n); }} rows={2} className="flex-1 text-sm" dir="rtl" style={{ unicodeBidi: "plaintext" }} />
+                                <div className="flex flex-col gap-0.5 pt-1">
+                                  <button type="button" onClick={() => { if (i === 0) return; const n = [...terms]; [n[i - 1], n[i]] = [n[i], n[i - 1]]; setTerms(n); }} disabled={i === 0} className="text-muted-foreground hover:text-foreground disabled:opacity-30 text-xs">▲</button>
+                                  <button type="button" onClick={() => { if (i === terms.length - 1) return; const n = [...terms]; [n[i + 1], n[i]] = [n[i], n[i + 1]]; setTerms(n); }} disabled={i === terms.length - 1} className="text-muted-foreground hover:text-foreground disabled:opacity-30 text-xs">▼</button>
+                                  <button type="button" onClick={() => setTerms(terms.filter((_, j) => j !== i))} className="text-muted-foreground hover:text-destructive text-xs">✕</button>
+                                </div>
+                              </div>
+                            ))}
+                            <button type="button" onClick={() => setTerms([...terms, ""])} className="w-full rounded-lg border border-dashed border-border py-2 text-xs font-semibold text-muted-foreground hover:border-primary/50 hover:text-primary">+ הוסף סעיף</button>
+                          </>
+                        );
+                      })()}
+                    </div>
+                  </div>
+                )}
 
                 <Button
                   onClick={() => handleSave(id)}
