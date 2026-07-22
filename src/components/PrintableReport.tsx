@@ -8,6 +8,7 @@ import {
   ELEMENT_STABILITY_RESULT_UNSTABLE,
   resolveStabilityTerms,
 } from "@/lib/element-stability";
+import { ELEMENT_STABILITY_HEADER_BANNER } from "@/lib/element-stability-banner";
 import React, { forwardRef } from "react";
 
 interface Props {
@@ -202,17 +203,12 @@ export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, sett
     return (
       <div ref={ref} dir="rtl" lang="he"
         style={{ width: "794px", background: "#ffffff", color: "#0f172a", fontFamily: "Heebo, Assistant, sans-serif" }}>
-        <section style={{ padding: "40px 56px 28px", background: "#fff" }}>
-          {coverLogo && (
-            <div style={{ textAlign: "center", marginBottom: 12 }}>
-              <img src={coverLogo} alt="logo" crossOrigin="anonymous" style={{ maxHeight: 80, maxWidth: "100%", height: "auto", display: "inline-block" }} />
-            </div>
-          )}
-
-          {/* 1. Title */}
-          <h1 style={{ textAlign: "center", fontSize: 26, fontWeight: 800, color: accent, margin: "6px 0 24px", borderBottom: `3px solid ${accent}`, paddingBottom: 12 }}>
-            דוח בדיקת יציבות אלמנטים
-          </h1>
+        <section style={{ padding: "32px 56px 28px", background: "#fff" }}>
+          {/* 1. Header banner — dedicated to this report type only */}
+          <div style={{ marginBottom: 24 }}>
+            <img src={ELEMENT_STABILITY_HEADER_BANNER} alt="דוח יציבות קונסטרוקציה" crossOrigin="anonymous"
+              style={{ width: "100%", height: "auto", display: "block" }} />
+          </div>
 
           {/* 2. Report details */}
           <CoverLine label="שם המזמין" value={report.clientName} />
