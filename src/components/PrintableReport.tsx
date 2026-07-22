@@ -152,21 +152,23 @@ export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, sett
     // Marked with data-pdf-page-footer so pdf.ts stamps it on EVERY page.
     // A custom footer image (from settings) takes precedence when provided.
     const footerImg = fmt.footerImage;
+    // Explicit top/bottom padding (not margin) so the captured box fully
+    // contains the text with breathing room and can never clip the last line.
     const ElementFooter = () => (
-      <div data-pdf-page-footer="" style={{ marginTop: 28, direction: "rtl" }}>
+      <div data-pdf-page-footer="" style={{ direction: "rtl", padding: "14px 0 12px", boxSizing: "border-box" }}>
         {footerImg ? (
           <img src={footerImg} alt="footer" crossOrigin="anonymous" style={{ width: "100%", height: "auto", display: "block" }} />
         ) : (
           <>
-            <div style={{ height: 3, background: "#2f5eb3", borderRadius: 2, marginBottom: 6 }} />
-            <div style={{ textAlign: "center", fontSize: 11, color: "#0f172a", lineHeight: 1.7 }}>
+            <div style={{ height: 3, background: "#2f5eb3", borderRadius: 2, marginBottom: 8 }} />
+            <div style={{ textAlign: "center", fontSize: 12, color: "#0f172a", lineHeight: 1.9 }}>
               <div style={{ fontWeight: 700 }}>{footer.company}{footer.phone ? `, נייד : ${footer.phone}` : ""}</div>
               <div>
                 <span style={{ fontWeight: 700 }}>דוא"ל: </span>
                 <span style={{ color: "#1d4ed8", textDecoration: "underline" }}>{footer.email}</span>
                 {footer.website ? (
                   <>
-                    {"  אתר : "}
+                    {"   אתר : "}
                     <span style={{ color: "#1d4ed8", textDecoration: "underline" }}>{footer.website}</span>
                   </>
                 ) : null}
