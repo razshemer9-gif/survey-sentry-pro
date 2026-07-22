@@ -720,8 +720,8 @@ export default function ReportEditor() {
                         report.elementStabilityStatus === "unstable" ? "border-destructive bg-destructive/10 text-destructive ring-2 ring-destructive/30" : "border-border bg-background text-muted-foreground hover:border-destructive/50")}
                     >המתקנים נמצאו לא יציבים</button>
                   </div>
-                  <Field label="תוקף הבדיקה עד תאריך (סעיף 8 ברשימה)">
-                    <Input type="date" value={report.elementValidUntil || ""} onChange={(e) => update({ elementValidUntil: e.target.value })} />
+                  <Field label="תוקף הבדיקה עד תאריך ושעה (סעיף 8 ברשימה)">
+                    <Input type="datetime-local" value={report.elementValidUntil || ""} onChange={(e) => update({ elementValidUntil: e.target.value })} />
                   </Field>
                 </div>
 
@@ -816,7 +816,9 @@ export default function ReportEditor() {
             );
           })()}
 
-          {/* Opinion summary section */}
+          {/* Opinion summary section — accessibility opinion only for accessibility;
+              general_safety keeps its own findings summary. Hidden for all others. */}
+          {(report.surveyType === "accessibility" || report.surveyType === "general_safety") && (
           <div dir="rtl" className="rounded-2xl border-2 border-primary/30 bg-card p-4 space-y-3">
             {report.surveyType === "general_safety" ? (
               <>
@@ -890,6 +892,7 @@ export default function ReportEditor() {
               </>
             )}
           </div>
+          )}
           {/* Disclaimer clauses — general_safety only */}
           {report.surveyType === "general_safety" && (
             <div dir="rtl" className="rounded-2xl border-2 border-primary/20 bg-card p-4 space-y-2">

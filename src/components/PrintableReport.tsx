@@ -180,9 +180,16 @@ export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, sett
       </div>
     );
 
+    // Valid-until may carry a time part (datetime-local: "YYYY-MM-DDTHH:mm").
+    const formatValidUntil = (v?: string) => {
+      if (!v) return undefined;
+      const datePart = formatHebrewDate(v);
+      const timeMatch = v.match(/T(\d{2}:\d{2})/);
+      return timeMatch ? `${datePart} בשעה ${timeMatch[1]}` : datePart;
+    };
     const terms = resolveStabilityTerms(
       report.stabilityTerms ?? fmt.stabilityTermsDefault,
-      report.elementValidUntil ? formatHebrewDate(report.elementValidUntil) : undefined,
+      formatValidUntil(report.elementValidUntil),
     );
     const resultText = report.elementStabilityStatus === "unstable"
       ? (fmt.resultUnstableText || ELEMENT_STABILITY_RESULT_UNSTABLE)
