@@ -29,7 +29,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 
-import { ChecklistItem, ConsultantSettings, DEFAULT_SETTINGS, ReferencePhotoEntry, SurveyReport } from "@/lib/types";
+import { ChecklistItem, ConsultantSettings, DEFAULT_CHECKLIST, DEFAULT_SETTINGS, ReferencePhotoEntry, SurveyReport } from "@/lib/types";
 import { EDU_INSPECTION_TABLE } from "@/lib/edu-inspection-table";
 import { ELEMENT_STABILITY_DEFAULT_TERMS } from "@/lib/element-stability";
 import { getReport, loadUserSettings, saveReport, saveUserSettings } from "@/lib/storage";
@@ -81,14 +81,23 @@ export default function ReportEditor() {
         navigate("/");
         return;
       }
-      // education_safety reports must not carry accessibility standards items —
-      // strip anything that carries a standards-library signature (id, standard
-      // part/clause, or a suggested correction — the latter three survive when
-      // items were copied via an older user template that lost matchedRequirementId).
+      // education_safety reports must not carry accessibility items — strip
+      // anything with a standards-library signature (id / standard part / clause /
+      // suggested correction) AND un-customized accessibility default-checklist
+      // items (their titles come from DEFAULT_CHECKLIST and carry no field data).
+      // If nothing survives, leave a single empty finding for the editor to name.
       if (r.surveyType === "education_safety") {
-        const isStandardsItem = (it: ChecklistItem) =>
-          !!it.matchedRequirementId || !!it.standardPart || !!it.clause || !!it.suggestedCorrection;
-        const cleanItems = r.items.filter((it) => !isStandardsItem(it));
+        const DEFAULT_TITLES = new Set(DEFAULT_CHECKLIST.map((i) => i.title));
+        const isAccessibilityJunk = (it: ChecklistItem) => {
+          if (it.matchedRequirementId || it.standardPart || it.clause || it.suggestedCorrection) return true;
+          // Default accessibility title with nothing filled in by the surveyor.
+          const untouched = !it.fieldNotes && !it.photo && !(it.notes && it.notes.trim());
+          return DEFAULT_TITLES.has(it.title) && untouched;
+        };
+        let cleanItems = r.items.filter((it) => !isAccessibilityJunk(it));
+        if (cleanItems.length === 0) {
+          cleanItems = [{ id: uuid(), title: "", status: "non_compliant", notes: "", estimatedCost: 0 }];
+        }
         if (cleanItems.length !== r.items.length) {
           const cleaned = { ...r, items: cleanItems, updatedAt: Date.now() };
           setReport(cleaned);
