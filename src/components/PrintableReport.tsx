@@ -278,19 +278,22 @@ export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, sett
             <h3 style={{ fontSize: 18, fontWeight: 800, color: report.elementStabilityStatus === "unstable" ? "#b91c1c" : "#15803d", margin: "0 0 10px" }}>
               {resultText}
             </h3>
-            <div style={{ direction: "rtl" }}>
-              {terms.map((t, i) => (
-                <div key={i} style={{ display: "flex", alignItems: "flex-start", gap: 8, marginBottom: 6, fontSize: 13, lineHeight: 1.7 }}>
-                  <span style={{ flexShrink: 0, fontWeight: 700, minWidth: 20, textAlign: "right" }}>{i + 1}.</span>
-                  <span style={{ flex: 1, whiteSpace: "pre-wrap", unicodeBidi: "plaintext" }}>{t}</span>
-                </div>
-              ))}
-            </div>
+            {/* Fixed terms are relevant only when the elements are found stable. */}
+            {report.elementStabilityStatus !== "unstable" && (
+              <div style={{ direction: "rtl" }}>
+                {terms.map((t, i) => (
+                  <div key={i} style={{ display: "flex", alignItems: "flex-start", gap: 8, marginBottom: 6, fontSize: 13, lineHeight: 1.7 }}>
+                    <span style={{ flexShrink: 0, fontWeight: 700, minWidth: 20, textAlign: "right" }}>{i + 1}.</span>
+                    <span style={{ flex: 1, whiteSpace: "pre-wrap", unicodeBidi: "plaintext" }}>{t}</span>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
 
-          {/* 9. Signature + stamp — only on the last page, only when present */}
+          {/* 9. Signature + stamp — left side of the page, last page only, when present */}
           {(sigImg || stampImg) && (
-            <div data-pdf-no-break="" style={{ marginTop: 48, display: "flex", justifyContent: "flex-start", gap: 48, direction: "rtl" }}>
+            <div data-pdf-no-break="" style={{ marginTop: 48, display: "flex", justifyContent: "flex-end", gap: 48, direction: "rtl" }}>
               {sigImg && (
                 <div style={{ textAlign: "center" }}>
                   <img src={sigImg} alt="חתימה" crossOrigin="anonymous" style={{ maxHeight: 70, maxWidth: 200, height: "auto", display: "block", margin: "0 auto" }} />
