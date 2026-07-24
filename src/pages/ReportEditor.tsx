@@ -32,6 +32,7 @@ import {
 import { ChecklistItem, ConsultantSettings, DEFAULT_CHECKLIST, DEFAULT_SETTINGS, ReferencePhotoEntry, SurveyReport } from "@/lib/types";
 import { EDU_INSPECTION_TABLE } from "@/lib/edu-inspection-table";
 import { ELEMENT_STABILITY_DEFAULT_TERMS } from "@/lib/element-stability";
+import { STANDARDS_DATA } from "@/lib/standards-data";
 import { getReport, loadUserSettings, saveReport, saveUserSettings } from "@/lib/storage";
 import { useAuth } from "@/contexts/AuthContext";
 import { buildPdfFileName, generateReportPdf } from "@/lib/pdf";
@@ -87,12 +88,18 @@ export default function ReportEditor() {
       // items (their titles come from DEFAULT_CHECKLIST and carry no field data).
       // If nothing survives, leave a single empty finding for the editor to name.
       if (r.surveyType === "education_safety") {
-        const DEFAULT_TITLES = new Set(DEFAULT_CHECKLIST.map((i) => i.title));
+        // Accessibility-flavored titles: the default checklist AND every
+        // requirement title from the accessibility standards library — these
+        // are what old education reports were pre-filled with.
+        const ACCESSIBILITY_TITLES = new Set<string>([
+          ...DEFAULT_CHECKLIST.map((i) => i.title),
+          ...STANDARDS_DATA.map((s) => s.requirementTitle),
+        ]);
         const isAccessibilityJunk = (it: ChecklistItem) => {
           if (it.matchedRequirementId || it.standardPart || it.clause || it.suggestedCorrection) return true;
-          // Default accessibility title with nothing filled in by the surveyor.
+          // Accessibility title with nothing the surveyor filled in.
           const untouched = !it.fieldNotes && !it.photo && !(it.notes && it.notes.trim());
-          return DEFAULT_TITLES.has(it.title) && untouched;
+          return ACCESSIBILITY_TITLES.has(it.title) && untouched;
         };
         let cleanItems = r.items.filter((it) => !isAccessibilityJunk(it));
         if (cleanItems.length === 0) {
