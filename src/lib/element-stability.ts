@@ -26,6 +26,11 @@ export const ELEMENT_STABILITY_DEFAULT_TERMS: string[] = [
 export const ELEMENT_STABILITY_RESULT_STABLE = "המתקנים נמצאו יציבים";
 export const ELEMENT_STABILITY_RESULT_UNSTABLE = "המתקנים נמצאו לא יציבים";
 
+// Clauses relevant ONLY when the result is "stable" (0-based indices matching
+// the default list) — displayed clauses 1, 3, 4, 8. When the result is
+// "unstable" these are omitted; the rest of the list still appears.
+export const ELEMENT_STABILITY_STABLE_ONLY_INDICES = [0, 2, 3, 7];
+
 // Footer shown at the bottom of every page. Falls back to these values when the
 // consultant settings don't provide company details. Replaceable via settings.
 export const ELEMENT_STABILITY_FOOTER = {

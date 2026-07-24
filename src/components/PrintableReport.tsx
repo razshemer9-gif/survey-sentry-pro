@@ -6,6 +6,7 @@ import {
   ELEMENT_STABILITY_FOOTER,
   ELEMENT_STABILITY_RESULT_STABLE,
   ELEMENT_STABILITY_RESULT_UNSTABLE,
+  ELEMENT_STABILITY_STABLE_ONLY_INDICES,
   resolveStabilityTerms,
 } from "@/lib/element-stability";
 import { ELEMENT_STABILITY_HEADER_BANNER } from "@/lib/element-stability-banner";
@@ -278,17 +279,17 @@ export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, sett
             <h3 style={{ fontSize: 18, fontWeight: 800, color: report.elementStabilityStatus === "unstable" ? "#b91c1c" : "#15803d", margin: "0 0 10px" }}>
               {resultText}
             </h3>
-            {/* Fixed terms are relevant only when the elements are found stable. */}
-            {report.elementStabilityStatus !== "unstable" && (
-              <div style={{ direction: "rtl" }}>
-                {terms.map((t, i) => (
+            {/* When 'unstable', omit the stable-only clauses (1,3,4,8); keep the rest. */}
+            <div style={{ direction: "rtl" }}>
+              {terms
+                .filter((_, i) => report.elementStabilityStatus !== "unstable" || !ELEMENT_STABILITY_STABLE_ONLY_INDICES.includes(i))
+                .map((t, i) => (
                   <div key={i} style={{ display: "flex", alignItems: "flex-start", gap: 8, marginBottom: 6, fontSize: 13, lineHeight: 1.7 }}>
                     <span style={{ flexShrink: 0, fontWeight: 700, minWidth: 20, textAlign: "right" }}>{i + 1}.</span>
                     <span style={{ flex: 1, whiteSpace: "pre-wrap", unicodeBidi: "plaintext" }}>{t}</span>
                   </div>
                 ))}
-              </div>
-            )}
+            </div>
           </div>
 
           {/* 9. Signature + stamp — left side of the page, last page only, when present */}
