@@ -31,7 +31,7 @@ import {
 
 import { ChecklistItem, ConsultantSettings, DEFAULT_CHECKLIST, DEFAULT_SETTINGS, ReferencePhotoEntry, SurveyReport } from "@/lib/types";
 import { EDU_INSPECTION_TABLE } from "@/lib/edu-inspection-table";
-import { ELEMENT_STABILITY_DEFAULT_TERMS } from "@/lib/element-stability";
+import { ELEMENT_STABILITY_DEFAULT_TERMS, ELEMENT_STABILITY_STABLE_ONLY_INDICES } from "@/lib/element-stability";
 import { STANDARDS_DATA } from "@/lib/standards-data";
 import { getReport, loadUserSettings, saveReport, saveUserSettings } from "@/lib/storage";
 import { useAuth } from "@/contexts/AuthContext";
@@ -741,16 +741,16 @@ export default function ReportEditor() {
                   </Field>
                 </div>
 
-                {/* Fixed terms are relevant only when the elements are found stable. */}
-                {report.elementStabilityStatus !== "unstable" && (
                 <div dir="rtl" className="rounded-2xl border-2 border-primary/20 bg-card p-4 space-y-2">
                   <div className="flex items-center justify-between">
                     <h3 className="font-bold text-sm text-primary">רשימת התנאים הקבועה</h3>
                     <button type="button" onClick={() => update({ stabilityTerms: undefined })} className="text-xs text-muted-foreground underline hover:text-primary">שחזר ברירת מחדל</button>
                   </div>
-                  <p className="text-xs text-muted-foreground">ניתן לערוך, להוסיף, למחוק ולשנות סדר. הכיתוב "{"{validUntil}"}" יוחלף בתאריך התוקף. הרשימה מופיעה רק כאשר נבחר "המתקנים נמצאו יציבים".</p>
-                  {terms.map((t, i) => (
-                    <div key={i} className="flex items-start gap-1.5">
+                  <p className="text-xs text-muted-foreground">ניתן לערוך, להוסיף, למחוק ולשנות סדר. הכיתוב "{"{validUntil}"}" יוחלף בתאריך התוקף.{report.elementStabilityStatus === "unstable" ? " במצב \"לא יציבים\" סעיפים 1, 3, 4, 8 לא יופיעו בדוח." : ""}</p>
+                  {terms.map((t, i) => {
+                    const hiddenWhenUnstable = report.elementStabilityStatus === "unstable" && ELEMENT_STABILITY_STABLE_ONLY_INDICES.includes(i);
+                    return (
+                    <div key={i} className={cn("flex items-start gap-1.5", hiddenWhenUnstable && "opacity-40")}>
                       <span className="text-xs font-bold text-muted-foreground pt-2 w-4 shrink-0">{i + 1}.</span>
                       <Textarea value={t} onChange={(e) => { const n = [...terms]; n[i] = e.target.value; setTerms(n); }} rows={2} className="flex-1" dir="rtl" style={{ unicodeBidi: "plaintext" }} />
                       <div className="flex flex-col gap-0.5 pt-1">
@@ -759,10 +759,10 @@ export default function ReportEditor() {
                         <button type="button" onClick={() => setTerms(terms.filter((_, j) => j !== i))} className="text-muted-foreground hover:text-destructive text-xs">✕</button>
                       </div>
                     </div>
-                  ))}
+                    );
+                  })}
                   <button type="button" onClick={() => setTerms([...terms, ""])} className="w-full rounded-lg border border-dashed border-border py-2 text-xs font-semibold text-muted-foreground hover:border-primary/50 hover:text-primary">+ הוסף סעיף</button>
                 </div>
-                )}
               </div>
             );
           })()}
