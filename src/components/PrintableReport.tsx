@@ -291,9 +291,9 @@ export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, sett
             )}
           </div>
 
-          {/* 9. Signature + stamp — only on the last page, only when present */}
+          {/* 9. Signature + stamp — left side of the page, last page only, when present */}
           {(sigImg || stampImg) && (
-            <div data-pdf-no-break="" style={{ marginTop: 48, display: "flex", justifyContent: "flex-start", gap: 48, direction: "rtl" }}>
+            <div data-pdf-no-break="" style={{ marginTop: 48, display: "flex", justifyContent: "flex-end", gap: 48, direction: "rtl" }}>
               {sigImg && (
                 <div style={{ textAlign: "center" }}>
                   <img src={sigImg} alt="חתימה" crossOrigin="anonymous" style={{ maxHeight: 70, maxWidth: 200, height: "auto", display: "block", margin: "0 auto" }} />
