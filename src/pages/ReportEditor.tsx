@@ -741,12 +741,14 @@ export default function ReportEditor() {
                   </Field>
                 </div>
 
+                {/* Fixed terms are relevant only when the elements are found stable. */}
+                {report.elementStabilityStatus !== "unstable" && (
                 <div dir="rtl" className="rounded-2xl border-2 border-primary/20 bg-card p-4 space-y-2">
                   <div className="flex items-center justify-between">
                     <h3 className="font-bold text-sm text-primary">רשימת התנאים הקבועה</h3>
                     <button type="button" onClick={() => update({ stabilityTerms: undefined })} className="text-xs text-muted-foreground underline hover:text-primary">שחזר ברירת מחדל</button>
                   </div>
-                  <p className="text-xs text-muted-foreground">ניתן לערוך, להוסיף, למחוק ולשנות סדר. הכיתוב "{"{validUntil}"}" יוחלף בתאריך התוקף.</p>
+                  <p className="text-xs text-muted-foreground">ניתן לערוך, להוסיף, למחוק ולשנות סדר. הכיתוב "{"{validUntil}"}" יוחלף בתאריך התוקף. הרשימה מופיעה רק כאשר נבחר "המתקנים נמצאו יציבים".</p>
                   {terms.map((t, i) => (
                     <div key={i} className="flex items-start gap-1.5">
                       <span className="text-xs font-bold text-muted-foreground pt-2 w-4 shrink-0">{i + 1}.</span>
@@ -760,6 +762,7 @@ export default function ReportEditor() {
                   ))}
                   <button type="button" onClick={() => setTerms([...terms, ""])} className="w-full rounded-lg border border-dashed border-border py-2 text-xs font-semibold text-muted-foreground hover:border-primary/50 hover:text-primary">+ הוסף סעיף</button>
                 </div>
+                )}
               </div>
             );
           })()}
