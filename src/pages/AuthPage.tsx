@@ -1,7 +1,7 @@
 import { useState, FormEvent } from "react";
 import { useNavigate } from "react-router-dom";
 import { signIn, signUp } from "@/lib/auth";
-import companyLogo from "@/assets/company-logo.png";
+import authLogo from "@/assets/auth-logo.png";
 import "./AuthPage.css";
 
 export default function AuthPage() {
@@ -157,23 +157,15 @@ export default function AuthPage() {
         <div className="ap-hero">
           <div className="ap-logo-wrap">
             <img
-              src={companyLogo}
-              alt="שמר בטיחות יועצים"
-              width={220}
+              src={authLogo}
+              alt="שמר בטיחות יועצים — בטיחות לפני הכל"
+              width={300}
               height="auto"
             />
           </div>
 
           <h1 className="ap-title">מערכת סקרים מקצועיים</h1>
           <p className="ap-subtitle">פותח ע״י שמר בטיחות יועצים בע״מ</p>
-
-          <div className="ap-tags">
-            <span>נגישות</span>
-            <span className="ap-tags-dot">•</span>
-            <span>בטיחות</span>
-            <span className="ap-tags-dot">•</span>
-            <span>מוסדות חינוך</span>
-          </div>
         </div>
 
         {/* ── Glass form card ── */}
