@@ -35,7 +35,7 @@ import { ELEMENT_STABILITY_DEFAULT_TERMS, ELEMENT_STABILITY_STABLE_ONLY_INDICES 
 import { STANDARDS_DATA } from "@/lib/standards-data";
 import { getReport, loadUserSettings, saveReport, saveUserSettings } from "@/lib/storage";
 import { useAuth } from "@/contexts/AuthContext";
-import { buildPdfFileName, generateReportPdf } from "@/lib/pdf";
+import { buildPdfFileName } from "@/lib/pdf";
 import { cropImageDataUrl, formatCurrency } from "@/lib/image";
 import { cn } from "@/lib/utils";
 import { SignaturePad } from "@/components/SignaturePad";
@@ -211,7 +211,11 @@ export default function ReportEditor() {
     if (!latest) return;
     setGenerating(true);
     try {
-      await saveReport(latest);
+      // Load the heavy PDF engine on demand (kept out of the initial bundle).
+      const [{ generateReportPdf }] = await Promise.all([
+        import("@/lib/pdf-generate"),
+        saveReport(latest),
+      ]);
       // Two rAF ticks let React commit any pending renders to the print portal DOM
       await new Promise<void>((r) => requestAnimationFrame(() => requestAnimationFrame(() => r())));
       await generateReportPdf(printRef.current, buildPdfFileName(latest));
