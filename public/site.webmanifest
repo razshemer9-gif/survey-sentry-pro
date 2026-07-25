@@ -1,0 +1,11 @@
+{
+  "name": "שמר בטיחות יועצים — מערכת סקרים מקצועיים",
+  "short_name": "שמר",
+  "icons": [
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+  ],
+  "theme_color": "#1e40af",
+  "background_color": "#0a2260",
+  "display": "browser"
+}
