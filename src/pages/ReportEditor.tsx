@@ -332,6 +332,9 @@ export default function ReportEditor() {
               <>
                 {isElement ? (
                   <>
+                    <Field label="שם הסקר">
+                      <Input value={report.placeName} onChange={(e) => update({ placeName: e.target.value })} placeholder="לדוגמה: בדיקת יציבות - אתר X" autoComplete="off" />
+                    </Field>
                     <Field label="שם המזמין">
                       <Input value={report.clientName} onChange={(e) => update({ clientName: e.target.value })} autoComplete="organization" />
                     </Field>
