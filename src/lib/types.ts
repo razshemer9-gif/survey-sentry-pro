@@ -1,7 +1,7 @@
 export type ComplianceStatus = "compliant" | "non_compliant" | "not_applicable" | "pending";
 
 // ── Survey types registry ──────────────────────────────────────────────────
-export type SurveyType = "accessibility" | "education_safety" | "general_safety" | "welfare_inspection" | "element_stability";
+export type SurveyType = "accessibility" | "education_safety" | "general_safety" | "welfare_inspection" | "element_stability" | "risk_survey";
 
 export interface SurveyTypeConfig {
   id: SurveyType;
@@ -52,6 +52,14 @@ export const SURVEY_TYPES: SurveyTypeConfig[] = [
     pdfTitle: "דוח בדיקת יציבות אלמנטים",
     filePrefix: "דוח-יציבות-אלמנטים",
     color: "#0f766e",
+  },
+  {
+    id: "risk_survey",
+    label: "סקר סיכונים",
+    shortLabel: "סיכונים",
+    pdfTitle: "סקר סיכונים",
+    filePrefix: "סקר-סיכונים",
+    color: "#c2410c",
   },
 ];
 
@@ -176,6 +184,12 @@ export interface SurveyReport {
   // Editable list of fixed terms shown below the result (per-report override).
   // undefined ⇒ use ELEMENT_STABILITY_DEFAULT_TERMS.
   stabilityTerms?: string[];
+  // ── Risk survey (סקר סיכונים) ──────────────────────────────────────────────
+  // Findings themselves are the existing report.items — each uses only
+  // photo (the hazard image) and fieldNotes (its short description).
+  riskInspectorName?: string;        // שם עורך הדו"ח
+  riskFencingNote?: string;          // הנחיה בנושא גידור — free text, editable
+  riskFencingNoteEnabled?: boolean;  // allows hiding the note entirely
 }
 
 export interface ReferencePhotoEntry {

@@ -10,6 +10,7 @@ import {
   resolveStabilityTerms,
 } from "@/lib/element-stability";
 import { ELEMENT_STABILITY_HEADER_BANNER } from "@/lib/element-stability-banner";
+import { RISK_SURVEY_DEFAULT_FENCING_NOTE, RISK_SURVEY_SUBTITLE } from "@/lib/risk-survey";
 import React, { forwardRef } from "react";
 
 interface Props {
@@ -313,6 +314,76 @@ export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, sett
           )}
 
           {showFooter && <ElementFooter />}
+        </section>
+      </div>
+    );
+  }
+
+  // ── Risk survey: תיעוד תמונות מפגעים לפני אירוע ─────────────────────────────
+  if (report.surveyType === "risk_survey") {
+    const accent = "#c2410c";
+    const fencingNote = report.riskFencingNote ?? RISK_SURVEY_DEFAULT_FENCING_NOTE;
+    const showFencingNote = report.riskFencingNoteEnabled !== false && fencingNote.trim().length > 0;
+
+    return (
+      // data-pdf-page-numbers: opt-in digits-only "1 / N" page indicator
+      // (see pdf-generate.ts) — this report type is the only one using it.
+      <div ref={ref} dir="rtl" lang="he" data-pdf-page-numbers=""
+        style={{ width: "794px", background: "#ffffff", color: "#0f172a", fontFamily: "Heebo, Assistant, sans-serif" }}>
+        <section style={{ padding: "40px 48px 44px" }}>
+
+          {/* Header: title (+ event name) on the right, logo on the left */}
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", borderBottom: `3px solid ${accent}`, paddingBottom: 16, marginBottom: 8 }}>
+            <div>
+              <h1 style={{ margin: 0, fontSize: 25, fontWeight: 800, color: accent }}>
+                {surveyConfig.pdfTitle}{report.placeName ? ` - ${report.placeName}` : ""}
+              </h1>
+              <div style={{ marginTop: 6, fontSize: 13, color: "#64748b" }}>{RISK_SURVEY_SUBTITLE}</div>
+            </div>
+            {coverLogo && (
+              <img src={coverLogo} alt="לוגו" crossOrigin="anonymous" style={{ maxHeight: 60, maxWidth: 150, height: "auto", width: "auto", display: "block", objectFit: "contain" }} />
+            )}
+          </div>
+
+          {/* Compact event details — one slim line, not a form */}
+          {(report.clientName || report.address || report.surveyDate || report.riskInspectorName) && (
+            <div style={{ display: "flex", flexWrap: "wrap", gap: "4px 20px", fontSize: 12.5, color: "#334155", marginBottom: 22 }}>
+              {report.clientName && <span><span style={{ fontWeight: 700 }}>לקוח/רשות: </span>{report.clientName}</span>}
+              {report.address && <span><span style={{ fontWeight: 700 }}>מיקום: </span>{report.address}</span>}
+              {report.surveyDate && <span><span style={{ fontWeight: 700 }}>תאריך סיור: </span>{formatHebrewDate(report.surveyDate)}</span>}
+              {report.riskInspectorName && <span><span style={{ fontWeight: 700 }}>עורך הדו״ח: </span>{report.riskInspectorName}</span>}
+            </div>
+          )}
+
+          {/* Photo cards — 2 per row; image + caption never split across pages */}
+          {report.items.length > 0 ? (
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+              {report.items.map((item) => (
+                <div key={item.id} data-pdf-no-break="" style={{ border: "1px solid #e2e8f0", borderRadius: 12, overflow: "hidden", background: "#fff" }}>
+                  {item.photo && (
+                    <div style={{ width: "100%", height: 210, background: "#f8fafc", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                      <img src={item.photo} alt="" crossOrigin="anonymous" style={{ maxWidth: "100%", maxHeight: "100%", objectFit: "contain", display: "block" }} />
+                    </div>
+                  )}
+                  {item.fieldNotes && (
+                    <div style={{ padding: "10px 14px", fontSize: 13, lineHeight: 1.65, color: "#1e293b", textAlign: "center" }}>
+                      {item.fieldNotes}
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div style={{ fontSize: 14, color: "#94a3b8", textAlign: "center", padding: "40px 0" }}>לא נוספו תמונות</div>
+          )}
+
+          {/* Fencing note — appears once, at the very end, framed across the page width */}
+          {showFencingNote && (
+            <div data-pdf-no-break="" style={{ marginTop: 28, border: `2px solid ${accent}`, borderRadius: 12, padding: "16px 20px", background: "#fdf4ee" }}>
+              <div style={{ fontWeight: 800, color: accent, fontSize: 14, marginBottom: 6 }}>הנחיה לעניין הגדרות</div>
+              <div style={{ fontSize: 13, lineHeight: 1.7, color: "#1e293b", whiteSpace: "pre-wrap" }}>{fencingNote}</div>
+            </div>
+          )}
         </section>
       </div>
     );

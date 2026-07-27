@@ -50,9 +50,9 @@ const Index = () => {
     if (!selectedType) return;
     setCreating(true);
     try {
-      // education_safety, welfare_inspection and element_stability start with a
-      // single empty finding — no template needed
-      if (selectedType === "education_safety" || selectedType === "welfare_inspection" || selectedType === "element_stability") {
+      // education_safety, welfare_inspection, element_stability and risk_survey
+      // start empty (no template needed)
+      if (selectedType === "education_safety" || selectedType === "welfare_inspection" || selectedType === "element_stability" || selectedType === "risk_survey") {
         const r = await saveReport(newReport(selectedType));
         setTypeDialogOpen(false);
         navigate(`/report/${r.id}`);

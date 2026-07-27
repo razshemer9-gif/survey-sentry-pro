@@ -21,6 +21,7 @@ const TAB_ORDER: { id: SurveyType; label: string }[] = [
   { id: "general_safety",    label: "בטיחות כללי" },
   { id: "education_safety",  label: 'בטיחות מוס"ח' },
   { id: "element_stability", label: "יציבות אלמנטים" },
+  { id: "risk_survey",       label: "סקר סיכונים" },
 ];
 
 export default function Settings() {
