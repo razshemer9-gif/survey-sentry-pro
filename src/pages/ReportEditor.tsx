@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { useNavigate, useParams } from "react-router-dom";
-import { ArrowRight, Download, Eye, FileDown, Images, Loader2, PenLine, Plus, Save, Trash2 } from "lucide-react";
+import { ArrowRight, Download, Eye, FileDown, Images, Loader2, PenLine, Plus, RotateCw, Save, Trash2 } from "lucide-react";
 import { v4 as uuid } from "uuid";
 import { toast } from "sonner";
 
@@ -36,7 +36,8 @@ import { STANDARDS_DATA } from "@/lib/standards-data";
 import { getReport, loadUserSettings, saveReport, saveUserSettings } from "@/lib/storage";
 import { useAuth } from "@/contexts/AuthContext";
 import { buildPdfFileName } from "@/lib/pdf";
-import { cropImageDataUrl, formatCurrency } from "@/lib/image";
+import { cropImageDataUrl, fileToCompressedDataUrl, formatCurrency, rotateImageDataUrl } from "@/lib/image";
+import { RISK_SURVEY_DEFAULT_FENCING_NOTE } from "@/lib/risk-survey";
 import { cn } from "@/lib/utils";
 import { SignaturePad } from "@/components/SignaturePad";
 
@@ -54,6 +55,7 @@ export default function ReportEditor() {
   const [refPickerItemId, setRefPickerItemId] = useState<string | null>(null);
   const [croppedCoverPhoto, setCroppedCoverPhoto] = useState<string | null>(null);
   const [customApprovalInput, setCustomApprovalInput] = useState("");
+  const [addingPhotos, setAddingPhotos] = useState(false);
   const printRef = useRef<HTMLDivElement>(null);
   const reportRef = useRef<SurveyReport | null>(null);
   const autoSaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -196,6 +198,36 @@ export default function ReportEditor() {
       return { ...r, items };
     });
 
+  // Risk survey: turn a bulk file selection into one new finding per photo,
+  // each with an empty description ready to be filled in.
+  const addItemsFromFiles = async (files: FileList | null) => {
+    if (!files || files.length === 0) return;
+    setAddingPhotos(true);
+    try {
+      const dataUrls = await Promise.all(
+        Array.from(files).map((f) => fileToCompressedDataUrl(f)),
+      );
+      setReport((r) =>
+        r
+          ? {
+              ...r,
+              items: [
+                ...r.items,
+                ...dataUrls.map((photo) => ({
+                  id: uuid(), title: "", status: "non_compliant" as const, notes: "", estimatedCost: 0, photo,
+                })),
+              ],
+            }
+          : r,
+      );
+    } catch (err) {
+      console.error("[risk-survey] failed to add photos", err);
+      toast.error("שגיאה בהוספת תמונות");
+    } finally {
+      setAddingPhotos(false);
+    }
+  };
+
   const handleSave = async () => {
     if (!report) return;
     try {
@@ -209,6 +241,13 @@ export default function ReportEditor() {
   const handleGenerate = async () => {
     const latest = reportRef.current;
     if (!latest) return;
+    if (latest.surveyType === "risk_survey") {
+      const missing = latest.items.findIndex((it) => !it.fieldNotes?.trim());
+      if (missing !== -1) {
+        toast.error(`לתמונה ${missing + 1} חסר תיאור — יש להשלים לפני הפקת ה-PDF`);
+        return;
+      }
+    }
     setGenerating(true);
     try {
       // Load the heavy PDF engine on demand (kept out of the initial bundle).
@@ -328,9 +367,28 @@ export default function ReportEditor() {
             const isEdu = report.surveyType === "education_safety";
             const isWelfare = report.surveyType === "welfare_inspection";
             const isElement = report.surveyType === "element_stability";
+            const isRisk = report.surveyType === "risk_survey";
             return (
               <>
-                {isElement ? (
+                {isRisk ? (
+                  <>
+                    <Field label="שם האירוע">
+                      <Input value={report.placeName} onChange={(e) => update({ placeName: e.target.value })} placeholder="לדוגמה: פארק רמון גבעת שמואל" autoComplete="off" />
+                    </Field>
+                    <Field label="שם הלקוח / הרשות">
+                      <Input value={report.clientName} onChange={(e) => update({ clientName: e.target.value })} autoComplete="organization" />
+                    </Field>
+                    <Field label="מיקום האירוע">
+                      <Input value={report.address} onChange={(e) => update({ address: e.target.value })} autoComplete="street-address" />
+                    </Field>
+                    <Field label="תאריך הסיור">
+                      <Input type="date" value={report.surveyDate} onChange={(e) => update({ surveyDate: e.target.value })} />
+                    </Field>
+                    <Field label="שם עורך הדו״ח">
+                      <Input value={report.riskInspectorName || ""} onChange={(e) => update({ riskInspectorName: e.target.value })} />
+                    </Field>
+                  </>
+                ) : isElement ? (
                   <>
                     <Field label="שם הסקר">
                       <Input value={report.placeName} onChange={(e) => update({ placeName: e.target.value })} placeholder="לדוגמה: בדיקת יציבות - אתר X" autoComplete="off" />
@@ -521,14 +579,75 @@ export default function ReportEditor() {
           <div className="flex items-center gap-3 pt-2">
             <div className="flex-1 h-px bg-border" />
             <span className="text-xs font-semibold text-muted-foreground">
-              {report.surveyType === "element_stability" ? "אלמנטים" : "ממצאים"} ({report.items.length})
+              {report.surveyType === "element_stability" ? "אלמנטים" : report.surveyType === "risk_survey" ? "תמונות מפגעים" : "ממצאים"} ({report.items.length})
             </span>
             <div className="flex-1 h-px bg-border" />
           </div>
+
+          {/* Risk survey: bulk photo upload — each selected photo becomes its own finding */}
+          {report.surveyType === "risk_survey" && (
+            <label className={cn(
+              "flex flex-col items-center justify-center gap-2 rounded-2xl border-2 border-dashed p-6 cursor-pointer transition-colors",
+              addingPhotos ? "opacity-60 pointer-events-none" : "border-[#c2410c]/40 hover:border-[#c2410c] hover:bg-[#c2410c]/5"
+            )}>
+              {addingPhotos ? <Loader2 className="h-6 w-6 animate-spin text-[#c2410c]" /> : <Images className="h-6 w-6 text-[#c2410c]" />}
+              <span className="text-sm font-semibold text-[#c2410c]">
+                {addingPhotos ? "מוסיף תמונות..." : "העלה תמונות מפגעים (ניתן לבחור כמה יחד)"}
+              </span>
+              <input
+                type="file"
+                accept="image/*"
+                multiple
+                className="hidden"
+                disabled={addingPhotos}
+                onChange={(e) => { addItemsFromFiles(e.target.files); e.target.value = ""; }}
+              />
+            </label>
+          )}
+
           {report.items.map((item, idx) => {
             const refPhotos = item.referencePhotos && item.referencePhotos.length > 0
               ? item.referencePhotos
               : (item.referencePhoto ? [item.referencePhoto] : []);
+            // ── Risk survey: dedicated photo+caption card ──
+            if (report.surveyType === "risk_survey") {
+              return (
+                <div key={item.id} className="rounded-2xl border border-border border-r-4 border-r-[#c2410c] bg-card shadow-soft animate-fade-in overflow-hidden">
+                  <div className="px-4 pt-3 pb-2 bg-muted/30 border-b border-border/60 flex items-center justify-between gap-2">
+                    <span className="text-xs font-semibold text-muted-foreground">תמונה {idx + 1}</span>
+                    <div className="flex items-center gap-1.5">
+                      <button onClick={() => moveItem(item.id, -1)} disabled={idx === 0} className="text-muted-foreground hover:text-foreground disabled:opacity-30 text-sm px-1" aria-label="הזז למעלה">▲</button>
+                      <button onClick={() => moveItem(item.id, 1)} disabled={idx === report.items.length - 1} className="text-muted-foreground hover:text-foreground disabled:opacity-30 text-sm px-1" aria-label="הזז למטה">▼</button>
+                      <button onClick={() => removeItem(item.id)} className="text-muted-foreground hover:text-destructive" aria-label="מחק"><Trash2 className="h-4 w-4" /></button>
+                    </div>
+                  </div>
+                  <div className="px-4 py-3 space-y-3">
+                    {item.photo && (
+                      <div className="relative">
+                        <img src={item.photo} alt="" className="w-full max-h-64 object-contain rounded-lg border border-border bg-muted" />
+                        <button
+                          type="button"
+                          onClick={async () => updateItem(item.id, { photo: await rotateImageDataUrl(item.photo!, 90) })}
+                          className="absolute top-2 left-2 grid h-9 w-9 place-items-center rounded-full bg-background/90 text-foreground shadow-elev"
+                          aria-label="סובב תמונה"
+                        >
+                          <RotateCw className="h-4 w-4" />
+                        </button>
+                      </div>
+                    )}
+                    <div>
+                      <Label className="mb-1 block text-xs font-semibold text-foreground">תיאור המפגע</Label>
+                      <Textarea
+                        value={item.fieldNotes || ""}
+                        onChange={(e) => updateItem(item.id, { fieldNotes: e.target.value })}
+                        placeholder='לדוגמה: "אבן גדולה מונחת בשטח המיועד לקהל ומהווה מכשול וסכנת מעידה."'
+                        rows={2}
+                      />
+                    </div>
+                  </div>
+                </div>
+              );
+            }
             // ── Element stability: dedicated element card ──
             if (report.surveyType === "element_stability") {
               const isOk = item.status === "compliant";
@@ -706,17 +825,44 @@ export default function ReportEditor() {
             );
           })}
 
+          {report.surveyType !== "risk_survey" && (
           <Button onClick={addItem} variant="outline" className="w-full gap-2 rounded-2xl border-2 border-[#1e3a8a] text-[#1e3a8a] font-bold hover:bg-[#1e3a8a]/10">
             <Plus className="h-4 w-4" /> {report.surveyType === "element_stability" ? "אלמנט חדש" : "ממצא חדש"}
           </Button>
+          )}
 
-          {report.surveyType !== "element_stability" && (
+          {report.surveyType !== "element_stability" && report.surveyType !== "risk_survey" && (
           <div className="rounded-2xl bg-primary text-primary-foreground p-4 shadow-glow">
             <div className="flex items-center justify-between">
               <span className="text-sm opacity-90">אומדן תיקונים כולל</span>
               <strong className="text-xl">{formatCurrency(totalCost)}</strong>
             </div>
           </div>
+          )}
+
+          {/* Risk survey — fencing guidance note (once, at the end) */}
+          {report.surveyType === "risk_survey" && (
+            <div dir="rtl" className="rounded-2xl border-2 border-primary/20 bg-card p-4 space-y-2">
+              <div className="flex items-center justify-between">
+                <h3 className="font-bold text-sm text-primary">הנחיה בנושא גידור</h3>
+                <label className="flex items-center gap-1.5 text-xs text-muted-foreground cursor-pointer select-none">
+                  <input
+                    type="checkbox"
+                    checked={report.riskFencingNoteEnabled !== false}
+                    onChange={(e) => update({ riskFencingNoteEnabled: e.target.checked })}
+                    className="h-4 w-4 accent-primary"
+                  />
+                  הצג בדוח
+                </label>
+              </div>
+              {report.riskFencingNoteEnabled !== false && (
+                <Textarea
+                  value={report.riskFencingNote ?? RISK_SURVEY_DEFAULT_FENCING_NOTE}
+                  onChange={(e) => update({ riskFencingNote: e.target.value })}
+                  rows={3}
+                />
+              )}
+            </div>
           )}
 
           {/* Element stability — notes, result, editable terms, valid-until */}

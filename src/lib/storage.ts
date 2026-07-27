@@ -9,6 +9,7 @@ import {
 } from "./types";
 import { AccessibilityRequirement } from "./standards-types";
 import { supabase } from "./supabase";
+import { RISK_SURVEY_DEFAULT_FENCING_NOTE } from "./risk-survey";
 
 const K_TEMPLATES = "ans.templates.v1";
 const K_SETTINGS = "ans.settings.v1";
@@ -128,6 +129,9 @@ export function newReport(
         notes: "",
         estimatedCost: 0,
       }]
+    : surveyType === "risk_survey"
+    // Findings are created from uploaded photos (bulk picker) — none upfront.
+    ? []
     : DEFAULT_CHECKLIST.map((i) => ({
         id: uuid(),
         title: i.title,
@@ -147,6 +151,10 @@ export function newReport(
     surveyDate: new Date().toISOString().slice(0, 10),
     items,
     generalNotes: "",
+    ...(surveyType === "risk_survey" && {
+      riskFencingNote: RISK_SURVEY_DEFAULT_FENCING_NOTE,
+      riskFencingNoteEnabled: true,
+    }),
   };
 }
 

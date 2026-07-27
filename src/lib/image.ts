@@ -53,6 +53,24 @@ export function cropImageDataUrl(src: string, w: number, h: number): Promise<str
   });
 }
 
+/**
+ * Rotate an image dataURL by a multiple of 90° (canvas-based, no dependency).
+ * Used to fix photos that display sideways/upside-down.
+ */
+export function rotateImageDataUrl(src: string, degrees: 90 | -90 | 180): Promise<string> {
+  return loadImage(src).then((img) => {
+    const canvas = document.createElement("canvas");
+    const swap = degrees === 90 || degrees === -90;
+    canvas.width = swap ? img.naturalHeight : img.naturalWidth;
+    canvas.height = swap ? img.naturalWidth : img.naturalHeight;
+    const ctx = canvas.getContext("2d")!;
+    ctx.translate(canvas.width / 2, canvas.height / 2);
+    ctx.rotate((degrees * Math.PI) / 180);
+    ctx.drawImage(img, -img.naturalWidth / 2, -img.naturalHeight / 2);
+    return canvas.toDataURL("image/jpeg", 0.88);
+  });
+}
+
 export function formatHebrewDate(iso: string): string {
   if (!iso) return "";
   const d = new Date(iso);

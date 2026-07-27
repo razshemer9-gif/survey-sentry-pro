@@ -75,6 +75,14 @@ export async function generateReportPdf(
   const footerHmm = footerHpx * PX_TO_MM;
   const gapMm = footerEl ? GAP_PX * PX_TO_MM : 0;
 
+  // ── Numeric page numbers (opt-in) ────────────────────────────────────────
+  // A report may mark its root with [data-pdf-page-numbers]. jsPDF's built-in
+  // fonts don't support Hebrew glyphs (all Hebrew text in this app is
+  // rasterized via html2canvas, never drawn as native jsPDF text), so this
+  // stamps digits only — "1 / 3" — never Hebrew words. Reports without the
+  // marker are unaffected.
+  const showPageNumbers = element.hasAttribute("data-pdf-page-numbers");
+
   // ── Page sizing and smart break calculation ──────────────────────────────
   // iOS Safari limits canvas height to ~4096px and total area to ~16 MP.
   // Use scale=1 on mobile so each canvas stays within those bounds.
@@ -201,6 +209,13 @@ export async function generateReportPdf(
       // Stamp the repeating footer at the bottom of every page.
       if (footerData) {
         pdf.addImage(footerData, "JPEG", 0, contentHmm + gapMm, pageWmm, footerHmm, undefined, "FAST");
+      }
+
+      // Digits-only page indicator (see comment above showPageNumbers).
+      if (showPageNumbers && slices.length > 1) {
+        pdf.setFontSize(9);
+        pdf.setTextColor(140, 140, 140);
+        pdf.text(`${i + 1} / ${slices.length}`, pageWmm / 2, pageHmm - 4, { align: "center" });
       }
     }
   } finally {
