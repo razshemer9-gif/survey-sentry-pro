@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useRef, useState, ReactNode } from "react";
 import { User } from "@supabase/supabase-js";
 import { supabase } from "@/lib/supabase";
+import { withTimeout } from "@/lib/async";
 
 export type UserRole = "owner" | "admin" | "employee";
 
@@ -19,13 +20,6 @@ const AuthContext = createContext<AuthContextValue>({
   isAdmin: false,
   refreshRole: async () => {},
 });
-
-function withTimeout<T>(promise: Promise<T>, ms: number, fallback: T): Promise<T> {
-  return Promise.race([
-    promise,
-    new Promise<T>((resolve) => setTimeout(() => resolve(fallback), ms)),
-  ]);
-}
 
 async function fetchRole(userId: string): Promise<UserRole> {
   try {

@@ -34,6 +34,8 @@ import { EDU_INSPECTION_TABLE } from "@/lib/edu-inspection-table";
 import { ELEMENT_STABILITY_DEFAULT_TERMS, ELEMENT_STABILITY_STABLE_ONLY_INDICES } from "@/lib/element-stability";
 import { STANDARDS_DATA } from "@/lib/standards-data";
 import { getReport, loadUserSettings, saveReport, saveUserSettings } from "@/lib/storage";
+import { isDirty } from "@/lib/offline-db";
+import { subscribeSyncStatus } from "@/lib/sync-engine";
 import { useAuth } from "@/contexts/AuthContext";
 import { buildPdfFileName } from "@/lib/pdf";
 import { cropImageDataUrl, fileToCompressedDataUrl, formatCurrency, rotateImageDataUrl } from "@/lib/image";
@@ -59,6 +61,9 @@ export default function ReportEditor() {
   // idle=nothing to save · pending=edited, waiting for the 3s debounce (NOT
   // yet safe to exit) · saving=in flight · saved=persisted, safe to exit · error=failed
   const [saveStatus, setSaveStatus] = useState<"idle" | "pending" | "saving" | "saved" | "error">("idle");
+  // Whether the report is saved locally but still waiting to reach Supabase
+  // (e.g. offline, or the background sync hasn't run yet).
+  const [pendingSync, setPendingSync] = useState(false);
   const printRef = useRef<HTMLDivElement>(null);
   const reportRef = useRef<SurveyReport | null>(null);
   const autoSaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -71,6 +76,19 @@ export default function ReportEditor() {
 
   // Keep reportRef in sync so handleGenerate always saves the latest state
   useEffect(() => { reportRef.current = report; }, [report]);
+
+  // Track whether this report still has unsynced local changes, so the
+  // header can distinguish "saved on this device" from "saved to the cloud".
+  useEffect(() => {
+    if (!id) return;
+    let cancelled = false;
+    const refresh = () => {
+      isDirty(id).then((dirty) => { if (!cancelled) setPendingSync(dirty); });
+    };
+    refresh();
+    const unsubscribe = subscribeSyncStatus(refresh);
+    return () => { cancelled = true; unsubscribe(); };
+  }, [id]);
 
   // Pre-crop cover photo so the off-screen PDF element always has the correct size
   useEffect(() => {
@@ -400,7 +418,8 @@ export default function ReportEditor() {
             עריכת דוח
             {saveStatus === "pending" && <span className="h-1.5 w-1.5 rounded-full bg-white/60" aria-label="ממתין לשמירה" />}
             {saveStatus === "saving" && <Loader2 className="h-3.5 w-3.5 animate-spin" aria-label="שומר..." />}
-            {saveStatus === "saved" && <Check className="h-3.5 w-3.5 text-emerald-300" aria-label="נשמר" />}
+            {saveStatus === "saved" && !pendingSync && <Check className="h-3.5 w-3.5 text-emerald-300" aria-label="נשמר בענן" />}
+            {saveStatus === "saved" && pendingSync && <Check className="h-3.5 w-3.5 text-amber-300" aria-label="נשמר במכשיר — ממתין לסנכרון" />}
             {saveStatus === "error" && <AlertTriangle className="h-3.5 w-3.5 text-red-300" aria-label="שגיאת שמירה" />}
           </div>
           <button
@@ -414,7 +433,8 @@ export default function ReportEditor() {
         <h1 className="mt-3 truncate text-xl font-bold">{report.placeName || "סקר ללא שם"}</h1>
         {saveStatus === "pending" && <p className="mt-0.5 text-xs opacity-70">ממתין לשמירה...</p>}
         {saveStatus === "saving" && <p className="mt-0.5 text-xs opacity-80">שומר...</p>}
-        {saveStatus === "saved" && <p className="mt-0.5 text-xs opacity-80">✓ נשמר — ניתן לצאת בבטחה</p>}
+        {saveStatus === "saved" && !pendingSync && <p className="mt-0.5 text-xs opacity-80">✓ נשמר בענן — ניתן לצאת בבטחה</p>}
+        {saveStatus === "saved" && pendingSync && <p className="mt-0.5 text-xs text-amber-200">✓ נשמר במכשיר — ממתין לסנכרון לענן, ניתן לצאת בבטחה</p>}
         {saveStatus === "error" && <p className="mt-0.5 text-xs text-red-200 font-semibold">⚠ שגיאה בשמירה — אל תצא עדיין</p>}
       </header>
 
