@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { useNavigate, useParams } from "react-router-dom";
-import { ArrowRight, Download, Eye, FileDown, Images, Loader2, PenLine, Plus, RotateCw, Save, Trash2 } from "lucide-react";
+import { AlertTriangle, ArrowRight, Check, Download, Eye, FileDown, Images, Loader2, PenLine, Plus, RotateCw, Save, Trash2 } from "lucide-react";
 import { v4 as uuid } from "uuid";
 import { toast } from "sonner";
 
@@ -56,6 +56,9 @@ export default function ReportEditor() {
   const [croppedCoverPhoto, setCroppedCoverPhoto] = useState<string | null>(null);
   const [customApprovalInput, setCustomApprovalInput] = useState("");
   const [addingPhotos, setAddingPhotos] = useState(false);
+  // idle=nothing to save · pending=edited, waiting for the 3s debounce (NOT
+  // yet safe to exit) · saving=in flight · saved=persisted, safe to exit · error=failed
+  const [saveStatus, setSaveStatus] = useState<"idle" | "pending" | "saving" | "saved" | "error">("idle");
   const printRef = useRef<HTMLDivElement>(null);
   const reportRef = useRef<SurveyReport | null>(null);
   const autoSaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -123,7 +126,9 @@ export default function ReportEditor() {
     });
   }, [id, navigate]);
 
-  // Auto-save: debounce 3s after every change
+  // Auto-save: debounce 3s after every change. Surfaces its own status
+  // (idle/saving/saved/error) so the user has a visible signal of whether
+  // it's safe to exit — previously this failed completely silently.
   useEffect(() => {
     if (!report) return;
     if (isFirstLoad.current) {
@@ -131,11 +136,39 @@ export default function ReportEditor() {
       return;
     }
     if (autoSaveTimer.current) clearTimeout(autoSaveTimer.current);
+    setSaveStatus("pending");
     autoSaveTimer.current = setTimeout(async () => {
-      try { await saveReport(report); } catch { /* silent */ }
+      setSaveStatus("saving");
+      try {
+        await saveReport(reportRef.current ?? report);
+        setSaveStatus("saved");
+      } catch (err) {
+        console.error("[autosave]", err);
+        setSaveStatus("error");
+        toast.error("שגיאה בשמירה אוטומטית — אין חיבור לאינטרנט?");
+      }
     }, 3000);
     return () => { if (autoSaveTimer.current) clearTimeout(autoSaveTimer.current); };
   }, [report]);
+
+  // True-unmount safety net: if the user exits (native back gesture, closing
+  // the tab, etc.) before the 3s debounce above fires, flush the latest state
+  // immediately instead of silently dropping it. Empty deps ⇒ this cleanup
+  // runs only when the component actually unmounts, not on every edit.
+  useEffect(() => {
+    return () => {
+      if (autoSaveTimer.current) {
+        clearTimeout(autoSaveTimer.current);
+        const latest = reportRef.current;
+        if (latest) {
+          saveReport(latest).catch((err) => {
+            console.error("[unmount-flush] failed to save pending changes", err);
+            toast.error("שגיאה בשמירת השינויים האחרונים — בדוק חיבור לאינטרנט");
+          });
+        }
+      }
+    };
+  }, []);
 
   if (!report) {
     return (
@@ -229,12 +262,30 @@ export default function ReportEditor() {
   };
 
   const handleSave = async () => {
-    if (!report) return;
+    const latest = reportRef.current;
+    if (!latest) return;
+    setSaveStatus("saving");
     try {
-      await saveReport(report);
+      await saveReport(latest);
+      setSaveStatus("saved");
       toast.success("נשמר");
     } catch {
+      setSaveStatus("error");
       toast.error("שגיאה בשמירה");
+    }
+  };
+
+  const handleExit = async () => {
+    // Cancel the pending debounce — we're saving explicitly right now instead.
+    if (autoSaveTimer.current) clearTimeout(autoSaveTimer.current);
+    const latest = reportRef.current;
+    try {
+      if (latest) await saveReport(latest);
+    } catch (err) {
+      console.error("[exit-save]", err);
+      toast.error("שגיאה בשמירה — בדוק חיבור לאינטרנט. השינויים האחרונים עלולים לא להישמר.");
+    } finally {
+      navigate("/");
     }
   };
 
@@ -339,15 +390,19 @@ export default function ReportEditor() {
       <header className="brand-gradient text-primary-foreground px-4 pb-5 pt-4 safe-top shadow-elev">
         <div className="flex items-center justify-between">
           <button
-            onClick={() => {
-              saveReport(report).finally(() => navigate("/"));
-            }}
+            onClick={handleExit}
             className="grid h-10 w-10 place-items-center rounded-full bg-white/15 hover:bg-white/25"
             aria-label="חזור"
           >
             <ArrowRight className="h-5 w-5" />
           </button>
-          <div className="text-sm font-semibold opacity-90">עריכת דוח</div>
+          <div className="flex items-center gap-1.5 text-sm font-semibold opacity-90">
+            עריכת דוח
+            {saveStatus === "pending" && <span className="h-1.5 w-1.5 rounded-full bg-white/60" aria-label="ממתין לשמירה" />}
+            {saveStatus === "saving" && <Loader2 className="h-3.5 w-3.5 animate-spin" aria-label="שומר..." />}
+            {saveStatus === "saved" && <Check className="h-3.5 w-3.5 text-emerald-300" aria-label="נשמר" />}
+            {saveStatus === "error" && <AlertTriangle className="h-3.5 w-3.5 text-red-300" aria-label="שגיאת שמירה" />}
+          </div>
           <button
             onClick={handleSave}
             className="grid h-10 w-10 place-items-center rounded-full bg-white/15 hover:bg-white/25"
@@ -357,6 +412,10 @@ export default function ReportEditor() {
           </button>
         </div>
         <h1 className="mt-3 truncate text-xl font-bold">{report.placeName || "סקר ללא שם"}</h1>
+        {saveStatus === "pending" && <p className="mt-0.5 text-xs opacity-70">ממתין לשמירה...</p>}
+        {saveStatus === "saving" && <p className="mt-0.5 text-xs opacity-80">שומר...</p>}
+        {saveStatus === "saved" && <p className="mt-0.5 text-xs opacity-80">✓ נשמר — ניתן לצאת בבטחה</p>}
+        {saveStatus === "error" && <p className="mt-0.5 text-xs text-red-200 font-semibold">⚠ שגיאה בשמירה — אל תצא עדיין</p>}
       </header>
 
       <div className="px-4 pt-4 space-y-4">
