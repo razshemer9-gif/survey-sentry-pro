@@ -10,6 +10,17 @@ import {
 import { AccessibilityRequirement } from "./standards-types";
 import { supabase } from "./supabase";
 import { RISK_SURVEY_DEFAULT_FENCING_NOTE } from "./risk-survey";
+import { withTimeout } from "./async";
+import {
+  getAllCachedReports,
+  getCachedReport,
+  getDirtyRows,
+  isDirty,
+  markDeletedLocally,
+  putCachedReport,
+} from "./offline-db";
+import { remoteGetReport, remoteListReports } from "./reports-remote";
+import { startSyncEngine, syncPendingReports } from "./sync-engine";
 
 const K_TEMPLATES = "ans.templates.v1";
 const K_SETTINGS = "ans.settings.v1";
@@ -33,49 +44,53 @@ function write<T>(key: string, value: T) {
   localStorage.setItem(key, JSON.stringify(value));
 }
 
-// ---------- Reports (Supabase) ----------
+// ---------- Reports (local-first: IndexedDB cache + background sync) ----------
 export async function listReports(): Promise<SurveyReport[]> {
-  const { data, error } = await supabase.rpc("list_my_reports");
-  if (error) throw error;
-  return (data ?? [])
-    .map((row: { data: SurveyReport }) => row.data)
-    .sort((a, b) => (b.updatedAt ?? 0) - (a.updatedAt ?? 0));
+  startSyncEngine();
+  try {
+    const remote = await withTimeout(remoteListReports(), 6000, null as SurveyReport[] | null);
+    if (remote) {
+      const dirty = await getDirtyRows();
+      const dirtyIds = new Set(dirty.map((r) => r.id));
+      for (const r of remote) {
+        if (!dirtyIds.has(r.id)) await putCachedReport(r, false);
+      }
+    }
+  } catch {
+    // offline or request failed — serve from local cache below
+  }
+  const cached = await getAllCachedReports();
+  return cached.sort((a, b) => (b.updatedAt ?? 0) - (a.updatedAt ?? 0));
 }
 
 export async function getReport(id: string): Promise<SurveyReport | undefined> {
-  const userId = await getUserId();
-  const { data, error } = await supabase
-    .from("reports")
-    .select("data")
-    .eq("id", id)
-    .eq("device_id", userId)
-    .single();
-  if (error) return undefined;
-  return data?.data as SurveyReport;
+  startSyncEngine();
+  const cached = await getCachedReport(id);
+  try {
+    const dirty = await isDirty(id);
+    if (!dirty) {
+      const remote = await withTimeout(remoteGetReport(id), 6000, undefined);
+      if (remote) {
+        await putCachedReport(remote, false);
+        return remote;
+      }
+    }
+  } catch {
+    // offline or request failed — fall back to local cache
+  }
+  return cached;
 }
 
 export async function saveReport(report: SurveyReport): Promise<SurveyReport> {
-  const userId = await getUserId();
   const updated = { ...report, updatedAt: Date.now() };
-  const { error } = await supabase.from("reports").upsert({
-    id: report.id,
-    device_id: userId,
-    data: updated,
-    created_at: updated.createdAt,
-    updated_at: updated.updatedAt,
-  });
-  if (error) throw error;
+  await putCachedReport(updated, true);
+  void syncPendingReports();
   return updated;
 }
 
 export async function deleteReport(id: string): Promise<void> {
-  const userId = await getUserId();
-  const { error } = await supabase
-    .from("reports")
-    .delete()
-    .eq("id", id)
-    .eq("device_id", userId);
-  if (error) throw error;
+  await markDeletedLocally(id);
+  void syncPendingReports();
 }
 
 export async function addRequirementToReport(

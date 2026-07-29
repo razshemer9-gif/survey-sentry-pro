@@ -7,12 +7,13 @@ import {
   Dialog, DialogContent, DialogHeader, DialogTitle,
 } from "@/components/ui/dialog";
 import { deleteReport, listReports, listTemplates, newReport, saveReport } from "@/lib/storage";
+import { isDirty } from "@/lib/offline-db";
+import { subscribeSyncStatus } from "@/lib/sync-engine";
 import { getSurveyType, SURVEY_TYPES, SurveyReport, SurveyType } from "@/lib/types";
 import { formatHebrewDate } from "@/lib/image";
 import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { supabase } from "@/lib/supabase";
 
 const Index = () => {
   const navigate = useNavigate();
@@ -21,25 +22,39 @@ const Index = () => {
   const [typeDialogOpen, setTypeDialogOpen] = useState(false);
   const [selectedType, setSelectedType] = useState<SurveyType | null>(null);
   const [creating, setCreating] = useState(false);
+  const [dirtyIds, setDirtyIds] = useState<Set<string>>(new Set());
 
+  // ProtectedRoute (App.tsx) already gates this page on a logged-in user —
+  // no need to re-check the session here. listReports() itself is
+  // local-first: it serves the IndexedDB cache even if the network is down.
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (!session) {
-        navigate("/auth");
-        return;
-      }
-      listReports()
-        .then(setReports)
-        .catch((err: unknown) => {
-          const detail = err instanceof Error
-            ? err.message
-            : (err as { message?: string })?.message ?? JSON.stringify(err);
-          console.error("listReports error:", err);
-          toast.error(`שגיאה בטעינת הדוחות: ${detail}`);
-        })
-        .finally(() => setLoading(false));
-    });
-  }, [navigate]);
+    listReports()
+      .then(setReports)
+      .catch((err: unknown) => {
+        const detail = err instanceof Error
+          ? err.message
+          : (err as { message?: string })?.message ?? JSON.stringify(err);
+        console.error("listReports error:", err);
+        toast.error(`שגיאה בטעינת הדוחות: ${detail}`);
+      })
+      .finally(() => setLoading(false));
+  }, []);
+
+  // Show a "pending sync" badge on reports that are saved locally but
+  // haven't reached Supabase yet; re-checked whenever the sync engine runs.
+  useEffect(() => {
+    let cancelled = false;
+    const refresh = () => {
+      Promise.all(reports.map((r) => isDirty(r.id).then((d) => (d ? r.id : null))))
+        .then((ids) => {
+          if (cancelled) return;
+          setDirtyIds(new Set(ids.filter((x): x is string => !!x)));
+        });
+    };
+    refresh();
+    const unsubscribe = subscribeSyncStatus(refresh);
+    return () => { cancelled = true; unsubscribe(); };
+  }, [reports]);
 
   function openNewDialog() {
     setSelectedType(null);
@@ -168,6 +183,11 @@ const Index = () => {
                           >
                             {cfg.shortLabel}
                           </span>
+                          {dirtyIds.has(r.id) && (
+                            <span className="inline-flex items-center gap-1 rounded-full bg-amber-500/10 px-2 py-0.5 text-[10px] font-semibold text-amber-600">
+                              ⏳ ממתין לסנכרון
+                            </span>
+                          )}
                           <span className="inline-flex items-center gap-1 rounded-full bg-success/10 px-2 py-0.5 text-[10px] font-semibold text-success">
                             ✓ {r.items.filter((i) => i.status === "compliant").length} תקין
                           </span>
