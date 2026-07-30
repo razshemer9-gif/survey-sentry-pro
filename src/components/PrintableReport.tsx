@@ -1,4 +1,4 @@
-import { ConsultantSettings, getSurveyType, SurveyReport, SurveyReportFormat } from "@/lib/types";
+import { ConsultantSettings, getSurveyType, hasEduDeficiencies, SurveyReport, SurveyReportFormat } from "@/lib/types";
 import { formatCurrency, formatHebrewDate } from "@/lib/pdf";
 import { EDU_INSPECTION_TABLE } from "@/lib/edu-inspection-table";
 import { ISRAEL_STATE_EMBLEM, MOLSA_HEADER_LOGO } from "@/lib/welfare-logos";
@@ -723,6 +723,7 @@ export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, sett
     const inspectorName = fmt.professionalName || settings.consultantName;
     const inspectorRole = fmt.professionalRole;
     const headerColor = "#1e3a8a"; // blue accent (matches brand)
+    const eduIsApproval = report.reportMode === "approval" && !hasEduDeficiencies(report);
 
     const EDU_PRIORITY: { p: 0 | 1 | 2; label: string; desc: string; color: string; bg: string; border: string }[] = [
       { p: 0, label: "קדימות 0", desc: "מפגע בטיחותי — מחייב הסרה מיידית.",              color: "#b91c1c", bg: "#fef2f2", border: "#fca5a5" },
@@ -776,7 +777,7 @@ export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, sett
             {fmt.reportTitle || "הבטחת תנאים בטיחותיים במוסדות חינוך"}
           </h1>
           <div style={{ fontSize: 18, fontWeight: 700, letterSpacing: 6, color: "#334155" }}>
-            ד ו ח &nbsp; ס י כ ו ם &nbsp; מ ב ד ק
+            {eduIsApproval ? <>א י ש ו ר</> : <>ד ו ח</>} &nbsp; ס י כ ו ם &nbsp; מ ב ד ק
           </div>
         </div>
 
