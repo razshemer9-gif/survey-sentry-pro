@@ -196,13 +196,15 @@ export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, sett
       const timeMatch = v.match(/T(\d{2}:\d{2})/);
       return timeMatch ? `${datePart} בשעה ${timeMatch[1]}` : datePart;
     };
+    const validUntilText = formatValidUntil(report.elementValidUntil);
     const terms = resolveStabilityTerms(
       report.stabilityTerms ?? fmt.stabilityTermsDefault,
-      formatValidUntil(report.elementValidUntil),
+      validUntilText,
     );
     const resultText = report.elementStabilityStatus === "unstable"
       ? (fmt.resultUnstableText || ELEMENT_STABILITY_RESULT_UNSTABLE)
       : (fmt.resultStableText || ELEMENT_STABILITY_RESULT_STABLE);
+    const isElementApproval = report.reportMode === "approval";
     const showStamp = fmt.showStamp !== false;
     const showSig = fmt.showSignature !== false;
     const showFooter = fmt.showFooter !== false;
@@ -221,16 +223,20 @@ export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, sett
         style={{ width: "794px", background: "#ffffff", color: "#0f172a", fontFamily: "Heebo, Assistant, sans-serif" }}>
         <section style={{ padding: "32px 56px 28px", background: "#fff" }}>
           {/* 1. Header banner — dedicated to this report type only */}
-          <div style={{ marginBottom: 24 }}>
-            <img src={ELEMENT_STABILITY_HEADER_BANNER} alt="דוח יציבות קונסטרוקציה" crossOrigin="anonymous"
+          <div style={{ marginBottom: 12 }}>
+            <img src={ELEMENT_STABILITY_HEADER_BANNER} alt="דו״ח יציבות קונסטרוקציה" crossOrigin="anonymous"
               style={{ width: "100%", height: "auto", display: "block" }} />
           </div>
+          <h1 style={{ fontSize: 22, fontWeight: 800, color: accent, textAlign: "center", margin: "0 0 20px" }}>
+            {isElementApproval ? "אישור יציבות קונסטרוקציה" : 'דו״ח יציבות קונסטרוקציה'}
+          </h1>
 
           {/* 2. Report details */}
           <CoverLine label="שם המזמין" value={report.clientName} />
           <CoverLine label="שם הבודק" value={inspectorName} />
           <CoverLine label="מיקום" value={report.address} />
           <CoverLine label="תאריך הבדיקה" value={report.surveyDate ? formatHebrewDate(report.surveyDate) : ""} />
+          <CoverLine label={isElementApproval ? "תוקף האישור" : "תוקף הבדיקה"} value={validUntilText} />
 
           {report.elementIntroText && (
             <div style={{ marginTop: 14, fontSize: 14, lineHeight: 1.8, whiteSpace: "pre-wrap", direction: "rtl" }}>
