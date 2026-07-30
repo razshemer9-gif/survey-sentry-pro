@@ -5,18 +5,21 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
+import { importWithReload } from "@/lib/dynamic-import";
 
 // Route-level code splitting — each page loads only when visited.
 // Behavior and appearance are unchanged; the Suspense fallback is the same
-// spinner already shown while auth state is loading.
-const Index          = lazy(() => import("./pages/Index.tsx"));
-const NotFound       = lazy(() => import("./pages/NotFound.tsx"));
-const ReportEditor   = lazy(() => import("./pages/ReportEditor.tsx"));
-const Settings       = lazy(() => import("./pages/Settings.tsx"));
-const Templates      = lazy(() => import("./pages/Templates.tsx"));
-const Standards      = lazy(() => import("./pages/Standards.tsx"));
-const UserManagement = lazy(() => import("./pages/UserManagement.tsx"));
-const AuthPage       = lazy(() => import("./pages/AuthPage.tsx"));
+// spinner already shown while auth state is loading. Each import is wrapped
+// so a stale chunk reference (from a tab left open across a deploy) retries
+// once via a full reload instead of crashing — see dynamic-import.ts.
+const Index          = lazy(() => importWithReload(() => import("./pages/Index.tsx")));
+const NotFound       = lazy(() => importWithReload(() => import("./pages/NotFound.tsx")));
+const ReportEditor   = lazy(() => importWithReload(() => import("./pages/ReportEditor.tsx")));
+const Settings       = lazy(() => importWithReload(() => import("./pages/Settings.tsx")));
+const Templates      = lazy(() => importWithReload(() => import("./pages/Templates.tsx")));
+const Standards      = lazy(() => importWithReload(() => import("./pages/Standards.tsx")));
+const UserManagement = lazy(() => importWithReload(() => import("./pages/UserManagement.tsx")));
+const AuthPage       = lazy(() => importWithReload(() => import("./pages/AuthPage.tsx")));
 
 const queryClient = new QueryClient();
 

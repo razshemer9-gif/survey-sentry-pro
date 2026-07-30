@@ -36,6 +36,7 @@ import { STANDARDS_DATA } from "@/lib/standards-data";
 import { getReport, loadUserSettings, saveReport, saveUserSettings } from "@/lib/storage";
 import { isDirty } from "@/lib/offline-db";
 import { subscribeSyncStatus } from "@/lib/sync-engine";
+import { importWithReload } from "@/lib/dynamic-import";
 import { useAuth } from "@/contexts/AuthContext";
 import { buildPdfFileName } from "@/lib/pdf";
 import { cropImageDataUrl, fileToCompressedDataUrl, formatCurrency, rotateImageDataUrl } from "@/lib/image";
@@ -321,7 +322,7 @@ export default function ReportEditor() {
     try {
       // Load the heavy PDF engine on demand (kept out of the initial bundle).
       const [{ generateReportPdf }] = await Promise.all([
-        import("@/lib/pdf-generate"),
+        importWithReload(() => import("@/lib/pdf-generate")),
         saveReport(latest),
       ]);
       // Two rAF ticks let React commit any pending renders to the print portal DOM
@@ -366,7 +367,7 @@ export default function ReportEditor() {
 
     setZipping(true);
     try {
-      const JSZip = (await import("jszip")).default;
+      const JSZip = (await importWithReload(() => import("jszip"))).default;
       const zip = new JSZip();
       entries.forEach(({ name, dataUrl }) => {
         const base64 = dataUrl.split(",")[1];
