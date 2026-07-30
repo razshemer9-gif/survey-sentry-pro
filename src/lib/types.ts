@@ -192,14 +192,6 @@ export interface SurveyReport {
   riskFencingNoteEnabled?: boolean;  // allows hiding the note entirely
 }
 
-// A education_safety report has no deficiencies when every finding is still
-// just the empty placeholder — used to gate the "mark as אישור" toggle and
-// to keep the PDF title in sync even if reportMode is stale (e.g. a
-// deficiency was added after the report was already marked as an approval).
-export function hasEduDeficiencies(report: SurveyReport): boolean {
-  return report.items.some((i) => (i.title || "").trim() || (i.fieldNotes || "").trim());
-}
-
 export interface ReferencePhotoEntry {
   id: string;
   label: string;

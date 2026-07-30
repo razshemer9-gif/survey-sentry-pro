@@ -29,7 +29,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 
-import { ChecklistItem, ConsultantSettings, DEFAULT_CHECKLIST, DEFAULT_SETTINGS, hasEduDeficiencies, ReferencePhotoEntry, SurveyReport } from "@/lib/types";
+import { ChecklistItem, ConsultantSettings, DEFAULT_CHECKLIST, DEFAULT_SETTINGS, ReferencePhotoEntry, SurveyReport } from "@/lib/types";
 import { EDU_INSPECTION_TABLE } from "@/lib/edu-inspection-table";
 import { ELEMENT_STABILITY_DEFAULT_TERMS, ELEMENT_STABILITY_STABLE_ONLY_INDICES } from "@/lib/element-stability";
 import { STANDARDS_DATA } from "@/lib/standards-data";
@@ -591,30 +591,6 @@ export default function ReportEditor() {
                     <Field label="הערות כלליות (אופציונלי)">
                       <Textarea value={report.generalNotes || ""} onChange={(e) => update({ generalNotes: e.target.value })} rows={3} placeholder="הערות שיופיעו לפני פירוט הממצאים" />
                     </Field>
-                    {!hasEduDeficiencies(report) && (
-                      <Field label="סוג מסמך">
-                        <div className="flex gap-2">
-                          {(["survey", "approval"] as const).map((m) => (
-                            <button
-                              key={m}
-                              type="button"
-                              onClick={() => update({ reportMode: m })}
-                              className={cn(
-                                "flex-1 rounded-lg border py-2 text-sm font-semibold transition-colors",
-                                (report.reportMode ?? "survey") === m
-                                  ? "bg-primary text-primary-foreground border-primary"
-                                  : "bg-background text-muted-foreground border-border hover:border-primary/50"
-                              )}
-                            >
-                              {m === "survey" ? "דוח" : "אישור"}
-                            </button>
-                          ))}
-                        </div>
-                        <p className="mt-1 text-xs text-muted-foreground">
-                          לא נמצאו ליקויים — ניתן לסמן את המסמך כאישור במקום דוח.
-                        </p>
-                      </Field>
-                    )}
                   </>
                 ) : (
                   <>

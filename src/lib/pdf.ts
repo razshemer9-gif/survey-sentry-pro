@@ -1,16 +1,14 @@
 // Pure PDF-related helpers — NO heavy imports here.
 // The actual generator (jsPDF + html2canvas) lives in ./pdf-generate and is
 // loaded on demand via dynamic import, so it stays out of the initial bundle.
-import { getSurveyType, hasEduDeficiencies, SurveyReport } from "./types";
+import { getSurveyType, SurveyReport } from "./types";
 import { formatCurrency, formatHebrewDate } from "./image";
 
 export function buildPdfFileName(report: SurveyReport): string {
   const safe = (report.placeName || "report").replace(/[^֐-׿a-zA-Z0-9 _-]/g, "").trim() || "report";
   const date  = report.surveyDate || new Date().toISOString().slice(0, 10);
   const basePrefix = getSurveyType(report.surveyType).filePrefix;
-  const isApproval = report.reportMode === "approval" &&
-    (report.surveyType !== "education_safety" || !hasEduDeficiencies(report));
-  const prefix = isApproval ? basePrefix.replace(/^סקר/, "אישור") : basePrefix;
+  const prefix = report.reportMode === "approval" ? basePrefix.replace(/^סקר/, "אישור") : basePrefix;
   return `${prefix}-${safe}-${date}.pdf`;
 }
 
