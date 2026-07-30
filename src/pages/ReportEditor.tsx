@@ -971,6 +971,25 @@ export default function ReportEditor() {
                   <Field label="תוקף הבדיקה עד תאריך ושעה (סעיף 8 ברשימה)">
                     <Input type="datetime-local" value={report.elementValidUntil || ""} onChange={(e) => update({ elementValidUntil: e.target.value })} />
                   </Field>
+                  <Field label="סוג מסמך">
+                    <div className="flex gap-2">
+                      {(["survey", "approval"] as const).map((m) => (
+                        <button
+                          key={m}
+                          type="button"
+                          onClick={() => update({ reportMode: m })}
+                          className={cn(
+                            "flex-1 rounded-lg border py-2 text-sm font-semibold transition-colors",
+                            (report.reportMode ?? "survey") === m
+                              ? "bg-primary text-primary-foreground border-primary"
+                              : "bg-background text-muted-foreground border-border hover:border-primary/50"
+                          )}
+                        >
+                          {m === "survey" ? "דוח" : "אישור"}
+                        </button>
+                      ))}
+                    </div>
+                  </Field>
                 </div>
 
                 <div dir="rtl" className="rounded-2xl border-2 border-primary/20 bg-card p-4 space-y-2">
