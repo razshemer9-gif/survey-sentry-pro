@@ -776,11 +776,6 @@ export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, sett
 
         {/* Header */}
         <div style={{ padding: "32px 48px 20px", textAlign: "center", borderBottom: `3px solid ${headerColor}` }}>
-          {coverLogo && (
-            <img src={coverLogo} alt="logo" crossOrigin="anonymous"
-              style={{ maxHeight: 90, maxWidth: "100%", height: "auto", display: "block", margin: "0 auto 12px" }} />
-          )}
-          <div style={{ fontSize: 13, color: "#64748b", marginBottom: 6 }}>{formatHebrewDate(report.surveyDate)}</div>
           <h1 style={{ fontSize: 26, fontWeight: 800, color: headerColor, margin: "0 0 8px" }}>
             {fmt.reportTitle || "הבטחת תנאים בטיחותיים במוסדות חינוך"}
           </h1>
@@ -907,28 +902,6 @@ export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, sett
             </div>
           )}
 
-          {/* Signature */}
-          <div style={{ marginTop: 32, display: "flex", gap: 48, alignItems: "flex-end" }}>
-            <div>
-              {(fmt.signatureImage || report.signatureDataUrl) ? (
-                <img src={fmt.signatureImage || report.signatureDataUrl} alt="חתימה" crossOrigin="anonymous"
-                  style={{ maxHeight: 64, maxWidth: 200, display: "block" }} />
-              ) : (
-                <div style={{ height: 56, width: 200, borderBottom: "1px solid #94a3b8" }} />
-              )}
-              <div style={{ fontSize: 12, color: "#64748b", marginTop: 4 }}>
-                {sigName || "חתימת הבודק"}
-                {report.signatureDate ? ` • ${report.signatureDate}` : ""}
-              </div>
-            </div>
-            {fmt.stampImage && (
-              <div>
-                <img src={fmt.stampImage} alt="חותמת" crossOrigin="anonymous"
-                  style={{ maxHeight: 80, maxWidth: 120, display: "block" }} />
-                <div style={{ fontSize: 11, color: "#64748b", marginTop: 2 }}>חותמת</div>
-              </div>
-            )}
-          </div>
         </div>
 
         {/* Education-safety notes + approval summary — appears above the inspection table */}
@@ -943,16 +916,10 @@ export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, sett
             {report.eduApprovalStatus && (
               <div style={{ marginBottom: 8 }}>
                 <div style={{ fontSize: 14, fontWeight: 800, color: headerColor, textDecoration: "underline", marginBottom: 8 }}>סיכום:</div>
-                <div style={{ display: "flex", alignItems: "flex-start", gap: 8, fontSize: 13, lineHeight: 1.7, color: "#0f172a", whiteSpace: "pre-line" }}>
-                  <span style={{ display: "flex", alignItems: "center", justifyContent: "center", width: 16, height: 16, border: "1.5px solid #0f172a", borderRadius: 2, boxSizing: "border-box", flexShrink: 0, marginTop: 2 }}>
-                    <svg width="11" height="9" viewBox="0 0 11 9" fill="none" xmlns="http://www.w3.org/2000/svg">
-                      <path d="M1 4.5L4 7.5L10 1" stroke="#0f172a" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-                    </svg>
-                  </span>
-                  <span>{report.eduApprovalStatus === "approve"
+                <div style={{ fontSize: 13, lineHeight: 1.7, color: "#0f172a", whiteSpace: "pre-line" }}>
+                  {report.eduApprovalStatus === "approve"
                     ? "ע״פ המבדק והערכת הסיכונים אין במוסד מפגעים בקדימות 0 ו-1 המהווים סכנה ברורה ומיידית לפגיעה באדם במגע מקרי או לא מכוון.\nפערים שנתגלו בקדימות 2, יוסרו באחריות הרשות/בעלות במסגרת תכנית שנתית/רב שנתית."
                     : "ע״פ המבדק והערכת הסיכונים יש במוסד מפגעים בקדימות 0 ו-1 המהווים סכנה ברורה ומיידית לפגיעה באדם במגע מקרי או לא מכוון.\nפערים שנתגלו בקדימות 2, יוסרו באחריות הרשות/בעלות במסגרת תכנית שנתית/רב שנתית."}
-                  </span>
                 </div>
               </div>
             )}
@@ -981,6 +948,31 @@ export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, sett
             </div>
           </div>
         )}
+
+        {/* Signature — bottom of the report, after all findings/tables */}
+        <div data-pdf-no-break="" style={{ padding: "0 56px", marginTop: 32 }}>
+          <div style={{ display: "flex", gap: 48, alignItems: "flex-end" }}>
+            <div>
+              {(fmt.signatureImage || report.signatureDataUrl) ? (
+                <img src={fmt.signatureImage || report.signatureDataUrl} alt="חתימה" crossOrigin="anonymous"
+                  style={{ maxHeight: 64, maxWidth: 200, display: "block" }} />
+              ) : (
+                <div style={{ height: 56, width: 200, borderBottom: "1px solid #94a3b8" }} />
+              )}
+              <div style={{ fontSize: 12, color: "#64748b", marginTop: 4 }}>
+                {sigName || "חתימת הבודק"}
+                {report.signatureDate ? ` • ${report.signatureDate}` : ""}
+              </div>
+            </div>
+            {fmt.stampImage && (
+              <div>
+                <img src={fmt.stampImage} alt="חותמת" crossOrigin="anonymous"
+                  style={{ maxHeight: 80, maxWidth: 120, display: "block" }} />
+                <div style={{ fontSize: 11, color: "#64748b", marginTop: 2 }}>חותמת</div>
+              </div>
+            )}
+          </div>
+        </div>
 
         {/* Footer */}
         <div style={{ padding: "12px 48px", borderTop: "1px solid #e2e8f0", display: "flex", justifyContent: "space-between", fontSize: 12, color: "#64748b" }}>
