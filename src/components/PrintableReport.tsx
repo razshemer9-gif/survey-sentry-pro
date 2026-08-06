@@ -152,13 +152,9 @@ export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, sett
     const accent = "#1e3a8a"; // blue accent (matches brand)
     const inspectorName = report.elementInspectorName || sigName;
 
-    // Footer pulls from consultant settings when available, else reference defaults.
-    const footer = {
-      company: settings.companyName || ELEMENT_STABILITY_FOOTER.company,
-      phone: settings.phone || ELEMENT_STABILITY_FOOTER.phone,
-      email: settings.email || ELEMENT_STABILITY_FOOTER.email,
-      website: ELEMENT_STABILITY_FOOTER.website,
-    };
+    // Always the company's own identity — not personalized per consultant
+    // account (see ELEMENT_STABILITY_FOOTER).
+    const footer = ELEMENT_STABILITY_FOOTER;
     // Marked with data-pdf-page-footer so pdf.ts stamps it on EVERY page.
     // A custom footer image (from settings) takes precedence when provided.
     const footerImg = fmt.footerImage;
@@ -212,9 +208,9 @@ export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, sett
     const sigImg = showSig ? (report.signatureDataUrl || fmt.signatureImage) : undefined;
 
     const CoverLine = ({ label, value }: { label: string; value?: string }) => (
-      <div style={{ display: "flex", alignItems: "flex-end", gap: 6, marginBottom: 10, fontSize: 14, direction: "rtl" }}>
+      <div style={{ display: "flex", alignItems: "baseline", gap: 6, marginBottom: 10, fontSize: 14, direction: "rtl" }}>
         <span style={{ fontWeight: 700, flexShrink: 0 }}>{label}:</span>
-        <span style={{ flex: 1, borderBottom: "1px solid #cbd5e1", paddingBottom: 2, minHeight: 18 }}>{value || ""}</span>
+        <span>{value || ""}</span>
       </div>
     );
 

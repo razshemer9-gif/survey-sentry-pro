@@ -31,12 +31,13 @@ export const ELEMENT_STABILITY_RESULT_UNSTABLE = "המתקנים נמצאו לא
 // "unstable" these are omitted; the rest of the list still appears.
 export const ELEMENT_STABILITY_STABLE_ONLY_INDICES = [0, 2, 3, 7];
 
-// Footer shown at the bottom of every page. Falls back to these values when the
-// consultant settings don't provide company details. Replaceable via settings.
+// Footer shown at the bottom of every page — always the company's own
+// identity, regardless of which consultant's account generated the report
+// (unlike other survey types, this one is not personalized per-account).
 export const ELEMENT_STABILITY_FOOTER = {
   company: 'שמר בטיחות יועצים בע"מ',
   phone: "052-2321144",
-  email: "maris@shemerl.co.il",
+  email: "Info@shemerl.co.il",
   website: "www.shemersafety.co.il",
 };
 
