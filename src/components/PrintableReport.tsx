@@ -776,11 +776,6 @@ export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, sett
 
         {/* Header */}
         <div style={{ padding: "32px 48px 20px", textAlign: "center", borderBottom: `3px solid ${headerColor}` }}>
-          {coverLogo && (
-            <img src={coverLogo} alt="logo" crossOrigin="anonymous"
-              style={{ maxHeight: 90, maxWidth: "100%", height: "auto", display: "block", margin: "0 auto 12px" }} />
-          )}
-          <div style={{ fontSize: 13, color: "#64748b", marginBottom: 6 }}>{formatHebrewDate(report.surveyDate)}</div>
           <h1 style={{ fontSize: 26, fontWeight: 800, color: headerColor, margin: "0 0 8px" }}>
             {fmt.reportTitle || "הבטחת תנאים בטיחותיים במוסדות חינוך"}
           </h1>
