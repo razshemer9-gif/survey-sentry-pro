@@ -935,6 +935,53 @@ export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, sett
           </div>
         </div>
 
+        {/* Education-safety notes + approval summary — appears above the inspection table */}
+        {(report.eduNotes || report.eduApprovalStatus) && (
+          <div data-pdf-no-break="" style={{ padding: "0 56px", marginTop: 8, direction: "rtl" }}>
+            {report.eduNotes && (
+              <div style={{ marginBottom: 16 }}>
+                <div style={{ fontSize: 14, fontWeight: 800, color: headerColor, textDecoration: "underline", marginBottom: 6 }}>הערות:</div>
+                <div style={{ whiteSpace: "pre-wrap", fontSize: 13, lineHeight: 1.7, color: "#0f172a", borderBottom: "1px solid #94a3b8", paddingBottom: 8 }}>{report.eduNotes}</div>
+              </div>
+            )}
+            {report.eduApprovalStatus && (
+              <div style={{ marginBottom: 8 }}>
+                <div style={{ fontSize: 14, fontWeight: 800, color: headerColor, textDecoration: "underline", marginBottom: 8 }}>סיכום:</div>
+                <div style={{ display: "flex", alignItems: "flex-start", gap: 8, fontSize: 13, lineHeight: 1.7, color: "#0f172a", whiteSpace: "pre-line" }}>
+                  <span style={{ display: "inline-block", width: 14, height: 14, border: "1px solid #0f172a", textAlign: "center", lineHeight: "12px", fontSize: 12, fontWeight: 700, flexShrink: 0, marginTop: 2 }}>✓</span>
+                  <span>{report.eduApprovalStatus === "approve"
+                    ? "ע״פ המבדק והערכת הסיכונים אין במוסד מפגעים בקדימות 0 ו-1 המהווים סכנה ברורה ומיידית לפגיעה באדם במגע מקרי או לא מכוון.\nפערים שנתגלו בקדימות 2, יוסרו באחריות הרשות/בעלות במסגרת תכנית שנתית/רב שנתית."
+                    : "ע״פ המבדק והערכת הסיכונים יש במוסד מפגעים בקדימות 0 ו-1 המהווים סכנה ברורה ומיידית לפגיעה באדם במגע מקרי או לא מכוון.\nפערים שנתגלו בקדימות 2, יוסרו באחריות הרשות/בעלות במסגרת תכנית שנתית/רב שנתית."}
+                  </span>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Education-safety inspection table — only selected rows appear */}
+        {(report.eduInspectionRows?.length ?? 0) > 0 && (
+          <div data-pdf-page-break="" style={{ padding: "0 56px", marginTop: 24 }}>
+            <h3 style={{ margin: "0 0 12px", fontSize: 20, fontWeight: 800, color: headerColor }}>טבלת בדיקות נוספות</h3>
+            <div style={{ border: `1px solid ${headerColor}`, borderRadius: 6, overflow: "hidden", direction: "rtl" }}>
+              <div style={{ display: "flex", backgroundColor: headerColor, color: "#ffffff", fontWeight: 700, fontSize: 13 }}>
+                <div style={{ width: 40, padding: "10px 8px", textAlign: "center", borderLeft: "1px solid rgba(255,255,255,0.3)" }}>מס'</div>
+                <div style={{ flex: 2, padding: "10px 10px", textAlign: "right", borderLeft: "1px solid rgba(255,255,255,0.3)" }}>תחום הבדיקה</div>
+                <div style={{ flex: 2, padding: "10px 10px", textAlign: "right", borderLeft: "1px solid rgba(255,255,255,0.3)" }}>תדירות</div>
+                <div style={{ flex: 2, padding: "10px 10px", textAlign: "right" }}>הגוף המקצועי הבודק והמאשר</div>
+              </div>
+              {EDU_INSPECTION_TABLE.filter((row) => report.eduInspectionRows?.includes(row.num)).map((row, i) => (
+                <div key={row.num} data-pdf-no-break="" style={{ display: "flex", backgroundColor: i % 2 === 0 ? "#ffffff" : "#f8fafc", borderTop: "1px solid #cbd5e1", fontSize: 12, lineHeight: 1.55 }}>
+                  <div style={{ width: 40, padding: "10px 8px", textAlign: "center", borderLeft: "1px solid #cbd5e1", fontWeight: 700 }}>{row.num}</div>
+                  <div style={{ flex: 2, padding: "10px 10px", borderLeft: "1px solid #cbd5e1", whiteSpace: "pre-line" }}>{row.area}</div>
+                  <div style={{ flex: 2, padding: "10px 10px", borderLeft: "1px solid #cbd5e1", whiteSpace: "pre-line" }}>{row.frequency}</div>
+                  <div style={{ flex: 2, padding: "10px 10px", whiteSpace: "pre-line" }}>{row.authority}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
         {/* Footer */}
         <div style={{ padding: "12px 48px", borderTop: "1px solid #e2e8f0", display: "flex", justifyContent: "space-between", fontSize: 12, color: "#64748b" }}>
           <span>{settings.companyName}</span>
@@ -1307,54 +1354,6 @@ export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, sett
                   <div style={{ fontSize: 11, color: "#64748b", marginTop: 2 }}>חותמת</div>
                 </div>
               )}
-            </div>
-          </div>
-        )}
-
-        {/* Education-safety notes + approval summary — appears above the inspection table */}
-        {report.surveyType === "education_safety" && (report.eduNotes || report.eduApprovalStatus) && (
-          <div data-pdf-no-break="" style={{ marginTop: 40, direction: "rtl" }}>
-            <p style={{ margin: "0 0 14px", fontSize: 12, color: "#334155" }}>* דוח זה מתייחס לליקויים שהתגלו ביום הבדיקה בלבד.</p>
-            {report.eduNotes && (
-              <div style={{ marginBottom: 16 }}>
-                <div style={{ fontSize: 14, fontWeight: 800, color: "#1e3a8a", textDecoration: "underline", marginBottom: 6 }}>הערות:</div>
-                <div style={{ whiteSpace: "pre-wrap", fontSize: 13, lineHeight: 1.7, color: "#0f172a", borderBottom: "1px solid #94a3b8", paddingBottom: 8 }}>{report.eduNotes}</div>
-              </div>
-            )}
-            {report.eduApprovalStatus && (
-              <div style={{ marginBottom: 8 }}>
-                <div style={{ fontSize: 14, fontWeight: 800, color: "#1e3a8a", textDecoration: "underline", marginBottom: 8 }}>סיכום:</div>
-                <div style={{ display: "flex", alignItems: "flex-start", gap: 8, fontSize: 13, lineHeight: 1.7, color: "#0f172a", whiteSpace: "pre-line" }}>
-                  <span style={{ display: "inline-block", width: 14, height: 14, border: "1px solid #0f172a", textAlign: "center", lineHeight: "12px", fontSize: 12, fontWeight: 700, flexShrink: 0, marginTop: 2 }}>✓</span>
-                  <span>{report.eduApprovalStatus === "approve"
-                    ? "ע״פ המבדק והערכת הסיכונים אין במוסד מפגעים בקדימות 0 ו-1 המהווים סכנה ברורה ומיידית לפגיעה באדם במגע מקרי או לא מכוון.\nפערים שנתגלו בקדימות 2, יוסרו באחריות הרשות/בעלות במסגרת תכנית שנתית/רב שנתית."
-                    : "ע״פ המבדק והערכת הסיכונים יש במוסד מפגעים בקדימות 0 ו-1 המהווים סכנה ברורה ומיידית לפגיעה באדם במגע מקרי או לא מכוון.\nפערים שנתגלו בקדימות 2, יוסרו באחריות הרשות/בעלות במסגרת תכנית שנתית/רב שנתית."}
-                  </span>
-                </div>
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* Education-safety inspection table — only selected rows appear */}
-        {report.surveyType === "education_safety" && (report.eduInspectionRows?.length ?? 0) > 0 && (
-          <div data-pdf-page-break="" style={{ marginTop: 40 }}>
-            <h3 style={{ margin: "0 0 12px", fontSize: 20, fontWeight: 800, color: "#1e3a8a" }}>טבלת בדיקות נוספות</h3>
-            <div style={{ border: "1px solid #1e3a8a", borderRadius: 6, overflow: "hidden", direction: "rtl" }}>
-              <div style={{ display: "flex", backgroundColor: "#1e3a8a", color: "#ffffff", fontWeight: 700, fontSize: 13 }}>
-                <div style={{ width: 40, padding: "10px 8px", textAlign: "center", borderLeft: "1px solid rgba(255,255,255,0.3)" }}>מס'</div>
-                <div style={{ flex: 2, padding: "10px 10px", textAlign: "right", borderLeft: "1px solid rgba(255,255,255,0.3)" }}>תחום הבדיקה</div>
-                <div style={{ flex: 2, padding: "10px 10px", textAlign: "right", borderLeft: "1px solid rgba(255,255,255,0.3)" }}>תדירות</div>
-                <div style={{ flex: 2, padding: "10px 10px", textAlign: "right" }}>הגוף המקצועי הבודק והמאשר</div>
-              </div>
-              {EDU_INSPECTION_TABLE.filter((row) => report.eduInspectionRows?.includes(row.num)).map((row, i) => (
-                <div key={row.num} data-pdf-no-break="" style={{ display: "flex", backgroundColor: i % 2 === 0 ? "#ffffff" : "#f8fafc", borderTop: "1px solid #cbd5e1", fontSize: 12, lineHeight: 1.55 }}>
-                  <div style={{ width: 40, padding: "10px 8px", textAlign: "center", borderLeft: "1px solid #cbd5e1", fontWeight: 700 }}>{row.num}</div>
-                  <div style={{ flex: 2, padding: "10px 10px", borderLeft: "1px solid #cbd5e1", whiteSpace: "pre-line" }}>{row.area}</div>
-                  <div style={{ flex: 2, padding: "10px 10px", borderLeft: "1px solid #cbd5e1", whiteSpace: "pre-line" }}>{row.frequency}</div>
-                  <div style={{ flex: 2, padding: "10px 10px", whiteSpace: "pre-line" }}>{row.authority}</div>
-                </div>
-              ))}
             </div>
           </div>
         )}
