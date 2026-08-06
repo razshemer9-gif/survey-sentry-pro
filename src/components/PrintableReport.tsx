@@ -149,16 +149,12 @@ export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, sett
 
   // ── Element stability inspection: דוח בדיקת יציבות אלמנטים ─────────────────
   if (report.surveyType === "element_stability") {
-    const accent = "#0f766e";
+    const accent = "#1e3a8a"; // blue accent (matches brand)
     const inspectorName = report.elementInspectorName || sigName;
 
-    // Footer pulls from consultant settings when available, else reference defaults.
-    const footer = {
-      company: settings.companyName || ELEMENT_STABILITY_FOOTER.company,
-      phone: settings.phone || ELEMENT_STABILITY_FOOTER.phone,
-      email: settings.email || ELEMENT_STABILITY_FOOTER.email,
-      website: ELEMENT_STABILITY_FOOTER.website,
-    };
+    // Always the company's own identity — not personalized per consultant
+    // account (see ELEMENT_STABILITY_FOOTER).
+    const footer = ELEMENT_STABILITY_FOOTER;
     // Marked with data-pdf-page-footer so pdf.ts stamps it on EVERY page.
     // A custom footer image (from settings) takes precedence when provided.
     const footerImg = fmt.footerImage;
@@ -212,9 +208,9 @@ export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, sett
     const sigImg = showSig ? (report.signatureDataUrl || fmt.signatureImage) : undefined;
 
     const CoverLine = ({ label, value }: { label: string; value?: string }) => (
-      <div style={{ display: "flex", alignItems: "flex-end", gap: 6, marginBottom: 10, fontSize: 14, direction: "rtl" }}>
+      <div style={{ display: "flex", alignItems: "baseline", gap: 6, marginBottom: 10, fontSize: 14, direction: "rtl" }}>
         <span style={{ fontWeight: 700, flexShrink: 0 }}>{label}:</span>
-        <span style={{ flex: 1, borderBottom: "1px solid #cbd5e1", paddingBottom: 2, minHeight: 18 }}>{value || ""}</span>
+        <span>{value || ""}</span>
       </div>
     );
 
@@ -246,7 +242,7 @@ export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, sett
 
           {/* 3. Elements table — container may span pages; individual rows never split */}
           <div style={{ marginTop: 22, border: "1px solid #0f172a", direction: "rtl", fontSize: 13 }}>
-            <div data-pdf-no-break="" style={{ display: "grid", gridTemplateColumns: "60px 1.6fr 1fr", background: "#e6f4f1", fontWeight: 800 }}>
+            <div data-pdf-no-break="" style={{ display: "grid", gridTemplateColumns: "60px 1.6fr 1fr", background: "#eff6ff", fontWeight: 800 }}>
               <div style={{ padding: "8px 6px", borderLeft: "1px solid #0f172a", textAlign: "center" }}>מס׳ סד׳</div>
               <div style={{ padding: "8px 6px", borderLeft: "1px solid #0f172a", textAlign: "center" }}>תיאור האלמנט / תמונה</div>
               <div style={{ padding: "8px 6px", textAlign: "center" }}>תקין / לא תקין</div>
@@ -265,8 +261,8 @@ export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, sett
                         style={{ maxWidth: "100%", height: "auto", display: "block", borderRadius: 6, border: "1px solid #e2e8f0" }} />
                     )}
                   </div>
-                  <div style={{ padding: "10px 10px", textAlign: "center" }}>
-                    <div style={{ display: "inline-block", fontWeight: 800, fontSize: 14, color: ok ? "#15803d" : "#b91c1c", border: `2px solid ${ok ? "#16a34a" : "#dc2626"}`, borderRadius: 8, padding: "3px 14px" }}>
+                  <div style={{ padding: "10px 10px" }}>
+                    <div style={{ textAlign: "center", fontWeight: 800, fontSize: 15, color: ok ? "#15803d" : "#b91c1c" }}>
                       {ok ? "תקין" : "לא תקין"}
                     </div>
                     {item.fieldNotes && (
@@ -290,7 +286,7 @@ export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, sett
 
           {/* 6+7. Result + fixed terms — kept together on one page */}
           <div data-pdf-no-break="" style={{ marginTop: 24 }}>
-            <h3 style={{ fontSize: 18, fontWeight: 800, color: report.elementStabilityStatus === "unstable" ? "#b91c1c" : "#15803d", margin: "0 0 10px" }}>
+            <h3 style={{ fontSize: 18, fontWeight: 800, color: accent, margin: "0 0 10px" }}>
               {resultText}
             </h3>
             {/* When 'unstable', omit the stable-only clauses (1,3,4,8); keep the rest. */}
