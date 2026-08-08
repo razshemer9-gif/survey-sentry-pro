@@ -219,13 +219,17 @@ export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, sett
         style={{ width: "794px", background: "#ffffff", color: "#0f172a", fontFamily: "Heebo, Assistant, sans-serif" }}>
         <section style={{ padding: "32px 56px 28px", background: "#fff" }}>
           {/* 1. Header banner — dedicated to this report type only */}
-          <div style={{ marginBottom: 12 }}>
+          <div style={{ marginBottom: isElementApproval ? 12 : 22 }}>
             <img src={ELEMENT_STABILITY_HEADER_BANNER} alt="דו״ח יציבות קונסטרוקציה" crossOrigin="anonymous"
               style={{ width: "100%", height: "auto", display: "block" }} />
           </div>
-          <h1 style={{ fontSize: 22, fontWeight: 800, color: accent, textAlign: "center", margin: "0 0 20px" }}>
-            {isElementApproval ? "אישור יציבות קונסטרוקציה" : 'דו״ח יציבות קונסטרוקציה'}
-          </h1>
+          {/* Title only shown when it differs from the banner's baked-in "דו״ח
+              יציבות קונסטרוקציה" — i.e. only in approval mode. */}
+          {isElementApproval && (
+            <h1 style={{ fontSize: 22, fontWeight: 800, color: accent, textAlign: "center", margin: "0 0 20px" }}>
+              אישור יציבות קונסטרוקציה
+            </h1>
+          )}
 
           {/* 2. Report details */}
           <CoverLine label="שם המזמין" value={report.clientName} />
@@ -241,18 +245,18 @@ export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, sett
           )}
 
           {/* 3. Elements table — container may span pages; individual rows never split */}
-          <div style={{ marginTop: 22, border: "1px solid #0f172a", direction: "rtl", fontSize: 13 }}>
+          <div style={{ marginTop: 22, border: `1px solid ${accent}`, direction: "rtl", fontSize: 13 }}>
             <div data-pdf-no-break="" style={{ display: "grid", gridTemplateColumns: "60px 1.6fr 1fr", background: "#eff6ff", fontWeight: 800 }}>
-              <div style={{ padding: "8px 6px", borderLeft: "1px solid #0f172a", textAlign: "center" }}>מס׳ סד׳</div>
-              <div style={{ padding: "8px 6px", borderLeft: "1px solid #0f172a", textAlign: "center" }}>תיאור האלמנט / תמונה</div>
+              <div style={{ padding: "8px 6px", borderLeft: `1px solid ${accent}`, textAlign: "center" }}>מס׳ סד׳</div>
+              <div style={{ padding: "8px 6px", borderLeft: `1px solid ${accent}`, textAlign: "center" }}>תיאור האלמנט / תמונה</div>
               <div style={{ padding: "8px 6px", textAlign: "center" }}>תקין / לא תקין</div>
             </div>
             {report.items.map((item, i) => {
               const ok = item.status === "compliant";
               return (
-                <div key={item.id} data-pdf-no-break="" style={{ display: "grid", gridTemplateColumns: "60px 1.6fr 1fr", borderTop: "1px solid #0f172a" }}>
-                  <div style={{ padding: "10px 6px", borderLeft: "1px solid #0f172a", textAlign: "center", fontWeight: 700 }}>{i + 1}</div>
-                  <div style={{ padding: "10px 10px", borderLeft: "1px solid #0f172a" }}>
+                <div key={item.id} data-pdf-no-break="" style={{ display: "grid", gridTemplateColumns: "60px 1.6fr 1fr", borderTop: `1px solid ${accent}` }}>
+                  <div style={{ padding: "10px 6px", borderLeft: `1px solid ${accent}`, textAlign: "center", fontWeight: 700, color: accent }}>{i + 1}</div>
+                  <div style={{ padding: "10px 10px", borderLeft: `1px solid ${accent}` }}>
                     {item.title && (
                       <div style={{ fontSize: 14, lineHeight: 1.7, whiteSpace: "pre-wrap", marginBottom: item.photo ? 8 : 0 }}>{item.title}</div>
                     )}
@@ -262,7 +266,7 @@ export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, sett
                     )}
                   </div>
                   <div style={{ padding: "10px 10px" }}>
-                    <div style={{ textAlign: "center", fontWeight: 800, fontSize: 15, color: ok ? "#15803d" : "#b91c1c" }}>
+                    <div style={{ textAlign: "center", fontWeight: 800, fontSize: 15, color: ok ? accent : "#b91c1c" }}>
                       {ok ? "תקין" : "לא תקין"}
                     </div>
                     {item.fieldNotes && (
@@ -295,7 +299,7 @@ export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, sett
                 .filter((_, i) => report.elementStabilityStatus !== "unstable" || !ELEMENT_STABILITY_STABLE_ONLY_INDICES.includes(i))
                 .map((t, i) => (
                   <div key={i} style={{ display: "flex", alignItems: "flex-start", gap: 8, marginBottom: 6, fontSize: 13, lineHeight: 1.7 }}>
-                    <span style={{ flexShrink: 0, fontWeight: 700, minWidth: 20, textAlign: "right" }}>{i + 1}.</span>
+                    <span style={{ flexShrink: 0, fontWeight: 700, minWidth: 20, textAlign: "right", color: accent }}>{i + 1}.</span>
                     <span style={{ flex: 1, whiteSpace: "pre-wrap", unicodeBidi: "plaintext" }}>{t}</span>
                   </div>
                 ))}
