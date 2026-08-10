@@ -85,9 +85,13 @@ export async function generateReportPdf(
 
   // ── Page sizing and smart break calculation ──────────────────────────────
   // iOS Safari limits canvas height to ~4096px and total area to ~16 MP.
-  // Use scale=1 on mobile so each canvas stays within those bounds.
+  // scale=1 produced visibly soft/pixelated text and images when a mobile-
+  // generated PDF was zoomed in, so we bump it to 1.5 — MAX_PX/MAX_H stay the
+  // same hard physical-pixel ceiling per captured canvas (PAGE_H below is
+  // computed to respect them regardless of scale), so this only means
+  // slightly shorter page slices on mobile, never a canvas-size violation.
   const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
-  const scale    = isMobile ? 1 : 2;
+  const scale    = isMobile ? 1.5 : 2;
   const MAX_PX   = isMobile ? 3_500_000 : 14_000_000;
   const MAX_H    = isMobile ? 3_500     : 7_000;
   // Reserve room for the footer so content + footer stays within the canvas cap.
