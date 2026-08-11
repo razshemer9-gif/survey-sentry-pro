@@ -296,13 +296,13 @@ export default function Settings() {
                   </div>
                 </Field>
 
-                <Field label="חתימה">
+                <Field label="חתימה וחותמת">
                   <div className="space-y-2">
                     <PhotoPicker
                       value={fmt.signatureImage}
                       onChange={(u) => upd({ signatureImage: u || undefined })}
                       aspect="video"
-                      label="העלה חתימה"
+                      label="העלה חתימה וחותמת"
                     />
                     {fmt.signatureImage && (
                       <Button
@@ -311,28 +311,7 @@ export default function Settings() {
                         size="sm"
                         className="w-full text-destructive hover:bg-destructive/10"
                       >
-                        נקה חתימה
-                      </Button>
-                    )}
-                  </div>
-                </Field>
-
-                <Field label="חותמת">
-                  <div className="space-y-2">
-                    <PhotoPicker
-                      value={fmt.stampImage}
-                      onChange={(u) => upd({ stampImage: u || undefined })}
-                      aspect="square"
-                      label="העלה חותמת"
-                    />
-                    {fmt.stampImage && (
-                      <Button
-                        onClick={() => upd({ stampImage: undefined })}
-                        variant="outline"
-                        size="sm"
-                        className="w-full text-destructive hover:bg-destructive/10"
-                      >
-                        נקה חותמת
+                        נקה חתימה וחותמת
                       </Button>
                     )}
                   </div>
@@ -357,8 +336,7 @@ export default function Settings() {
                     <div className="space-y-2">
                       {([
                         { key: "showFooter", label: "הצג Footer בכל עמוד" },
-                        { key: "showSignature", label: "הצג חתימה בעמוד האחרון" },
-                        { key: "showStamp", label: "הצג חותמת בעמוד האחרון" },
+                        { key: "showSignature", label: "הצג חתימה וחותמת בעמוד האחרון" },
                       ] as const).map(({ key, label }) => (
                         <label key={key} className="flex items-center gap-2.5 cursor-pointer select-none text-sm">
                           <input
