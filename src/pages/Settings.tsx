@@ -296,13 +296,13 @@ export default function Settings() {
                   </div>
                 </Field>
 
-                <Field label="חתימה">
+                <Field label="חתימה וחותמת">
                   <div className="space-y-2">
                     <PhotoPicker
                       value={fmt.signatureImage}
                       onChange={(u) => upd({ signatureImage: u || undefined })}
                       aspect="video"
-                      label="העלה חתימה"
+                      label="העלה חתימה וחותמת"
                     />
                     {fmt.signatureImage && (
                       <Button
@@ -311,28 +311,7 @@ export default function Settings() {
                         size="sm"
                         className="w-full text-destructive hover:bg-destructive/10"
                       >
-                        נקה חתימה
-                      </Button>
-                    )}
-                  </div>
-                </Field>
-
-                <Field label="חותמת">
-                  <div className="space-y-2">
-                    <PhotoPicker
-                      value={fmt.stampImage}
-                      onChange={(u) => upd({ stampImage: u || undefined })}
-                      aspect="square"
-                      label="העלה חותמת"
-                    />
-                    {fmt.stampImage && (
-                      <Button
-                        onClick={() => upd({ stampImage: undefined })}
-                        variant="outline"
-                        size="sm"
-                        className="w-full text-destructive hover:bg-destructive/10"
-                      >
-                        נקה חותמת
+                        נקה חתימה וחותמת
                       </Button>
                     )}
                   </div>
@@ -357,8 +336,7 @@ export default function Settings() {
                     <div className="space-y-2">
                       {([
                         { key: "showFooter", label: "הצג Footer בכל עמוד" },
-                        { key: "showSignature", label: "הצג חתימה בעמוד האחרון" },
-                        { key: "showStamp", label: "הצג חותמת בעמוד האחרון" },
+                        { key: "showSignature", label: "הצג חתימה וחותמת בעמוד האחרון" },
                       ] as const).map(({ key, label }) => (
                         <label key={key} className="flex items-center gap-2.5 cursor-pointer select-none text-sm">
                           <input
@@ -414,6 +392,18 @@ export default function Settings() {
                 {id === "accessibility_form_8" && (
                   <div className="space-y-5 rounded-2xl border-2 border-primary/20 bg-card p-4">
                     <div>
+                      <h3 className="font-bold text-sm text-primary">מספרי רישיון</h3>
+                      <div className="mt-3 space-y-4">
+                        <Field label='מס׳ רישיון — מורשה נגישות מתו״ס'>
+                          <Input value={fmt.accessibilityMatosRegistrationNumber ?? ""} onChange={(e) => upd({ accessibilityMatosRegistrationNumber: e.target.value || undefined })} dir="ltr" />
+                        </Field>
+                        <Field label="מס׳ רישיון — מורשה נגישות שירות">
+                          <Input value={fmt.accessibilityServiceRegistrationNumber ?? ""} onChange={(e) => upd({ accessibilityServiceRegistrationNumber: e.target.value || undefined })} dir="ltr" />
+                        </Field>
+                      </div>
+                    </div>
+
+                    <div className="border-t border-border pt-4">
                       <h3 className="font-bold text-sm text-primary">מורשה נגישות מתו״ס</h3>
                       <div className="mt-3 space-y-4">
                         <Field label="שם המורשה">
@@ -421,9 +411,6 @@ export default function Settings() {
                         </Field>
                         <Field label='מספר ת"ז'>
                           <Input value={fmt.accessibilityMatosId ?? ""} onChange={(e) => upd({ accessibilityMatosId: e.target.value || undefined })} dir="ltr" inputMode="numeric" />
-                        </Field>
-                        <Field label="מס' רישום בפנקס הרשם">
-                          <Input value={fmt.accessibilityMatosRegistrationNumber ?? ""} onChange={(e) => upd({ accessibilityMatosRegistrationNumber: e.target.value || undefined })} dir="ltr" />
                         </Field>
                         <Field label="שם הפנקס">
                           <Input value={fmt.accessibilityMatosRegistryName ?? ""} onChange={(e) => upd({ accessibilityMatosRegistryName: e.target.value || undefined })} placeholder='מורשה נגישות מתו"ס' />
@@ -439,9 +426,6 @@ export default function Settings() {
                         </Field>
                         <Field label='מספר ת"ז'>
                           <Input value={fmt.accessibilityServiceId ?? ""} onChange={(e) => upd({ accessibilityServiceId: e.target.value || undefined })} dir="ltr" inputMode="numeric" />
-                        </Field>
-                        <Field label="מס' רישום בפנקס הרשם">
-                          <Input value={fmt.accessibilityServiceRegistrationNumber ?? ""} onChange={(e) => upd({ accessibilityServiceRegistrationNumber: e.target.value || undefined })} dir="ltr" />
                         </Field>
                         <Field label="שם הפנקס">
                           <Input value={fmt.accessibilityServiceRegistryName ?? ""} onChange={(e) => upd({ accessibilityServiceRegistryName: e.target.value || undefined })} placeholder="מורשה נגישות השירות" />

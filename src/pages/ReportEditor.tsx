@@ -1162,7 +1162,7 @@ export default function ReportEditor() {
                 <div dir="rtl" className="rounded-2xl border-2 border-primary/20 bg-card p-4 space-y-2">
                   <div className="flex items-center justify-between">
                     <h3 className="font-bold text-sm text-primary">רשימת התנאים הקבועה</h3>
-                    <button type="button" onClick={() => update({ stabilityTerms: undefined })} className="text-xs text-muted-foreground underline hover:text-primary">שחזר ברירת מחדל</button>
+                    <button type="button" onClick={() => update({ stabilityTerms: undefined })} className="text-sm text-muted-foreground underline hover:text-primary">שחזר ברירת מחדל</button>
                   </div>
                   <p className="text-xs text-muted-foreground">ניתן לערוך, להוסיף, למחוק ולשנות סדר. הכיתוב "{"{validUntil}"}" יוחלף בתאריך התוקף.{report.elementStabilityStatus === "unstable" ? " במצב \"לא יציבים\" סעיפים 1, 3, 4, 8 לא יופיעו בדוח." : ""}</p>
                   {terms.map((t, i) => {
@@ -1174,7 +1174,7 @@ export default function ReportEditor() {
                       <div className="flex flex-col gap-0.5 pt-1">
                         <button type="button" onClick={() => { if (i === 0) return; const n = [...terms]; [n[i - 1], n[i]] = [n[i], n[i - 1]]; setTerms(n); }} disabled={i === 0} className="text-muted-foreground hover:text-foreground disabled:opacity-30 text-xs">▲</button>
                         <button type="button" onClick={() => { if (i === terms.length - 1) return; const n = [...terms]; [n[i + 1], n[i]] = [n[i], n[i + 1]]; setTerms(n); }} disabled={i === terms.length - 1} className="text-muted-foreground hover:text-foreground disabled:opacity-30 text-xs">▼</button>
-                        <button type="button" onClick={() => setTerms(terms.filter((_, j) => j !== i))} className="text-muted-foreground hover:text-destructive text-xs">✕</button>
+                        <button type="button" onClick={() => setTerms(terms.filter((_, j) => j !== i))} className="text-muted-foreground hover:text-destructive text-base leading-none p-0.5">✕</button>
                       </div>
                     </div>
                     );
