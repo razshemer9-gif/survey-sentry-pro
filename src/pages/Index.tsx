@@ -67,32 +67,31 @@ const Index = () => {
     if (!selectedType) return;
     setCreating(true);
     try {
-      // Form 8 needs the consultant's מורשה נגישות details snapshotted from
-      // their account settings before the report can be created at all.
+      // Form 8 snapshots the consultant's מורשה נגישות details from their
+      // account settings into the report at creation time. Missing details
+      // don't block creation — just a heads-up; the consultant can fill them
+      // in (in Settings) and re-enter the report's own חלק ב' fields later.
       if (selectedType === "accessibility_form_8") {
         if (!user) return;
         const settings = await loadUserSettings(user.id);
         const fmt = settings.reportFormats?.accessibility_form_8;
         if (!fmt?.accessibilityMatosName) {
-          toast.error('חסרים פרטי מורשה נגישות עבור טופס 8. יש להשלים אותם בהגדרות החשבון.');
-          setTypeDialogOpen(false);
-          navigate("/settings");
-          return;
+          toast.info('חסרים פרטי מורשה נגישות עבור טופס 8. אפשר להמשיך וליצור את הדוח, ולהשלים את הפרטים בהגדרות החשבון בכל שלב.');
         }
         const draft: SurveyReport = {
           ...newReport(selectedType),
-          form8ExpertName: fmt.accessibilityMatosName,
-          form8ExpertId: fmt.accessibilityMatosId,
-          form8ExpertRegistrationNumber: fmt.accessibilityMatosRegistrationNumber,
-          form8ExpertRegistryName: fmt.accessibilityMatosRegistryName,
-          form8ExpertAddress: fmt.accessibilityExpertAddress,
-          form8ExpertPhone: fmt.accessibilityExpertPhone,
-          form8ExpertEmail: fmt.accessibilityExpertEmail,
-          form8ServiceExpertName: fmt.accessibilityServiceName,
-          form8ServiceExpertId: fmt.accessibilityServiceId,
-          form8ServiceRegistrationNumber: fmt.accessibilityServiceRegistrationNumber,
-          form8ServiceRegistryName: fmt.accessibilityServiceRegistryName,
-          form8ExpertSignature: fmt.accessibilityExpertSignature,
+          form8ExpertName: fmt?.accessibilityMatosName,
+          form8ExpertId: fmt?.accessibilityMatosId,
+          form8ExpertRegistrationNumber: fmt?.accessibilityMatosRegistrationNumber,
+          form8ExpertRegistryName: fmt?.accessibilityMatosRegistryName,
+          form8ExpertAddress: fmt?.accessibilityExpertAddress,
+          form8ExpertPhone: fmt?.accessibilityExpertPhone,
+          form8ExpertEmail: fmt?.accessibilityExpertEmail,
+          form8ServiceExpertName: fmt?.accessibilityServiceName,
+          form8ServiceExpertId: fmt?.accessibilityServiceId,
+          form8ServiceRegistrationNumber: fmt?.accessibilityServiceRegistrationNumber,
+          form8ServiceRegistryName: fmt?.accessibilityServiceRegistryName,
+          form8ExpertSignature: fmt?.accessibilityExpertSignature,
         };
         const r = await saveReport(draft);
         setTypeDialogOpen(false);
