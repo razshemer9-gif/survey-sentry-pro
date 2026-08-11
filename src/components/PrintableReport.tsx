@@ -240,7 +240,7 @@ export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, sett
 
           {report.elementIntroText && (
             <div style={{ marginTop: 14, fontSize: 14, lineHeight: 1.8, whiteSpace: "pre-wrap", direction: "rtl" }}>
-              <span style={{ fontWeight: 700 }}>בתאריך: </span>{report.elementIntroText}
+              <span style={{ fontWeight: 700 }}>הקדמה: </span>{report.elementIntroText}
             </div>
           )}
 
@@ -326,8 +326,12 @@ export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, sett
             </div>
           )}
 
-          {showFooter && <ElementFooter />}
         </section>
+
+        {/* Rendered outside the padded section so the divider line and text
+            can span the full page width instead of stopping at the
+            section's side padding. */}
+        {showFooter && <ElementFooter />}
       </div>
     );
   }
