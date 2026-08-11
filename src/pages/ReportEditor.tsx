@@ -485,7 +485,7 @@ export default function ReportEditor() {
                     <Field label="תאריך הבדיקה">
                       <Input type="date" value={report.surveyDate} onChange={(e) => update({ surveyDate: e.target.value })} />
                     </Field>
-                    <Field label="בתאריך (טקסט חופשי)">
+                    <Field label="הקדמה (טקסט חופשי)">
                       <Textarea value={report.elementIntroText || ""} onChange={(e) => update({ elementIntroText: e.target.value })} rows={3} placeholder="פסקת פתיחה חופשית שתופיע מתחת לפרטי הדוח" />
                     </Field>
                   </>
