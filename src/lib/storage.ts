@@ -144,8 +144,9 @@ export function newReport(
         notes: "",
         estimatedCost: 0,
       }]
-    : surveyType === "risk_survey"
-    // Findings are created from uploaded photos (bulk picker) — none upfront.
+    : surveyType === "risk_survey" || surveyType === "accessibility_form_8"
+    // risk_survey: findings are created from uploaded photos (bulk picker).
+    // accessibility_form_8: content lives in form8Requirements, not items.
     ? []
     : DEFAULT_CHECKLIST.map((i) => ({
         id: uuid(),
@@ -169,6 +170,9 @@ export function newReport(
     ...(surveyType === "risk_survey" && {
       riskFencingNote: RISK_SURVEY_DEFAULT_FENCING_NOTE,
       riskFencingNoteEnabled: true,
+    }),
+    ...(surveyType === "accessibility_form_8" && {
+      form8Requirements: Array.from({ length: 14 }, (_, i) => ({ id: i + 1, response: "" })),
     }),
   };
 }

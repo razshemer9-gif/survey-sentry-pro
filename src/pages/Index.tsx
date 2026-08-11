@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle,
 } from "@/components/ui/dialog";
-import { deleteReport, listReports, listTemplates, newReport, saveReport } from "@/lib/storage";
+import { deleteReport, listReports, listTemplates, loadUserSettings, newReport, saveReport } from "@/lib/storage";
 import { isDirty } from "@/lib/offline-db";
 import { subscribeSyncStatus } from "@/lib/sync-engine";
 import { getSurveyType, SURVEY_TYPES, SurveyReport, SurveyType } from "@/lib/types";
@@ -14,9 +14,11 @@ import { formatHebrewDate } from "@/lib/image";
 import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useAuth } from "@/contexts/AuthContext";
 
 const Index = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [reports, setReports] = useState<SurveyReport[]>([]);
   const [loading, setLoading] = useState(true);
   const [typeDialogOpen, setTypeDialogOpen] = useState(false);
@@ -65,6 +67,39 @@ const Index = () => {
     if (!selectedType) return;
     setCreating(true);
     try {
+      // Form 8 needs the consultant's מורשה נגישות details snapshotted from
+      // their account settings before the report can be created at all.
+      if (selectedType === "accessibility_form_8") {
+        if (!user) return;
+        const settings = await loadUserSettings(user.id);
+        const fmt = settings.reportFormats?.accessibility_form_8;
+        if (!fmt?.accessibilityMatosName) {
+          toast.error('חסרים פרטי מורשה נגישות עבור טופס 8. יש להשלים אותם בהגדרות החשבון.');
+          setTypeDialogOpen(false);
+          navigate("/settings");
+          return;
+        }
+        const draft: SurveyReport = {
+          ...newReport(selectedType),
+          form8ExpertName: fmt.accessibilityMatosName,
+          form8ExpertId: fmt.accessibilityMatosId,
+          form8ExpertRegistrationNumber: fmt.accessibilityMatosRegistrationNumber,
+          form8ExpertRegistryName: fmt.accessibilityMatosRegistryName,
+          form8ExpertAddress: fmt.accessibilityExpertAddress,
+          form8ExpertPhone: fmt.accessibilityExpertPhone,
+          form8ExpertEmail: fmt.accessibilityExpertEmail,
+          form8ServiceExpertName: fmt.accessibilityServiceName,
+          form8ServiceExpertId: fmt.accessibilityServiceId,
+          form8ServiceRegistrationNumber: fmt.accessibilityServiceRegistrationNumber,
+          form8ServiceRegistryName: fmt.accessibilityServiceRegistryName,
+          form8ExpertSignature: fmt.accessibilityExpertSignature,
+        };
+        const r = await saveReport(draft);
+        setTypeDialogOpen(false);
+        navigate(`/report/${r.id}`);
+        return;
+      }
+
       // education_safety, welfare_inspection, element_stability and risk_survey
       // start empty (no template needed)
       if (selectedType === "education_safety" || selectedType === "welfare_inspection" || selectedType === "element_stability" || selectedType === "risk_survey") {
