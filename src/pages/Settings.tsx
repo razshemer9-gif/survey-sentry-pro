@@ -114,12 +114,12 @@ export default function Settings() {
         )}
 
         <Tabs defaultValue="accessibility" dir="rtl">
-          <TabsList className="w-full mb-5 rounded-2xl h-11">
+          <TabsList className="w-full mb-5 h-11 justify-start gap-1 overflow-x-auto no-scrollbar rounded-2xl [scroll-snap-type:x_proximity]">
             {TAB_ORDER.map((t) => (
               <TabsTrigger
                 key={t.id}
                 value={t.id}
-                className="flex-1 text-xs font-semibold rounded-xl"
+                className="shrink-0 text-xs font-semibold rounded-xl px-4 [scroll-snap-align:start]"
               >
                 {t.label}
               </TabsTrigger>
