@@ -52,7 +52,11 @@ export async function generateReportPdf(
   // A report may mark one element with [data-pdf-page-footer]. When present we
   // capture it once, remove it from the sliced content flow, and stamp it at
   // the bottom of every page. Reports without such an element are unaffected.
-  const scaleForFooter = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent) ? 1 : 2;
+  // This is a single small strip of text (a header row or two), captured
+  // once regardless of how many pages the report has — nowhere near iOS
+  // Safari's canvas-size limits even at a high scale — so unlike the main
+  // content slices, there's no reason to cap it lower on mobile.
+  const scaleForFooter = 2;
   const footerEl = element.querySelector<HTMLElement>("[data-pdf-page-footer]");
   let footerData: string | null = null;
   let footerHpx = 0;
