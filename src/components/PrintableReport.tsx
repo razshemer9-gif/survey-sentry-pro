@@ -50,7 +50,7 @@ export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, sett
   const licNum = fmt.licenseNumber || settings.license;
   const sigName = fmt.professionalName || report.signatureConsultantName || settings.consultantName;
   const isApproval = report.reportMode === "approval" ||
-    (report.surveyType === "general_safety" && (report.accessibilityComplianceStatus === "yes" || report.accessibilityComplianceStatus === "safe"));
+    (report.surveyType === "general_safety" && report.accessibilityComplianceStatus === "safe");
   // Accessibility ("נגישות מתו"ס ושירות") uses a fixed brand banner instead of
   // the generic per-account logo + title — the banner already has the title
   // text baked in, so it swaps entirely between the survey/approval variants.
