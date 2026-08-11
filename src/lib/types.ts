@@ -254,7 +254,8 @@ export interface SurveyReportFormat {
   professionalRole?: string;
   licenseNumber?: string;
   certificationText?: string;
-  signatureImage?: string; // dataURL — signature and/or stamp, combined into one image
+  signatureImage?: string; // dataURL
+  stampImage?: string; // dataURL
   companyLogo?: string; // dataURL — overrides global logo for this survey type
   closingText?: string;
   legalNotes?: string;
@@ -269,6 +270,7 @@ export interface SurveyReportFormat {
   resultUnstableText?: string;       // override "המתקנים נמצאו לא יציבים"
   showFooter?: boolean;              // default true
   showSignature?: boolean;           // default true
+  showStamp?: boolean;               // default true
   // ── Form 8 (טופס 8) — מורשה נגישות account details, entered once and
   // snapshotted into each new report (see SurveyReport.form8Expert*) ──────
   accessibilityMatosName?: string;

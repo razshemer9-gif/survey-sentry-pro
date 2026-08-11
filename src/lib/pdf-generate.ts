@@ -98,15 +98,8 @@ export async function generateReportPdf(
   const scale    = isMobile ? 1.5 : 2;
   const MAX_PX   = isMobile ? 3_500_000 : 14_000_000;
   const MAX_H    = isMobile ? 3_500     : 7_000;
-  // Target a real A4 sheet (210×297mm, matching pageWmm below) so each PDF
-  // page prints as one physical A4 page at 100% scale instead of a tall
-  // custom-size page that print dialogs squash down (shrinking the width
-  // along with it, which reads as huge blank side margins on paper).
-  // MAX_H/MAX_PX stay in place as an outer safety cap — the A4 height in
-  // px is always far under them, so they no longer bind in practice.
-  const A4_PAGE_H = 297 / PX_TO_MM;
-  // Reserve room for the footer so content + footer stays within one page.
-  const PAGE_H   = Math.max(200, Math.min(A4_PAGE_H, MAX_H, Math.floor(MAX_PX / (elWidth * scale))) - footerHpx - GAP_PX);
+  // Reserve room for the footer so content + footer stays within the canvas cap.
+  const PAGE_H   = Math.max(200, Math.min(MAX_H, Math.floor(MAX_PX / (elWidth * scale))) - footerHpx - GAP_PX);
 
   // Content height without the (now hidden) footer.
   const contentHeight = footerEl ? element.scrollHeight : elHeight;
