@@ -22,6 +22,7 @@ const TAB_ORDER: { id: SurveyType; label: string }[] = [
   { id: "education_safety",  label: 'בטיחות מוס"ח' },
   { id: "element_stability", label: "יציבות אלמנטים" },
   { id: "risk_survey",       label: "סקר סיכונים" },
+  { id: "accessibility_form_8", label: "טופס 8" },
 ];
 
 export default function Settings() {
@@ -163,7 +164,11 @@ export default function Settings() {
                   </>
                 )}
 
-                {/* ── Personal details (all users) ── */}
+                {/* ── Personal details / PDF text overrides / media — not used by
+                    Form 8, which has its own dedicated מורשה נגישות identity
+                    below instead of the generic professional fields. ── */}
+                {id !== "accessibility_form_8" && (
+                <>
                 <Field label="שם בעל המקצוע">
                   <Input
                     placeholder="שם מלא"
@@ -332,6 +337,8 @@ export default function Settings() {
                     )}
                   </div>
                 </Field>
+                </>
+                )}
 
                 {/* ── Element stability: dedicated settings ── */}
                 {id === "element_stability" && (
@@ -399,6 +406,76 @@ export default function Settings() {
                         );
                       })()}
                     </div>
+                  </div>
+                )}
+
+                {/* ── Form 8 (טופס 8): מורשה נגישות identity, entered once and
+                    snapshotted into every new report of this type. ── */}
+                {id === "accessibility_form_8" && (
+                  <div className="space-y-5 rounded-2xl border-2 border-primary/20 bg-card p-4">
+                    <div>
+                      <h3 className="font-bold text-sm text-primary">מורשה נגישות מתו״ס</h3>
+                      <div className="mt-3 space-y-4">
+                        <Field label="שם המורשה">
+                          <Input value={fmt.accessibilityMatosName ?? ""} onChange={(e) => upd({ accessibilityMatosName: e.target.value || undefined })} placeholder="שם מלא" />
+                        </Field>
+                        <Field label='מספר ת"ז'>
+                          <Input value={fmt.accessibilityMatosId ?? ""} onChange={(e) => upd({ accessibilityMatosId: e.target.value || undefined })} dir="ltr" inputMode="numeric" />
+                        </Field>
+                        <Field label="מס' רישום בפנקס הרשם">
+                          <Input value={fmt.accessibilityMatosRegistrationNumber ?? ""} onChange={(e) => upd({ accessibilityMatosRegistrationNumber: e.target.value || undefined })} dir="ltr" />
+                        </Field>
+                        <Field label="שם הפנקס">
+                          <Input value={fmt.accessibilityMatosRegistryName ?? ""} onChange={(e) => upd({ accessibilityMatosRegistryName: e.target.value || undefined })} placeholder='מורשה נגישות מתו"ס' />
+                        </Field>
+                      </div>
+                    </div>
+
+                    <div className="border-t border-border pt-4">
+                      <h3 className="font-bold text-sm text-primary">מורשה נגישות שירות</h3>
+                      <div className="mt-3 space-y-4">
+                        <Field label="שם המורשה">
+                          <Input value={fmt.accessibilityServiceName ?? ""} onChange={(e) => upd({ accessibilityServiceName: e.target.value || undefined })} placeholder="שם מלא" />
+                        </Field>
+                        <Field label='מספר ת"ז'>
+                          <Input value={fmt.accessibilityServiceId ?? ""} onChange={(e) => upd({ accessibilityServiceId: e.target.value || undefined })} dir="ltr" inputMode="numeric" />
+                        </Field>
+                        <Field label="מס' רישום בפנקס הרשם">
+                          <Input value={fmt.accessibilityServiceRegistrationNumber ?? ""} onChange={(e) => upd({ accessibilityServiceRegistrationNumber: e.target.value || undefined })} dir="ltr" />
+                        </Field>
+                        <Field label="שם הפנקס">
+                          <Input value={fmt.accessibilityServiceRegistryName ?? ""} onChange={(e) => upd({ accessibilityServiceRegistryName: e.target.value || undefined })} placeholder="מורשה נגישות השירות" />
+                        </Field>
+                      </div>
+                    </div>
+
+                    <div className="border-t border-border pt-4 space-y-4">
+                      <h3 className="font-bold text-sm text-primary">פרטי קשר</h3>
+                      <Field label="כתובת">
+                        <Input value={fmt.accessibilityExpertAddress ?? ""} onChange={(e) => upd({ accessibilityExpertAddress: e.target.value || undefined })} />
+                      </Field>
+                      <Field label="מספר טלפון">
+                        <Input value={fmt.accessibilityExpertPhone ?? ""} onChange={(e) => upd({ accessibilityExpertPhone: e.target.value || undefined })} dir="ltr" placeholder="050-0000000" />
+                      </Field>
+                      <Field label='כתובת דוא"ל'>
+                        <Input value={fmt.accessibilityExpertEmail ?? ""} onChange={(e) => upd({ accessibilityExpertEmail: e.target.value || undefined })} dir="ltr" placeholder="email@example.com" />
+                      </Field>
+                    </div>
+
+                    <div className="border-t border-border pt-4">
+                      <Field label="חתימת המורשה">
+                        <div className="space-y-2">
+                          <PhotoPicker value={fmt.accessibilityExpertSignature} onChange={(u) => upd({ accessibilityExpertSignature: u || undefined })} aspect="video" label="העלה חתימה" />
+                          {fmt.accessibilityExpertSignature && (
+                            <Button onClick={() => upd({ accessibilityExpertSignature: undefined })} variant="outline" size="sm" className="w-full text-destructive hover:bg-destructive/10">נקה חתימה</Button>
+                          )}
+                        </div>
+                      </Field>
+                    </div>
+
+                    <p className="text-xs text-muted-foreground">
+                      הפרטים האלה יועתקו אוטומטית לכל טופס 8 חדש שתיצור. שינוי כאן לא ישפיע על טפסים שכבר נוצרו.
+                    </p>
                   </div>
                 )}
 

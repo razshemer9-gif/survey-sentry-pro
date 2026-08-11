@@ -1,7 +1,7 @@
 export type ComplianceStatus = "compliant" | "non_compliant" | "not_applicable" | "pending";
 
 // ── Survey types registry ──────────────────────────────────────────────────
-export type SurveyType = "accessibility" | "education_safety" | "general_safety" | "welfare_inspection" | "element_stability" | "risk_survey";
+export type SurveyType = "accessibility" | "education_safety" | "general_safety" | "welfare_inspection" | "element_stability" | "risk_survey" | "accessibility_form_8";
 
 export interface SurveyTypeConfig {
   id: SurveyType;
@@ -60,6 +60,14 @@ export const SURVEY_TYPES: SurveyTypeConfig[] = [
     pdfTitle: "סקר סיכונים",
     filePrefix: "סקר-סיכונים",
     color: "#c2410c",
+  },
+  {
+    id: "accessibility_form_8",
+    label: 'טופס 8 – חוות דעת מורשה נגישות',
+    shortLabel: "טופס 8",
+    pdfTitle: "חוות דעת מורשה נגישות",
+    filePrefix: "טופס-8-חוות-דעת-נגישות",
+    color: "#7c3aed",
   },
 ];
 
@@ -190,6 +198,43 @@ export interface SurveyReport {
   riskInspectorName?: string;        // שם עורך הדו"ח
   riskFencingNote?: string;          // הנחיה בנושא גידור — free text, editable
   riskFencingNoteEnabled?: boolean;  // allows hiding the note entirely
+  // ── Form 8 — חוות דעת מורשה נגישות (טופס 8) ────────────────────────────────
+  // חלק א' — פרטי העסק (report-specific; never taken from the sample DOCX)
+  form8LocalAuthority?: string;      // אל: רשות רישוי עסקים __
+  form8FileNumber?: string;          // מס' תיק/בקשה לרישיון עסק
+  form8BusinessName?: string;        // שם העסק (עשוי לכלול גם שם/תיאור אירוע)
+  form8EventDate?: string;           // תאריך האירוע — כשרלוונטי, בנפרד משם העסק
+  form8Attendance?: string;          // מספר משתתפים / תפוסה
+  form8LicenseItemNumber?: string;   // מס' פריט רישוי
+  form8BusinessAddress?: string;     // כתובת העסק
+  form8BusinessOwnerName?: string;   // בעל/ת העסק
+  form8BusinessOwnerId?: string;     // ת.ז./ח.פ
+  // חלק ג' — חוות הדעת (report-specific)
+  form8BuildingApproved?: boolean;   // הוראות נגישות לבניין קיים/חדש מתקיימות
+  form8ServiceApproved?: boolean;    // הוראות נגישות לשירות מתקיימות
+  form8InspectionDataDate?: string;  // יום הכרת הנתונים
+  form8OpinionDate?: string;         // תאריך חוות הדעת (ליד חתימת המורשה)
+  // חלק ד' — טבלת 14 הדרישות הקבועות; רק response משתנה בין דוחות
+  form8Requirements?: { id: number; response: string }[];
+  // אישור בעל העסק לעניין העברת הרשימה לחייב
+  form8OwnerDeclarationName?: string; // ברירת מחדל מ-form8BusinessOwnerName, ניתן לעריכה
+  form8OwnerSignature?: string;       // dataURL, אופציונלי
+  form8OwnerSignatureDate?: string;
+  // חלק ב' — פרטי מורשה נגישות: SNAPSHOT שהועתק מהגדרות היועץ (reportFormats.
+  // accessibility_form_8) בעת יצירת הדוח — לעולם לא נקרא מחדש מההגדרות
+  // החיות, כדי שדוחות ישנים לא ישתנו רטרואקטיבית אם היועץ יעדכן את פרטיו.
+  form8ExpertName?: string;
+  form8ExpertId?: string;
+  form8ExpertRegistrationNumber?: string;   // מס' רישום בפנקס — מתו"ס
+  form8ExpertRegistryName?: string;         // שם הפנקס — מתו"ס
+  form8ExpertAddress?: string;
+  form8ExpertPhone?: string;
+  form8ExpertEmail?: string;
+  form8ServiceExpertName?: string;
+  form8ServiceExpertId?: string;
+  form8ServiceRegistrationNumber?: string;  // מס' רישום בפנקס — שירות
+  form8ServiceRegistryName?: string;        // שם הפנקס — שירות
+  form8ExpertSignature?: string;            // dataURL, snapshot
 }
 
 export interface ReferencePhotoEntry {
@@ -226,6 +271,20 @@ export interface SurveyReportFormat {
   showFooter?: boolean;              // default true
   showSignature?: boolean;           // default true
   showStamp?: boolean;               // default true
+  // ── Form 8 (טופס 8) — מורשה נגישות account details, entered once and
+  // snapshotted into each new report (see SurveyReport.form8Expert*) ──────
+  accessibilityMatosName?: string;
+  accessibilityMatosId?: string;
+  accessibilityMatosRegistrationNumber?: string;
+  accessibilityMatosRegistryName?: string;
+  accessibilityExpertAddress?: string;
+  accessibilityExpertPhone?: string;
+  accessibilityExpertEmail?: string;
+  accessibilityServiceName?: string;
+  accessibilityServiceId?: string;
+  accessibilityServiceRegistrationNumber?: string;
+  accessibilityServiceRegistryName?: string;
+  accessibilityExpertSignature?: string; // dataURL, PNG עם רקע שקוף עדיף
 }
 
 export interface ConsultantSettings {

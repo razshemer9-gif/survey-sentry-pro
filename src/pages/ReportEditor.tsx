@@ -32,6 +32,7 @@ import {
 import { ChecklistItem, ConsultantSettings, DEFAULT_CHECKLIST, DEFAULT_SETTINGS, ReferencePhotoEntry, SurveyReport } from "@/lib/types";
 import { EDU_INSPECTION_TABLE } from "@/lib/edu-inspection-table";
 import { ELEMENT_STABILITY_DEFAULT_TERMS, ELEMENT_STABILITY_STABLE_ONLY_INDICES } from "@/lib/element-stability";
+import { FORM8_REQUIREMENTS } from "@/lib/form8-data";
 import { STANDARDS_DATA } from "@/lib/standards-data";
 import { getReport, loadUserSettings, saveReport, saveUserSettings } from "@/lib/storage";
 import { isDirty } from "@/lib/offline-db";
@@ -448,9 +449,85 @@ export default function ReportEditor() {
             const isWelfare = report.surveyType === "welfare_inspection";
             const isElement = report.surveyType === "element_stability";
             const isRisk = report.surveyType === "risk_survey";
+            const isForm8 = report.surveyType === "accessibility_form_8";
             return (
               <>
-                {isRisk ? (
+                {isForm8 ? (
+                  <>
+                    <h3 className="px-1 text-xs font-bold text-primary">חלק א' — פרטי העסק</h3>
+                    <Field label="אל: רשות רישוי עסקים">
+                      <Input value={report.form8LocalAuthority || ""} onChange={(e) => update({ form8LocalAuthority: e.target.value })} placeholder="שם הרשות המקומית" />
+                    </Field>
+                    <Field label="מס' תיק/בקשה לרישיון עסק">
+                      <Input value={report.form8FileNumber || ""} onChange={(e) => update({ form8FileNumber: e.target.value })} />
+                    </Field>
+                    <Field label="שם העסק">
+                      <Textarea value={report.form8BusinessName || ""} onChange={(e) => update({ form8BusinessName: e.target.value })} rows={2} placeholder="שם העסק, ובמידת הצורך גם תיאור/שם האירוע" />
+                    </Field>
+                    <Field label="תאריך האירוע (אם רלוונטי)">
+                      <Input type="date" value={report.form8EventDate || ""} onChange={(e) => update({ form8EventDate: e.target.value })} />
+                    </Field>
+                    <Field label="מספר משתתפים / תפוסה">
+                      <Input value={report.form8Attendance || ""} onChange={(e) => update({ form8Attendance: e.target.value })} inputMode="numeric" />
+                    </Field>
+                    <Field label="מס' פריט רישוי">
+                      <Input value={report.form8LicenseItemNumber || ""} onChange={(e) => update({ form8LicenseItemNumber: e.target.value })} />
+                    </Field>
+                    <Field label="כתובת העסק">
+                      <Textarea value={report.form8BusinessAddress || ""} onChange={(e) => update({ form8BusinessAddress: e.target.value })} rows={2} />
+                    </Field>
+                    <Field label="בעל/ת העסק">
+                      <Input value={report.form8BusinessOwnerName || ""} onChange={(e) => update({ form8BusinessOwnerName: e.target.value })} />
+                    </Field>
+                    <Field label='ת.ז./ח.פ'>
+                      <Input value={report.form8BusinessOwnerId || ""} onChange={(e) => update({ form8BusinessOwnerId: e.target.value })} dir="ltr" inputMode="numeric" />
+                    </Field>
+                    <Field label="תאריך הבדיקה">
+                      <Input type="date" value={report.surveyDate} onChange={(e) => update({ surveyDate: e.target.value })} />
+                    </Field>
+
+                    <h3 className="mt-2 px-1 text-xs font-bold text-primary">חלק ב' — פרטי מורשה נגישות</h3>
+                    <p className="px-1 text-xs text-muted-foreground">
+                      הפרטים נטענו מהגדרות החשבון. עריכה כאן תשפיע רק על הדוח הנוכחי.
+                    </p>
+                    <Field label='מורשה מתו"ס — שם'>
+                      <Input value={report.form8ExpertName || ""} onChange={(e) => update({ form8ExpertName: e.target.value })} />
+                    </Field>
+                    <Field label='מורשה מתו"ס — ת"ז'>
+                      <Input value={report.form8ExpertId || ""} onChange={(e) => update({ form8ExpertId: e.target.value })} dir="ltr" />
+                    </Field>
+                    <Field label='מורשה מתו"ס — מס׳ רישום'>
+                      <Input value={report.form8ExpertRegistrationNumber || ""} onChange={(e) => update({ form8ExpertRegistrationNumber: e.target.value })} dir="ltr" />
+                    </Field>
+                    <Field label='מורשה מתו"ס — שם הפנקס'>
+                      <Input value={report.form8ExpertRegistryName || ""} onChange={(e) => update({ form8ExpertRegistryName: e.target.value })} />
+                    </Field>
+                    <Field label="מורשה שירות — שם">
+                      <Input value={report.form8ServiceExpertName || ""} onChange={(e) => update({ form8ServiceExpertName: e.target.value })} />
+                    </Field>
+                    <Field label='מורשה שירות — ת"ז'>
+                      <Input value={report.form8ServiceExpertId || ""} onChange={(e) => update({ form8ServiceExpertId: e.target.value })} dir="ltr" />
+                    </Field>
+                    <Field label="מורשה שירות — מס׳ רישום">
+                      <Input value={report.form8ServiceRegistrationNumber || ""} onChange={(e) => update({ form8ServiceRegistrationNumber: e.target.value })} dir="ltr" />
+                    </Field>
+                    <Field label="מורשה שירות — שם הפנקס">
+                      <Input value={report.form8ServiceRegistryName || ""} onChange={(e) => update({ form8ServiceRegistryName: e.target.value })} />
+                    </Field>
+                    <Field label="כתובת">
+                      <Input value={report.form8ExpertAddress || ""} onChange={(e) => update({ form8ExpertAddress: e.target.value })} />
+                    </Field>
+                    <Field label="מספר טלפון">
+                      <Input value={report.form8ExpertPhone || ""} onChange={(e) => update({ form8ExpertPhone: e.target.value })} dir="ltr" />
+                    </Field>
+                    <Field label='כתובת דוא"ל'>
+                      <Input value={report.form8ExpertEmail || ""} onChange={(e) => update({ form8ExpertEmail: e.target.value })} dir="ltr" />
+                    </Field>
+                    <Field label="חתימת המורשה">
+                      <PhotoPicker value={report.form8ExpertSignature} onChange={(u) => update({ form8ExpertSignature: u })} aspect="video" label="עדכן חתימה לדוח זה בלבד" />
+                    </Field>
+                  </>
+                ) : isRisk ? (
                   <>
                     <Field label="שם האירוע">
                       <Input value={report.placeName} onChange={(e) => update({ placeName: e.target.value })} placeholder="לדוגמה: פארק רמון גבעת שמואל" autoComplete="off" />
@@ -656,6 +733,11 @@ export default function ReportEditor() {
 
         {/* CHECKLIST SECTION */}
         <div className="space-y-3 pb-20">
+          {/* Form 8 doesn't use the generic findings/items list at all — its
+              content lives in form8Requirements (Part D), rendered further
+              below as its own dedicated section. */}
+          {report.surveyType !== "accessibility_form_8" && (
+          <>
           <div className="flex items-center gap-3 pt-2">
             <div className="flex-1 h-px bg-border" />
             <span className="text-xs font-semibold text-muted-foreground">
@@ -919,6 +1001,90 @@ export default function ReportEditor() {
             </div>
           </div>
           )}
+          </>
+          )}
+
+          {/* Form 8 — חלק ג' (חוות הדעת), חלק ד' (14 דרישות), חלק ה' (אישור בעל העסק) */}
+          {report.surveyType === "accessibility_form_8" && (() => {
+            const requirements = report.form8Requirements?.length
+              ? report.form8Requirements
+              : Array.from({ length: 14 }, (_, i) => ({ id: i + 1, response: "" }));
+            const setRequirement = (id: number, response: string) =>
+              update({ form8Requirements: requirements.map((r) => (r.id === id ? { ...r, response } : r)) });
+            return (
+              <>
+                <div dir="rtl" className="rounded-2xl border-2 border-primary/20 bg-card p-4 space-y-3">
+                  <h3 className="font-bold text-sm text-primary">חלק ג' — חוות הדעת</h3>
+                  <label className="flex items-start gap-2.5 cursor-pointer select-none">
+                    <input
+                      type="checkbox"
+                      checked={!!report.form8BuildingApproved}
+                      onChange={(e) => update({ form8BuildingApproved: e.target.checked })}
+                      className="mt-0.5 h-4 w-4 shrink-0 accent-primary"
+                    />
+                    <span className="text-sm leading-relaxed">
+                      הוראות הנגישות החלות על העסק מכוח תקנות הנגישות לבניין קיים/חדש מתקיימות.
+                    </span>
+                  </label>
+                  <label className="flex items-start gap-2.5 cursor-pointer select-none">
+                    <input
+                      type="checkbox"
+                      checked={!!report.form8ServiceApproved}
+                      onChange={(e) => update({ form8ServiceApproved: e.target.checked })}
+                      className="mt-0.5 h-4 w-4 shrink-0 accent-primary"
+                    />
+                    <span className="text-sm leading-relaxed">
+                      הוראות הנגישות החלות על העסק מכוח תקנות הנגישות לשירות מתקיימות.
+                    </span>
+                  </label>
+                  <Field label="יום הכרת הנתונים">
+                    <Input type="date" value={report.form8InspectionDataDate || ""} onChange={(e) => update({ form8InspectionDataDate: e.target.value })} />
+                  </Field>
+                  <Field label="תאריך חוות הדעת (ליד חתימת המורשה)">
+                    <Input type="date" value={report.form8OpinionDate || ""} onChange={(e) => update({ form8OpinionDate: e.target.value })} />
+                  </Field>
+                </div>
+
+                <div dir="rtl" className="rounded-2xl border-2 border-primary/20 bg-card p-4 space-y-2">
+                  <h3 className="font-bold text-sm text-primary">חלק ד' — התאמות נגישות בבניין קיים שאינן באחריות בעל העסק</h3>
+                  <p className="text-xs text-muted-foreground">
+                    יש למלא רק עבור עסק בבניין ציבורי קיים שהיתר הקמתו הוגש לפני 1.8.2009. יש להזין את התייחסותך לכל סעיף.
+                  </p>
+                  {requirements.map((req, i) => (
+                    <div key={req.id} className="rounded-xl border border-border bg-background p-3 space-y-2">
+                      <div className="flex items-start gap-2 text-xs font-semibold text-foreground">
+                        <span className="shrink-0 text-muted-foreground">{i + 1}.</span>
+                        <span>{FORM8_REQUIREMENTS[i]?.label}</span>
+                      </div>
+                      <Textarea
+                        value={req.response}
+                        onChange={(e) => setRequirement(req.id, e.target.value)}
+                        rows={2}
+                        placeholder="הדרישה עבור עסק זה..."
+                        className="text-sm"
+                      />
+                    </div>
+                  ))}
+                </div>
+
+                <div dir="rtl" className="rounded-2xl border-2 border-primary/20 bg-card p-4 space-y-3">
+                  <h3 className="font-bold text-sm text-primary">אישור בעל העסק לעניין העברת הרשימה לחייב</h3>
+                  <Field label="שם בעל העסק (החתום)">
+                    <Input
+                      value={report.form8OwnerDeclarationName ?? report.form8BusinessOwnerName ?? ""}
+                      onChange={(e) => update({ form8OwnerDeclarationName: e.target.value })}
+                    />
+                  </Field>
+                  <Field label="חתימת בעל העסק (אופציונלי)">
+                    <PhotoPicker value={report.form8OwnerSignature} onChange={(u) => update({ form8OwnerSignature: u })} aspect="video" label="העלה חתימה" />
+                  </Field>
+                  <Field label="תאריך חתימת בעל העסק (אופציונלי)">
+                    <Input type="date" value={report.form8OwnerSignatureDate || ""} onChange={(e) => update({ form8OwnerSignatureDate: e.target.value })} />
+                  </Field>
+                </div>
+              </>
+            );
+          })()}
 
           {/* Risk survey — fencing guidance note (once, at the end) */}
           {report.surveyType === "risk_survey" && (

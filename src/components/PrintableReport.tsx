@@ -1,6 +1,7 @@
 import { ConsultantSettings, getSurveyType, SurveyReport, SurveyReportFormat } from "@/lib/types";
 import { formatCurrency, formatHebrewDate } from "@/lib/pdf";
 import { EDU_INSPECTION_TABLE } from "@/lib/edu-inspection-table";
+import { FORM8_REQUIREMENTS } from "@/lib/form8-data";
 import { ISRAEL_STATE_EMBLEM, MOLSA_HEADER_LOGO } from "@/lib/welfare-logos";
 import {
   ELEMENT_STABILITY_FOOTER,
@@ -146,6 +147,212 @@ export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, sett
       </div>
     );
   };
+
+  // ── Form 8: חוות דעת מורשה נגישות (טופס 8) ─────────────────────────────────
+  if (report.surveyType === "accessibility_form_8") {
+    const accent = "#7c3aed";
+    const requirements = report.form8Requirements?.length
+      ? report.form8Requirements
+      : FORM8_REQUIREMENTS.map((r) => ({ id: r.id, response: "" }));
+    const getResponse = (id: number) => requirements.find((r) => r.id === id)?.response || "";
+    const showFooter = fmt.showFooter !== false;
+
+    const SectionTitle = ({ children }: { children: React.ReactNode }) => (
+      <h2 style={{ fontSize: 16, fontWeight: 800, color: accent, borderBottom: `2px solid ${accent}`, paddingBottom: 6, margin: "22px 0 12px" }}>
+        {children}
+      </h2>
+    );
+
+    const Checkbox = ({ checked }: { checked?: boolean }) => (
+      <span style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", width: 16, height: 16, border: "1.5px solid #0f172a", borderRadius: 2, boxSizing: "border-box", flexShrink: 0 }}>
+        {checked && (
+          <svg width="11" height="9" viewBox="0 0 11 9" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M1 4.5L4 7.5L10 1" stroke="#0f172a" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+        )}
+      </span>
+    );
+
+    const Cell = ({ label, value }: { label: string; value?: string }) => (
+      <div style={{ padding: "8px 10px", border: "1px solid #d1d5db", fontSize: 12 }}>
+        <div style={{ fontWeight: 700, marginBottom: 2 }}>{label}:</div>
+        <div style={{ whiteSpace: "pre-wrap" }}>{value || ""}</div>
+      </div>
+    );
+
+    const Footer = () => (
+      <div data-pdf-page-footer="" style={{ direction: "rtl", padding: "10px 0 8px", boxSizing: "border-box", textAlign: "center", borderTop: "1px solid #e2e8f0" }}>
+        <div style={{ fontSize: 12, fontWeight: 700, color: "#0f172a" }}>שם המורשה: {report.form8ExpertName || ""}</div>
+        <div style={{ fontSize: 11, color: "#334155", marginTop: 2 }}>
+          {'מורשה נגישות מתו"ס מ.ר. '}{report.form8ExpertRegistrationNumber || ""}
+          {"   ·   מורשה נגישות שירות מ.ר. "}{report.form8ServiceRegistrationNumber || ""}
+        </div>
+        {report.form8ExpertSignature && (
+          <img src={report.form8ExpertSignature} alt="חתימת המורשה" crossOrigin="anonymous"
+            style={{ maxHeight: 32, maxWidth: 140, height: "auto", display: "block", margin: "4px auto 0" }} />
+        )}
+      </div>
+    );
+
+    return (
+      <div ref={ref} dir="rtl" lang="he"
+        style={{ width: "794px", background: "#ffffff", color: "#0f172a", fontFamily: "Heebo, Assistant, sans-serif" }}>
+        <section style={{ padding: "32px 48px 4px" }}>
+
+          {/* Recipient + subject */}
+          <div data-pdf-no-break="" style={{ textAlign: "center" }}>
+            <div style={{ fontSize: 13 }}>אל: רשות רישוי עסקים {report.form8LocalAuthority || ""}</div>
+            <h1 style={{ fontSize: 19, fontWeight: 800, color: accent, margin: "12px 0 6px", lineHeight: 1.3 }}>
+              הנדון: חוות דעת מורשה נגישות – התקיימות הוראות הנגישות בעסק
+            </h1>
+            <div style={{ fontSize: 13, color: "#334155" }}>{'לפי סעיף 8ב לחוק רישוי עסקים, התשכ"ח- 1968'}</div>
+            <div style={{ fontSize: 13, color: "#334155" }}>לצורך מתן/ חידוש רישיון עסק</div>
+          </div>
+
+          {/* חלק א' */}
+          <SectionTitle>{"חלק א' - פרטי העסק"}</SectionTitle>
+          <div data-pdf-no-break="" style={{ fontSize: 13, marginBottom: 10, display: "flex", alignItems: "flex-end", gap: 6 }}>
+            <span style={{ fontWeight: 700, flexShrink: 0 }}>מס' תיק/בקשה לרישיון עסק:</span>
+            <span style={{ flex: 1, borderBottom: "1px solid #94a3b8" }}>{report.form8FileNumber || ""}</span>
+          </div>
+          <div data-pdf-no-break="" style={{ display: "grid", gridTemplateColumns: "1.6fr 1fr 1.2fr 1fr 1fr" }}>
+            <Cell label="שם העסק" value={report.form8BusinessName} />
+            <Cell label="מס' פריט רישוי" value={report.form8LicenseItemNumber} />
+            <Cell label="כתובת העסק" value={report.form8BusinessAddress} />
+            <Cell label="בעל/ת העסק" value={report.form8BusinessOwnerName} />
+            <Cell label='ת.ז./ח.פ' value={report.form8BusinessOwnerId} />
+          </div>
+          {(report.form8EventDate || report.form8Attendance) && (
+            <div data-pdf-no-break="" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", marginTop: -1 }}>
+              <Cell label="תאריך האירוע" value={report.form8EventDate ? formatHebrewDate(report.form8EventDate) : ""} />
+              <Cell label="מספר משתתפים / תפוסה" value={report.form8Attendance} />
+            </div>
+          )}
+
+          {/* חלק ב' */}
+          <SectionTitle>{"חלק ב' - פרטי מורשה נגישות"}</SectionTitle>
+          <div data-pdf-no-break="" style={{ display: "grid", gridTemplateColumns: "1fr 1fr" }}>
+            <Cell label='שם המורשה מתו"ס' value={report.form8ExpertName} />
+            <Cell label='מספר ת"ז' value={report.form8ExpertId} />
+            <Cell label="מס' רישום בפנקס הרשם" value={report.form8ExpertRegistrationNumber} />
+            <Cell label="שם הפנקס" value={report.form8ExpertRegistryName} />
+            <Cell label="כתובת" value={report.form8ExpertAddress} />
+            <Cell label="כתובת" value={report.form8ExpertAddress} />
+            <Cell label="מספר טלפון" value={report.form8ExpertPhone} />
+            <Cell label='כתובת דוא"ל' value={report.form8ExpertEmail} />
+            <Cell label="שם המורשה שירות" value={report.form8ServiceExpertName} />
+            <Cell label='מספר ת"ז' value={report.form8ServiceExpertId} />
+            <Cell label="מס' רישום בפנקס הרשם" value={report.form8ServiceRegistrationNumber} />
+            <Cell label="שם הפנקס" value={report.form8ServiceRegistryName} />
+            <Cell label="כתובת" value={report.form8ExpertAddress} />
+            <Cell label="כתובת" value={report.form8ExpertAddress} />
+            <Cell label="מספר טלפון" value={report.form8ExpertPhone} />
+            <Cell label='כתובת דוא"ל' value={report.form8ExpertEmail} />
+          </div>
+
+          {/* חלק ג' */}
+          <div data-pdf-page-break="" />
+          <SectionTitle>{"חלק ג' - חוות הדעת של מורשה הנגישות"}</SectionTitle>
+          <div data-pdf-no-break="" style={{ fontSize: 13, lineHeight: 1.8 }}>
+            <p style={{ margin: "0 0 10px" }}>בחוות דעת זו אני מאשר/ת כי מתקיימות בעסק (נא לסמן את המשבצות הרלבנטיות):</p>
+            <div style={{ display: "flex", alignItems: "flex-start", gap: 8, marginBottom: 10 }}>
+              <Checkbox checked={report.form8BuildingApproved} />
+              <span>
+                הוראות הנגישות החלות על העסק מכוח תקנות הנגישות לבניין קיים/ תקנות הנגישות לבניין חדש
+                {" "}(לפי מועד קבלת ההיתר לבניין שבו ניתן השירות) מקום שאינו בנין.
+              </span>
+            </div>
+            <div style={{ display: "flex", alignItems: "flex-start", gap: 8, marginBottom: 14 }}>
+              <Checkbox checked={report.form8ServiceApproved} />
+              <span>הוראות הנגישות החלות על העסק מכוח תקנות הנגישות לשירות.</span>
+            </div>
+            <p style={{ margin: 0 }}>
+              אני נותן/ת חוות דעת זו לאחר שהכרתי את הנתונים ביום{" "}
+              <strong>{report.form8InspectionDataDate ? formatHebrewDate(report.form8InspectionDataDate) : "__________"}</strong>
+              {" "}ולאחר שווידאתי את התקיימותן של הוראות הנגישות שסומנו לעיל.
+            </p>
+          </div>
+          <div data-pdf-no-break="" style={{ marginTop: 28, display: "flex", alignItems: "flex-end", gap: 24 }}>
+            <div style={{ flex: 1 }}>
+              {report.form8ExpertSignature ? (
+                <img src={report.form8ExpertSignature} alt="חתימה" crossOrigin="anonymous" style={{ maxHeight: 56, maxWidth: 180, display: "block" }} />
+              ) : (
+                <div style={{ height: 40, borderBottom: "1px solid #94a3b8" }} />
+              )}
+              <div style={{ fontSize: 12, color: "#64748b", marginTop: 4 }}>{"שם + חתימת המורשה — "}{report.form8ExpertName || ""}</div>
+            </div>
+            <div style={{ textAlign: "center" }}>
+              <div style={{ minWidth: 100, borderBottom: "1px solid #94a3b8", paddingBottom: 4 }}>
+                {report.form8OpinionDate ? formatHebrewDate(report.form8OpinionDate) : ""}
+              </div>
+              <div style={{ fontSize: 12, color: "#64748b", marginTop: 4 }}>תאריך</div>
+            </div>
+          </div>
+
+          {/* חלק ד' */}
+          <div data-pdf-page-break="" />
+          <SectionTitle>{"חלק ד' - התאמות נגישות בבניין קיים שאינן באחריות בעל העסק"}</SectionTitle>
+          <div data-pdf-no-break="" style={{ fontSize: 12, lineHeight: 1.8, color: "#334155", marginBottom: 12 }}>
+            <div style={{ fontWeight: 700 }}>{"הנחיות למילוי חלק ד':"}</div>
+            <div>{"חלק ד' ימולא רק עבור עסק הנמצא בבניין ציבורי קיים, שבקשה להיתר להקמתו הוגשה לפני 1.8.2009."}</div>
+            <div>הטבלה מפרטת התאמות נגישות הנדרשות להשלמת רצף הנגישות מפתח העסק ועד לפתח הבניין, שאינן באחריות בעל העסק.</div>
+            <div>הטבלה תמולא בידי מורשה נגישות.</div>
+            <div>{'"התקנות" – תקנות שוויון זכויות לאנשים עם מוגבלות (התאמות נגישות למקום ציבורי שהוא בניין קיים), תשע"ב-2011.'}</div>
+          </div>
+
+          <div style={{ border: `1px solid ${accent}`, direction: "rtl", fontSize: 12 }}>
+            <div data-pdf-no-break="" style={{ display: "grid", gridTemplateColumns: "44px 2fr 1.3fr", background: "#f5f3ff", fontWeight: 700 }}>
+              <div style={{ padding: "8px 6px", textAlign: "center", borderLeft: `1px solid ${accent}` }}>מס'</div>
+              <div style={{ padding: "8px 6px", textAlign: "center", borderLeft: `1px solid ${accent}` }}>
+                התאמות נגישות נוספות לפי התקנות, הנדרשות להשלמת רצף הנגישות מפתח העסק ועד לפתח הבניין בו מצוי העסק, אשר לא בוצעו
+              </div>
+              <div style={{ padding: "8px 6px", textAlign: "center" }}>הדרישה</div>
+            </div>
+            {FORM8_REQUIREMENTS.map((req, i) => (
+              <div key={req.id} data-pdf-no-break="" style={{ display: "grid", gridTemplateColumns: "44px 2fr 1.3fr", borderTop: `1px solid ${accent}`, background: i % 2 === 0 ? "#ffffff" : "#faf9ff" }}>
+                <div style={{ padding: "8px 6px", textAlign: "center", fontWeight: 700, borderLeft: `1px solid ${accent}` }}>{req.id}</div>
+                <div style={{ padding: "8px 8px", borderLeft: `1px solid ${accent}`, lineHeight: 1.6 }}>
+                  {req.staticText.map((line, li) => <div key={li}>{line}</div>)}
+                  {req.image && (
+                    <img src={req.image} alt="" crossOrigin="anonymous" style={{ maxWidth: "100%", height: "auto", display: "block", marginTop: 6, borderRadius: 4, border: "1px solid #e2e8f0" }} />
+                  )}
+                </div>
+                <div style={{ padding: "8px 8px", whiteSpace: "pre-wrap", lineHeight: 1.6 }}>{getResponse(req.id)}</div>
+              </div>
+            ))}
+          </div>
+
+          {/* אישור בעל העסק */}
+          <div data-pdf-no-break="" style={{ marginTop: 24, fontSize: 13, lineHeight: 1.8 }}>
+            <div style={{ fontWeight: 800, color: accent, marginBottom: 8 }}>{"אישור בעל העסק לעניין העברת הרשימה לחייב:"}</div>
+            <p style={{ margin: 0 }}>
+              {'אני הח"מ, '}
+              <strong>{report.form8OwnerDeclarationName || report.form8BusinessOwnerName || "__________________"}</strong>
+              {", בעל העסק שפרטיו מופיעים בחלק א' לעיל, מצהיר בזאת שהעברתי לחייב בביצוע נגישות את רשימת התאמות הנגישות הנוספות, המפורטות בטבלה שבסעיף 1 בחלק ד', ודרשתי ממנו לבצען."}
+            </p>
+          </div>
+          <div data-pdf-no-break="" style={{ marginTop: 24, display: "flex", alignItems: "flex-end", gap: 24 }}>
+            <div style={{ flex: 1 }}>
+              {report.form8OwnerSignature ? (
+                <img src={report.form8OwnerSignature} alt="חתימה" crossOrigin="anonymous" style={{ maxHeight: 56, maxWidth: 180, display: "block" }} />
+              ) : (
+                <div style={{ height: 40, borderBottom: "1px solid #94a3b8" }} />
+              )}
+              <div style={{ fontSize: 12, color: "#64748b", marginTop: 4 }}>חתימה</div>
+            </div>
+            <div style={{ textAlign: "center" }}>
+              <div style={{ minWidth: 100, borderBottom: "1px solid #94a3b8", paddingBottom: 4 }}>
+                {report.form8OwnerSignatureDate ? formatHebrewDate(report.form8OwnerSignatureDate) : ""}
+              </div>
+              <div style={{ fontSize: 12, color: "#64748b", marginTop: 4 }}>תאריך</div>
+            </div>
+          </div>
+
+        </section>
+        {showFooter && <Footer />}
+      </div>
+    );
+  }
 
   // ── Element stability inspection: דוח בדיקת יציבות אלמנטים ─────────────────
   if (report.surveyType === "element_stability") {
