@@ -408,10 +408,8 @@ export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, sett
       ? (fmt.resultUnstableText || ELEMENT_STABILITY_RESULT_UNSTABLE)
       : (fmt.resultStableText || ELEMENT_STABILITY_RESULT_STABLE);
     const isElementApproval = report.reportMode === "approval";
-    const showStamp = fmt.showStamp !== false;
     const showSig = fmt.showSignature !== false;
     const showFooter = fmt.showFooter !== false;
-    const stampImg = showStamp ? fmt.stampImage : undefined;
     const sigImg = showSig ? (report.signatureDataUrl || fmt.signatureImage) : undefined;
 
     const CoverLine = ({ label, value }: { label: string; value?: string }) => (
@@ -513,23 +511,15 @@ export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, sett
             </div>
           </div>
 
-          {/* 9. Signature + stamp — left side of the page, last page only, when present */}
-          {(sigImg || stampImg) && (
-            <div data-pdf-no-break="" style={{ marginTop: 48, display: "flex", justifyContent: "flex-end", gap: 48, direction: "rtl" }}>
-              {sigImg && (
-                <div style={{ textAlign: "center" }}>
-                  <img src={sigImg} alt="חתימה" crossOrigin="anonymous" style={{ maxHeight: 70, maxWidth: 200, height: "auto", display: "block", margin: "0 auto" }} />
-                  <div style={{ borderTop: "1px solid #0f172a", marginTop: 4, paddingTop: 4, fontSize: 12, color: "#64748b" }}>
-                    חתימת הבודק{inspectorName ? ` — ${inspectorName}` : ""}
-                  </div>
+          {/* 9. Signature/stamp — left side of the page, last page only, when present */}
+          {sigImg && (
+            <div data-pdf-no-break="" style={{ marginTop: 48, display: "flex", justifyContent: "flex-end", direction: "rtl" }}>
+              <div style={{ textAlign: "center" }}>
+                <img src={sigImg} alt="חתימה" crossOrigin="anonymous" style={{ maxHeight: 70, maxWidth: 200, height: "auto", display: "block", margin: "0 auto" }} />
+                <div style={{ borderTop: "1px solid #0f172a", marginTop: 4, paddingTop: 4, fontSize: 12, color: "#64748b" }}>
+                  חתימת הבודק{inspectorName ? ` — ${inspectorName}` : ""}
                 </div>
-              )}
-              {stampImg && (
-                <div style={{ textAlign: "center" }}>
-                  <img src={stampImg} alt="חותמת" crossOrigin="anonymous" style={{ maxHeight: 90, maxWidth: 130, height: "auto", display: "block", margin: "0 auto" }} />
-                  <div style={{ marginTop: 4, fontSize: 12, color: "#64748b" }}>חותמת</div>
-                </div>
-              )}
+              </div>
             </div>
           )}
 
@@ -1179,13 +1169,6 @@ export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, sett
                 {report.signatureDate ? ` • ${report.signatureDate}` : ""}
               </div>
             </div>
-            {fmt.stampImage && (
-              <div>
-                <img src={fmt.stampImage} alt="חותמת" crossOrigin="anonymous"
-                  style={{ maxHeight: 80, maxWidth: 120, display: "block" }} />
-                <div style={{ fontSize: 11, color: "#64748b", marginTop: 2 }}>חותמת</div>
-              </div>
-            )}
           </div>
         </div>
 
@@ -1459,7 +1442,7 @@ export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, sett
         )}
 
         {/* CLOSING: general notes + professional sign-off */}
-        {(report.generalNotes || fmt.professionalName || settings.consultantName || fmt.signatureImage || report.signatureDataUrl || fmt.stampImage) && (
+        {(report.generalNotes || fmt.professionalName || settings.consultantName || fmt.signatureImage || report.signatureDataUrl) && (
           <div style={{ marginTop: 40, pageBreakInside: "avoid" }}>
             {report.generalNotes && (
               <>
@@ -1549,18 +1532,6 @@ export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, sett
                   {report.signatureDate ? ` • ${report.signatureDate}` : ""}
                 </div>
               </div>
-
-              {fmt.stampImage && (
-                <div style={{ textAlign: "center" }}>
-                  <img
-                    src={fmt.stampImage}
-                    alt="חותמת"
-                    style={{ maxHeight: 80, height: "auto", maxWidth: 120, display: "block" }}
-                    crossOrigin="anonymous"
-                  />
-                  <div style={{ fontSize: 11, color: "#64748b", marginTop: 2 }}>חותמת</div>
-                </div>
-              )}
             </div>
           </div>
         )}
