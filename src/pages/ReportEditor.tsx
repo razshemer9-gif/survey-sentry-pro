@@ -621,6 +621,9 @@ export default function ReportEditor() {
                     <Field label="תאריך המבדק">
                       <Input type="date" value={report.surveyDate} onChange={(e) => update({ surveyDate: e.target.value })} />
                     </Field>
+                    <Field label="תמונת המסגרת">
+                      <PhotoPicker value={report.coverPhoto} onChange={(u) => update({ coverPhoto: u })} label="צרף תמונה" />
+                    </Field>
                   </>
                 ) : isEdu ? (
                   <>
