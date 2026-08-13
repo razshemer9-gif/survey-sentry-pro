@@ -12,6 +12,7 @@ import {
 } from "@/lib/element-stability";
 import { ELEMENT_STABILITY_HEADER_BANNER } from "@/lib/element-stability-banner";
 import { ACCESSIBILITY_HEADER_BANNER_APPROVAL, ACCESSIBILITY_HEADER_BANNER_SURVEY } from "@/lib/accessibility-header-banner";
+import { GENERAL_SAFETY_HEADER_BANNER_APPROVAL, GENERAL_SAFETY_HEADER_BANNER_SURVEY } from "@/lib/general-safety-banner";
 import { RISK_SURVEY_DEFAULT_FENCING_NOTE, RISK_SURVEY_SUBTITLE } from "@/lib/risk-survey";
 import React, { forwardRef } from "react";
 
@@ -55,6 +56,11 @@ export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, sett
   // the generic per-account logo + title — the banner already has the title
   // text baked in, so it swaps entirely between the survey/approval variants.
   const isAccessibilityType = !report.surveyType || report.surveyType === "accessibility";
+  // general_safety ("סקר/אישור בטיחות כללי") also uses a fixed brand banner
+  // with the survey/approval title baked in, instead of the generic
+  // per-account logo + <h1> title — same treatment as accessibility above.
+  const isGeneralSafetyType = report.surveyType === "general_safety";
+  const hasHeaderBanner = isAccessibilityType || isGeneralSafetyType;
 
   const hasPriorities = report.items.some(i => i.priority !== undefined);
   const PRIORITY_GROUPS: { priority: 0 | 1 | 2 | undefined; label: string; color: string; bg: string; border: string }[] = [
@@ -1196,7 +1202,7 @@ export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, sett
       <div
         style={{
           backgroundColor: "#ffffff",
-          padding: isAccessibilityType ? "20px 32px" : "28px 48px 24px",
+          padding: hasHeaderBanner ? "20px 32px" : "28px 48px 24px",
           display: "flex",
           flexDirection: "column",
           alignItems: "center",
@@ -1207,6 +1213,12 @@ export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, sett
           <img
             src={isApproval ? ACCESSIBILITY_HEADER_BANNER_APPROVAL : ACCESSIBILITY_HEADER_BANNER_SURVEY}
             alt={isApproval ? "אישור נגישות מתו״ס ושירות" : "סקר נגישות מתו״ס ושירות"}
+            style={{ width: "100%", height: "auto", display: "block" }}
+          />
+        ) : isGeneralSafetyType ? (
+          <img
+            src={isApproval ? GENERAL_SAFETY_HEADER_BANNER_APPROVAL : GENERAL_SAFETY_HEADER_BANNER_SURVEY}
+            alt={isApproval ? "אישור בטיחות כללי" : "סקר בטיחות כללי"}
             style={{ width: "100%", height: "auto", display: "block" }}
           />
         ) : coverLogo && (
@@ -1234,7 +1246,7 @@ export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, sett
         <div style={{ height: 40, background: `linear-gradient(to bottom, #ffffff 0%, ${surveyConfig.color}dd 100%)` }} />
 
         <div style={{ padding: "10px 48px 24px" }}>
-          {!isAccessibilityType && (
+          {!hasHeaderBanner && (
             <h1 style={{ fontSize: 46, fontWeight: 800, lineHeight: 1.05, margin: 0 }}>
               {(() => {
                 const base = fmt.reportTitle || surveyConfig.pdfTitle;
@@ -1242,7 +1254,7 @@ export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, sett
               })()}
             </h1>
           )}
-          <div style={{ fontSize: 22, marginTop: isAccessibilityType ? 0 : 14, opacity: 0.95 }}>{report.placeName || "ללא שם"}</div>
+          <div style={{ fontSize: 22, marginTop: hasHeaderBanner ? 0 : 14, opacity: 0.95 }}>{report.placeName || "ללא שם"}</div>
         </div>
 
         <div
