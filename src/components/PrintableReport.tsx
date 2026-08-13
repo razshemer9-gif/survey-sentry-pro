@@ -278,7 +278,7 @@ export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, sett
           <div data-pdf-no-break="" style={{ marginTop: 28, display: "flex", alignItems: "flex-end", gap: 24 }}>
             <div style={{ flex: 1 }}>
               {report.form8ExpertSignature ? (
-                <img src={report.form8ExpertSignature} alt="חתימה" crossOrigin="anonymous" style={{ maxHeight: 56, maxWidth: 180, display: "block" }} />
+                <img src={report.form8ExpertSignature} alt="חתימה" crossOrigin="anonymous" style={{ maxHeight: 112, maxWidth: 360, display: "block" }} />
               ) : (
                 <div style={{ height: 40, borderBottom: "1px solid #94a3b8" }} />
               )}
@@ -337,7 +337,7 @@ export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, sett
           <div data-pdf-no-break="" style={{ marginTop: 24, display: "flex", alignItems: "flex-end", gap: 24 }}>
             <div style={{ flex: 1 }}>
               {report.form8OwnerSignature ? (
-                <img src={report.form8OwnerSignature} alt="חתימה" crossOrigin="anonymous" style={{ maxHeight: 56, maxWidth: 180, display: "block" }} />
+                <img src={report.form8OwnerSignature} alt="חתימה" crossOrigin="anonymous" style={{ maxHeight: 112, maxWidth: 360, display: "block" }} />
               ) : (
                 <div style={{ height: 40, borderBottom: "1px solid #94a3b8" }} />
               )}
