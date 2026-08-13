@@ -173,8 +173,8 @@ export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, sett
       </span>
     );
 
-    const Cell = ({ label, value }: { label: string; value?: string }) => (
-      <div style={{ padding: "8px 10px", border: "1px solid #d1d5db", fontSize: 12 }}>
+    const Cell = ({ label, value, full }: { label: string; value?: string; full?: boolean }) => (
+      <div style={{ padding: "8px 10px", border: "1px solid #d1d5db", fontSize: 12, ...(full ? { gridColumn: "1 / -1" } : {}) }}>
         <div style={{ fontWeight: 700, marginBottom: 2 }}>{label}:</div>
         <div style={{ whiteSpace: "pre-wrap" }}>{value || ""}</div>
       </div>
@@ -236,16 +236,14 @@ export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, sett
             <Cell label='מספר ת"ז' value={report.form8ExpertId} />
             <Cell label="מס' רישום בפנקס הרשם" value={report.form8ExpertRegistrationNumber} />
             <Cell label="שם הפנקס" value={report.form8ExpertRegistryName} />
-            <Cell label="כתובת" value={report.form8ExpertAddress} />
-            <Cell label="כתובת" value={report.form8ExpertAddress} />
+            <Cell label="כתובת" value={report.form8ExpertAddress} full />
             <Cell label="מספר טלפון" value={report.form8ExpertPhone} />
             <Cell label='כתובת דוא"ל' value={report.form8ExpertEmail} />
             <Cell label="שם המורשה שירות" value={report.form8ServiceExpertName} />
             <Cell label='מספר ת"ז' value={report.form8ServiceExpertId} />
             <Cell label="מס' רישום בפנקס הרשם" value={report.form8ServiceRegistrationNumber} />
             <Cell label="שם הפנקס" value={report.form8ServiceRegistryName} />
-            <Cell label="כתובת" value={report.form8ExpertAddress} />
-            <Cell label="כתובת" value={report.form8ExpertAddress} />
+            <Cell label="כתובת" value={report.form8ExpertAddress} full />
             <Cell label="מספר טלפון" value={report.form8ExpertPhone} />
             <Cell label='כתובת דוא"ל' value={report.form8ExpertEmail} />
           </div>
