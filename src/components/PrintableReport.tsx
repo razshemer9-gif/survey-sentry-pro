@@ -931,6 +931,35 @@ export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, sett
           <MinistryFooter marginTop={60} />
         </section>
 
+        {/* Page 6: תמונות מצורפות — appendix, only when photos were attached.
+            The official form's pages above must stay an exact replica, so
+            photos (building photo + per-finding photos) are never inserted
+            into those tables — they get their own page instead. */}
+        {(report.coverPhoto || report.items.some((i) => i.photo)) && (
+          <section data-pdf-page-break="" style={{ padding: "40px 56px", background: "#fff" }}>
+            <MinistryHeader />
+            <h2 style={{ fontSize: 16, fontWeight: 800, textDecoration: "underline", marginBottom: 20, textAlign: "center" }}>תמונות מצורפות</h2>
+
+            {report.coverPhoto && (
+              <div data-pdf-no-break="" style={{ marginBottom: 24 }}>
+                <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 6, textAlign: "center" }}>תמונת המסגרת</div>
+                <img src={report.coverPhoto} alt="תמונת המסגרת" crossOrigin="anonymous"
+                  style={{ maxWidth: "100%", height: "auto", display: "block", margin: "0 auto", borderRadius: 8, border: "1px solid #e2e8f0" }} />
+              </div>
+            )}
+
+            {report.items.filter((i) => i.photo).map((item, idx) => (
+              <div key={item.id} data-pdf-no-break="" style={{ marginBottom: 24 }}>
+                <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 6, textAlign: "center" }}>{item.title || `ממצא ${idx + 1}`}</div>
+                <img src={item.photo} alt={item.title || ""} crossOrigin="anonymous"
+                  style={{ maxWidth: "100%", height: "auto", display: "block", margin: "0 auto", borderRadius: 8, border: "1px solid #e2e8f0" }} />
+              </div>
+            ))}
+
+            <MinistryFooter />
+          </section>
+        )}
+
       </div>
     );
   }
