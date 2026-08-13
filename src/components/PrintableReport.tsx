@@ -150,7 +150,7 @@ export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, sett
 
   // ── Form 8: חוות דעת מורשה נגישות (טופס 8) ─────────────────────────────────
   if (report.surveyType === "accessibility_form_8") {
-    const accent = "#7c3aed";
+    const accent = "#1e3a8a"; // blue accent (matches brand)
     const requirements = report.form8Requirements?.length
       ? report.form8Requirements
       : FORM8_REQUIREMENTS.map((r) => ({ id: r.id, response: "" }));
@@ -298,7 +298,7 @@ export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, sett
           </div>
 
           <div style={{ border: `1px solid ${accent}`, direction: "rtl", fontSize: 12 }}>
-            <div data-pdf-no-break="" style={{ display: "grid", gridTemplateColumns: "44px 2fr 1.3fr", background: "#f5f3ff", fontWeight: 700 }}>
+            <div data-pdf-no-break="" style={{ display: "grid", gridTemplateColumns: "44px 2fr 1.3fr", background: "#f0f4ff", fontWeight: 700 }}>
               <div style={{ padding: "8px 6px", textAlign: "center", borderLeft: `1px solid ${accent}` }}>מס'</div>
               <div style={{ padding: "8px 6px", textAlign: "center", borderLeft: `1px solid ${accent}` }}>
                 התאמות נגישות נוספות לפי התקנות, הנדרשות להשלמת רצף הנגישות מפתח העסק ועד לפתח הבניין בו מצוי העסק, אשר לא בוצעו
@@ -306,7 +306,7 @@ export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, sett
               <div style={{ padding: "8px 6px", textAlign: "center" }}>הדרישה</div>
             </div>
             {FORM8_REQUIREMENTS.map((req, i) => (
-              <div key={req.id} data-pdf-no-break="" style={{ display: "grid", gridTemplateColumns: "44px 2fr 1.3fr", borderTop: `1px solid ${accent}`, background: i % 2 === 0 ? "#ffffff" : "#faf9ff" }}>
+              <div key={req.id} data-pdf-no-break="" style={{ display: "grid", gridTemplateColumns: "44px 2fr 1.3fr", borderTop: `1px solid ${accent}`, background: i % 2 === 0 ? "#ffffff" : "#f0f4ff" }}>
                 <div style={{ padding: "8px 6px", textAlign: "center", fontWeight: 700, borderLeft: `1px solid ${accent}` }}>{req.id}</div>
                 <div style={{ padding: "8px 8px", borderLeft: `1px solid ${accent}`, lineHeight: 1.6 }}>
                   {req.staticText.map((line, li) => <div key={li}>{line}</div>)}
