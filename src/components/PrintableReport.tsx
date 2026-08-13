@@ -244,8 +244,6 @@ export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, sett
             <Cell label="מס' רישום בפנקס הרשם" value={report.form8ServiceRegistrationNumber} />
             <Cell label="שם הפנקס" value={report.form8ServiceRegistryName} />
             <Cell label="כתובת" value={report.form8ExpertAddress} full />
-            <Cell label="מספר טלפון" value={report.form8ExpertPhone} />
-            <Cell label='כתובת דוא"ל' value={report.form8ExpertEmail} />
           </div>
 
           {/* חלק ג' */}
