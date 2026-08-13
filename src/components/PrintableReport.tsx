@@ -1198,11 +1198,13 @@ export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, sett
         fontFamily: "Heebo, Assistant, sans-serif",
       }}
     >
-      {/* White band — outside the blue section so html2canvas never composites it against a colored parent */}
+      {/* White band — outside the blue section so html2canvas never composites it against a colored parent.
+          Banner-carrying types (accessibility/general_safety) run the banner full-bleed, edge to edge,
+          instead of inset in a padded box — the banner is a finished graphic on its own. */}
       <div
         style={{
           backgroundColor: "#ffffff",
-          padding: hasHeaderBanner ? "20px 32px" : "28px 48px 24px",
+          padding: hasHeaderBanner ? 0 : "28px 48px 24px",
           display: "flex",
           flexDirection: "column",
           alignItems: "center",
@@ -1242,10 +1244,14 @@ export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, sett
           flexDirection: "column",
         }}
       >
-        {/* Gradient fade from white into blue */}
-        <div style={{ height: 40, background: `linear-gradient(to bottom, #ffffff 0%, ${surveyConfig.color}dd 100%)` }} />
+        {/* Gradient fade from white into blue — only needed when a white band
+            precedes this section; banner-carrying types flow the banner's
+            own (already dark) bottom edge straight into the color below. */}
+        {!hasHeaderBanner && (
+          <div style={{ height: 40, background: `linear-gradient(to bottom, #ffffff 0%, ${surveyConfig.color}dd 100%)` }} />
+        )}
 
-        <div style={{ padding: "10px 48px 24px" }}>
+        <div style={{ padding: hasHeaderBanner ? "16px 48px" : "10px 48px 24px" }}>
           {!hasHeaderBanner && (
             <h1 style={{ fontSize: 46, fontWeight: 800, lineHeight: 1.05, margin: 0 }}>
               {(() => {
