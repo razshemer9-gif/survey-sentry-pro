@@ -255,7 +255,8 @@ export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, sett
               <Checkbox checked={report.form8BuildingApproved} />
               <span>
                 הוראות הנגישות החלות על העסק מכוח תקנות הנגישות לבניין קיים/ תקנות הנגישות לבניין חדש
-                {" "}(לפי מועד קבלת ההיתר לבניין שבו ניתן השירות) מקום שאינו בנין.
+                {" "}(לפי מועד קבלת ההיתר לבניין שבו ניתן השירות){" "}
+                <strong style={{ color: "#1e3a8a", borderBottom: "2px solid #1e3a8a" }}>מקום שאינו בנין</strong>.
               </span>
             </div>
             <div style={{ display: "flex", alignItems: "flex-start", gap: 8, marginBottom: 14 }}>
