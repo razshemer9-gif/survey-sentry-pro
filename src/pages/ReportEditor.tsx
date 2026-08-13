@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { useNavigate, useParams } from "react-router-dom";
-import { AlertTriangle, ArrowRight, Check, Download, Eye, FileDown, Images, Loader2, PenLine, Plus, RotateCw, Save, Trash2 } from "lucide-react";
+import { AlertTriangle, ArrowRight, Check, Download, Eye, FileDown, Images, Loader2, PenLine, Plus, RotateCw, Save, Trash2, X } from "lucide-react";
 import { v4 as uuid } from "uuid";
 import { toast } from "sonner";
 
@@ -33,6 +33,7 @@ import { ChecklistItem, ConsultantSettings, DEFAULT_CHECKLIST, DEFAULT_SETTINGS,
 import { EDU_INSPECTION_TABLE } from "@/lib/edu-inspection-table";
 import { ELEMENT_STABILITY_DEFAULT_TERMS, ELEMENT_STABILITY_STABLE_ONLY_INDICES } from "@/lib/element-stability";
 import { FORM8_REQUIREMENTS } from "@/lib/form8-data";
+import { SEATING_BRACKETS, UNITS_BRACKETS, computeAccessibleUnits, computeSeatingPositions, seatingBracketIndex, unitsBracketIndex } from "@/lib/form8-calc";
 import { STANDARDS_DATA } from "@/lib/standards-data";
 import { getReport, loadUserSettings, saveReport, saveUserSettings } from "@/lib/storage";
 import { isDirty } from "@/lib/offline-db";
@@ -348,6 +349,7 @@ export default function ReportEditor() {
       const num = String(idx + 1).padStart(2, "0");
       const photos: string[] = [];
       if (item.photo) photos.push(item.photo);
+      if (item.photos?.length) photos.push(...item.photos);
       if (item.referencePhotos?.length) photos.push(...item.referencePhotos);
       else if (item.referencePhoto) photos.push(item.referencePhoto);
 
@@ -620,6 +622,9 @@ export default function ReportEditor() {
                     </Field>
                     <Field label="תאריך המבדק">
                       <Input type="date" value={report.surveyDate} onChange={(e) => update({ surveyDate: e.target.value })} />
+                    </Field>
+                    <Field label="תמונת המסגרת">
+                      <PhotoPicker value={report.coverPhoto} onChange={(u) => update({ coverPhoto: u })} label="צרף תמונה" />
                     </Field>
                   </>
                 ) : isEdu ? (
@@ -905,14 +910,44 @@ export default function ReportEditor() {
 
                 {/* ── Client-specific (editable) ── */}
                 <div className="px-4 py-3 space-y-3">
-                  <div>
-                    <Label className="mb-1 block text-xs font-semibold text-foreground">תמונת מצב קיים</Label>
-                    <PhotoPicker
-                      value={item.photo}
-                      onChange={(u) => updateItem(item.id, { photo: u })}
-                      label="צרף תמונה מהשטח"
-                    />
-                  </div>
+                  {report.surveyType === "welfare_inspection" ? (
+                    <div>
+                      <Label className="mb-1 block text-xs font-semibold text-foreground">תמונות מצב קיים</Label>
+                      <div className="space-y-2">
+                        {(item.photos?.length ?? 0) > 0 && (
+                          <div className="grid grid-cols-2 gap-1.5">
+                            {item.photos!.map((p, i) => (
+                              <div key={i} className="relative">
+                                <img src={p} alt="" className="w-full aspect-square object-cover rounded-lg border border-border bg-muted" />
+                                <button
+                                  type="button"
+                                  onClick={() => updateItem(item.id, { photos: item.photos!.filter((_, j) => j !== i) })}
+                                  className="absolute top-1 left-1 grid h-6 w-6 place-items-center rounded-full bg-background/90 text-foreground shadow-elev"
+                                  aria-label="הסר תמונה"
+                                >
+                                  <X className="h-3.5 w-3.5" />
+                                </button>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                        <PhotoPicker
+                          value={undefined}
+                          onChange={(u) => { if (u) updateItem(item.id, { photos: [...(item.photos ?? []), u] }); }}
+                          label="הוסף תמונה מהשטח"
+                        />
+                      </div>
+                    </div>
+                  ) : (
+                    <div>
+                      <Label className="mb-1 block text-xs font-semibold text-foreground">תמונת מצב קיים</Label>
+                      <PhotoPicker
+                        value={item.photo}
+                        onChange={(u) => updateItem(item.id, { photo: u })}
+                        label="צרף תמונה מהשטח"
+                      />
+                    </div>
+                  )}
 
                   <div>
                     <Label className="mb-1 block text-xs font-semibold text-foreground">פירוט מצב קיים</Label>
@@ -1050,12 +1085,103 @@ export default function ReportEditor() {
                   <p className="text-xs text-muted-foreground">
                     יש למלא רק עבור עסק בבניין ציבורי קיים שהיתר הקמתו הוגש לפני 1.8.2009. יש להזין את התייחסותך לכל סעיף.
                   </p>
-                  {requirements.map((req, i) => (
+                  {requirements.map((req, i) => {
+                    // Row 4: עמדות צפייה מיוחדות — suggested count from כמות קהל/תפוסה.
+                    const seatingInput = req.id === 4
+                      ? (report.form8SeatingCalcInput ?? (Number(report.form8Attendance) || undefined))
+                      : undefined;
+                    const seatingBracket = seatingInput ? seatingBracketIndex(seatingInput) : -1;
+                    const seatingResult = seatingInput ? computeSeatingPositions(seatingInput) : null;
+
+                    // Row 5: תאים נגישים — defaults its input from row 4's own suggestion.
+                    const seatingForUnits = report.form8SeatingCalcInput ?? (Number(report.form8Attendance) || undefined);
+                    const unitsInput = req.id === 5
+                      ? (report.form8UnitsCalcInput ?? (seatingForUnits ? computeSeatingPositions(seatingForUnits) ?? undefined : undefined))
+                      : undefined;
+                    const unitsBracket = unitsInput ? unitsBracketIndex(unitsInput) : -1;
+                    const unitsResult = unitsInput ? computeAccessibleUnits(unitsInput) : null;
+
+                    return (
                     <div key={req.id} className="rounded-xl border border-border bg-background p-3 space-y-2">
                       <div className="flex items-start gap-2 text-xs font-semibold text-foreground">
                         <span className="shrink-0 text-muted-foreground">{i + 1}.</span>
                         <span>{FORM8_REQUIREMENTS[i]?.label}</span>
                       </div>
+
+                      {req.id === 4 && (
+                        <div className="rounded-lg bg-primary-soft/40 border border-primary/20 p-2.5 space-y-2" dir="rtl">
+                          <div className="flex items-center gap-2">
+                            <Label className="text-xs shrink-0 text-foreground">כמות קהל/תפוסה לחישוב</Label>
+                            <Input
+                              type="number"
+                              inputMode="numeric"
+                              className="h-8 text-sm"
+                              value={seatingInput ?? ""}
+                              onChange={(e) => update({ form8SeatingCalcInput: e.target.value ? Number(e.target.value) : undefined })}
+                              placeholder="לדוגמה: 800"
+                            />
+                          </div>
+                          <div className="space-y-0.5">
+                            {SEATING_BRACKETS.map((b, bi) => (
+                              <div key={bi} className={cn("text-xs rounded px-1.5 py-0.5", bi === seatingBracket ? "bg-primary text-primary-foreground font-bold" : "text-muted-foreground")} style={{ unicodeBidi: "plaintext" }}>
+                                {b.label}
+                              </div>
+                            ))}
+                          </div>
+                          {seatingResult !== null && (
+                            <div className="flex items-center justify-between gap-2 text-xs">
+                              <span className="text-foreground">הצעה: נדרשות <strong>{seatingResult}</strong> עמדות צפייה מיוחדות</span>
+                              <Button
+                                type="button" size="sm" variant="secondary" className="h-7 text-xs shrink-0"
+                                onClick={() => setRequirement(4, `נדרשות ${seatingResult} עמדות צפייה מיוחדות (לפי ${seatingInput} משתתפים).`)}
+                              >
+                                השתמש בהצעה
+                              </Button>
+                            </div>
+                          )}
+                        </div>
+                      )}
+
+                      {req.id === 5 && (
+                        <div className="rounded-lg bg-primary-soft/40 border border-primary/20 p-2.5 space-y-2" dir="rtl">
+                          <div className="flex items-center gap-2">
+                            <Label className="text-xs shrink-0 text-foreground">מספר מקומות ישיבה מיוחדים לחישוב</Label>
+                            <Input
+                              type="number"
+                              inputMode="numeric"
+                              className="h-8 text-sm"
+                              value={unitsInput ?? ""}
+                              onChange={(e) => update({ form8UnitsCalcInput: e.target.value ? Number(e.target.value) : undefined })}
+                              placeholder="לדוגמה: 20"
+                            />
+                          </div>
+                          <div className="space-y-0.5">
+                            {UNITS_BRACKETS.map((b, bi) => (
+                              <div key={bi} className={cn("text-xs rounded px-1.5 py-0.5", bi === unitsBracket ? "bg-primary text-primary-foreground font-bold" : "text-muted-foreground")} style={{ unicodeBidi: "plaintext" }}>
+                                {b.label}
+                              </div>
+                            ))}
+                          </div>
+                          {unitsResult && (
+                            <div className="flex items-center justify-between gap-2 text-xs">
+                              <span className="text-foreground">
+                                {unitsResult.referToOther
+                                  ? "הצעה: לפי האמור בפרט 8.146"
+                                  : <>הצעה: נדרשים <strong>{unitsResult.count}</strong> תאים נגישים{unitsResult.sharedNote ? ` (${unitsResult.sharedNote})` : ""}</>}
+                              </span>
+                              <Button
+                                type="button" size="sm" variant="secondary" className="h-7 text-xs shrink-0"
+                                onClick={() => setRequirement(5, unitsResult.referToOther
+                                  ? "לפי האמור בפרט 8.146."
+                                  : `נדרשים ${unitsResult.count} תאים נגישים${unitsResult.sharedNote ? `, ${unitsResult.sharedNote}` : ""} (לפי ${unitsInput} מקומות ישיבה מיוחדים).`)}
+                              >
+                                השתמש בהצעה
+                              </Button>
+                            </div>
+                          )}
+                        </div>
+                      )}
+
                       <Textarea
                         value={req.response}
                         onChange={(e) => setRequirement(req.id, e.target.value)}
@@ -1064,7 +1190,8 @@ export default function ReportEditor() {
                         className="text-sm"
                       />
                     </div>
-                  ))}
+                    );
+                  })}
                 </div>
 
                 <div dir="rtl" className="rounded-2xl border-2 border-primary/20 bg-card p-4 space-y-3">

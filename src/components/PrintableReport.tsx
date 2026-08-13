@@ -219,7 +219,7 @@ export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, sett
           <SectionTitle>{"חלק א' - פרטי העסק"}</SectionTitle>
           <div data-pdf-no-break="" style={{ fontSize: 13, marginBottom: 10, display: "flex", alignItems: "flex-end", gap: 6 }}>
             <span style={{ fontWeight: 700, flexShrink: 0 }}>מס' תיק/בקשה לרישיון עסק:</span>
-            <span style={{ flex: 1, borderBottom: "1px solid #94a3b8" }}>{report.form8FileNumber || ""}</span>
+            <span style={{ flex: 1, borderBottom: "1px solid #94a3b8", paddingBottom: 2, minHeight: 18 }}>{report.form8FileNumber || ""}</span>
           </div>
           <div data-pdf-no-break="" style={{ display: "grid", gridTemplateColumns: "1.6fr 1fr 1.2fr 1fr 1fr" }}>
             <Cell label="שם העסק" value={report.form8BusinessName} />
@@ -278,7 +278,7 @@ export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, sett
           <div data-pdf-no-break="" style={{ marginTop: 28, display: "flex", alignItems: "flex-end", gap: 24 }}>
             <div style={{ flex: 1 }}>
               {report.form8ExpertSignature ? (
-                <img src={report.form8ExpertSignature} alt="חתימה" crossOrigin="anonymous" style={{ maxHeight: 56, maxWidth: 180, display: "block" }} />
+                <img src={report.form8ExpertSignature} alt="חתימה" crossOrigin="anonymous" style={{ maxHeight: 112, maxWidth: 360, display: "block" }} />
               ) : (
                 <div style={{ height: 40, borderBottom: "1px solid #94a3b8" }} />
               )}
@@ -337,7 +337,7 @@ export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, sett
           <div data-pdf-no-break="" style={{ marginTop: 24, display: "flex", alignItems: "flex-end", gap: 24 }}>
             <div style={{ flex: 1 }}>
               {report.form8OwnerSignature ? (
-                <img src={report.form8OwnerSignature} alt="חתימה" crossOrigin="anonymous" style={{ maxHeight: 56, maxWidth: 180, display: "block" }} />
+                <img src={report.form8OwnerSignature} alt="חתימה" crossOrigin="anonymous" style={{ maxHeight: 112, maxWidth: 360, display: "block" }} />
               ) : (
                 <div style={{ height: 40, borderBottom: "1px solid #94a3b8" }} />
               )}
@@ -930,6 +930,47 @@ export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, sett
 
           <MinistryFooter marginTop={60} />
         </section>
+
+        {/* Page 6: תמונות מצורפות — appendix, only when photos were attached.
+            The official form's pages above must stay an exact replica, so
+            neither the facility photo nor per-finding photos are inserted
+            into those tables — they get their own page instead. */}
+        {(() => {
+          const itemPhotos = (i: typeof report.items[0]) => [...(i.photos ?? []), ...(i.photo ? [i.photo] : [])];
+          const itemsWithPhotos = report.items.filter((i) => itemPhotos(i).length > 0);
+          if (!report.coverPhoto && itemsWithPhotos.length === 0) return null;
+          return (
+            <section data-pdf-page-break="" style={{ padding: "40px 56px", background: "#fff" }}>
+              <MinistryHeader />
+              <h2 style={{ fontSize: 16, fontWeight: 800, textDecoration: "underline", marginBottom: 20, textAlign: "center" }}>תמונות מצורפות</h2>
+
+              {report.coverPhoto && (
+                <div data-pdf-no-break="" style={{ marginBottom: 24 }}>
+                  <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 6, textAlign: "center" }}>תמונת המסגרת</div>
+                  <img src={report.coverPhoto} alt="תמונת המסגרת" crossOrigin="anonymous"
+                    style={{ maxWidth: "100%", height: "auto", display: "block", margin: "0 auto", borderRadius: 8, border: "1px solid #e2e8f0" }} />
+                </div>
+              )}
+
+              {itemsWithPhotos.map((item, idx) => {
+                const photos = itemPhotos(item);
+                return (
+                  <div key={item.id} data-pdf-no-break="" style={{ marginBottom: 24 }}>
+                    <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 6, textAlign: "center" }}>{item.title || `ממצא ${idx + 1}`}</div>
+                    <div style={{ display: "grid", gridTemplateColumns: photos.length > 1 ? "1fr 1fr" : "1fr", gap: 8 }}>
+                      {photos.map((p, i) => (
+                        <img key={i} src={p} alt={item.title || ""} crossOrigin="anonymous"
+                          style={{ width: "100%", height: "auto", display: "block", borderRadius: 8, border: "1px solid #e2e8f0" }} />
+                      ))}
+                    </div>
+                  </div>
+                );
+              })}
+
+              <MinistryFooter />
+            </section>
+          );
+        })()}
 
       </div>
     );
