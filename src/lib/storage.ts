@@ -10,6 +10,7 @@ import {
 import { AccessibilityRequirement } from "./standards-types";
 import { supabase } from "./supabase";
 import { RISK_SURVEY_DEFAULT_FENCING_NOTE } from "./risk-survey";
+import { FORM8_REQUIREMENTS } from "./form8-data";
 import { withTimeout } from "./async";
 import {
   getAllCachedReports,
@@ -172,7 +173,7 @@ export function newReport(
       riskFencingNoteEnabled: true,
     }),
     ...(surveyType === "accessibility_form_8" && {
-      form8Requirements: Array.from({ length: 14 }, (_, i) => ({ id: i + 1, response: "" })),
+      form8Requirements: FORM8_REQUIREMENTS.map((r) => ({ id: r.id, response: r.defaultResponse ?? "" })),
     }),
   };
 }

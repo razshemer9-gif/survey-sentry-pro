@@ -150,7 +150,7 @@ export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, sett
 
   // ── Form 8: חוות דעת מורשה נגישות (טופס 8) ─────────────────────────────────
   if (report.surveyType === "accessibility_form_8") {
-    const accent = "#7c3aed";
+    const accent = "#1e3a8a"; // blue accent (matches brand)
     const requirements = report.form8Requirements?.length
       ? report.form8Requirements
       : FORM8_REQUIREMENTS.map((r) => ({ id: r.id, response: "" }));
@@ -173,8 +173,8 @@ export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, sett
       </span>
     );
 
-    const Cell = ({ label, value }: { label: string; value?: string }) => (
-      <div style={{ padding: "8px 10px", border: "1px solid #d1d5db", fontSize: 12 }}>
+    const Cell = ({ label, value, full }: { label: string; value?: string; full?: boolean }) => (
+      <div style={{ padding: "8px 10px", border: "1px solid #d1d5db", fontSize: 12, ...(full ? { gridColumn: "1 / -1" } : {}) }}>
         <div style={{ fontWeight: 700, marginBottom: 2 }}>{label}:</div>
         <div style={{ whiteSpace: "pre-wrap" }}>{value || ""}</div>
       </div>
@@ -201,7 +201,7 @@ export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, sett
 
           {/* Recipient + subject */}
           <div data-pdf-no-break="" style={{ textAlign: "center" }}>
-            <div style={{ fontSize: 13 }}>אל: רשות רישוי עסקים {report.form8LocalAuthority || ""}</div>
+            <div style={{ fontSize: 13 }}>אל: רשות רישוי עסקים <strong style={{ fontWeight: 800 }}>{report.form8LocalAuthority || ""}</strong></div>
             <h1 style={{ fontSize: 19, fontWeight: 800, color: accent, margin: "12px 0 6px", lineHeight: 1.3 }}>
               הנדון: חוות דעת מורשה נגישות – התקיימות הוראות הנגישות בעסק
             </h1>
@@ -236,18 +236,14 @@ export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, sett
             <Cell label='מספר ת"ז' value={report.form8ExpertId} />
             <Cell label="מס' רישום בפנקס הרשם" value={report.form8ExpertRegistrationNumber} />
             <Cell label="שם הפנקס" value={report.form8ExpertRegistryName} />
-            <Cell label="כתובת" value={report.form8ExpertAddress} />
-            <Cell label="כתובת" value={report.form8ExpertAddress} />
+            <Cell label="כתובת" value={report.form8ExpertAddress} full />
             <Cell label="מספר טלפון" value={report.form8ExpertPhone} />
             <Cell label='כתובת דוא"ל' value={report.form8ExpertEmail} />
             <Cell label="שם המורשה שירות" value={report.form8ServiceExpertName} />
             <Cell label='מספר ת"ז' value={report.form8ServiceExpertId} />
             <Cell label="מס' רישום בפנקס הרשם" value={report.form8ServiceRegistrationNumber} />
             <Cell label="שם הפנקס" value={report.form8ServiceRegistryName} />
-            <Cell label="כתובת" value={report.form8ExpertAddress} />
-            <Cell label="כתובת" value={report.form8ExpertAddress} />
-            <Cell label="מספר טלפון" value={report.form8ExpertPhone} />
-            <Cell label='כתובת דוא"ל' value={report.form8ExpertEmail} />
+            <Cell label="כתובת" value={report.form8ExpertAddress} full />
           </div>
 
           {/* חלק ג' */}
@@ -259,7 +255,8 @@ export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, sett
               <Checkbox checked={report.form8BuildingApproved} />
               <span>
                 הוראות הנגישות החלות על העסק מכוח תקנות הנגישות לבניין קיים/ תקנות הנגישות לבניין חדש
-                {" "}(לפי מועד קבלת ההיתר לבניין שבו ניתן השירות) מקום שאינו בנין.
+                {" "}(לפי מועד קבלת ההיתר לבניין שבו ניתן השירות){" "}
+                <strong style={{ color: "#1e3a8a", borderBottom: "2px solid #1e3a8a" }}>מקום שאינו בנין</strong>.
               </span>
             </div>
             <div style={{ display: "flex", alignItems: "flex-start", gap: 8, marginBottom: 14 }}>
@@ -301,7 +298,7 @@ export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, sett
           </div>
 
           <div style={{ border: `1px solid ${accent}`, direction: "rtl", fontSize: 12 }}>
-            <div data-pdf-no-break="" style={{ display: "grid", gridTemplateColumns: "44px 2fr 1.3fr", background: "#f5f3ff", fontWeight: 700 }}>
+            <div data-pdf-no-break="" style={{ display: "grid", gridTemplateColumns: "44px 2fr 1.3fr", background: "#f0f4ff", fontWeight: 700 }}>
               <div style={{ padding: "8px 6px", textAlign: "center", borderLeft: `1px solid ${accent}` }}>מס'</div>
               <div style={{ padding: "8px 6px", textAlign: "center", borderLeft: `1px solid ${accent}` }}>
                 התאמות נגישות נוספות לפי התקנות, הנדרשות להשלמת רצף הנגישות מפתח העסק ועד לפתח הבניין בו מצוי העסק, אשר לא בוצעו
@@ -309,7 +306,7 @@ export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, sett
               <div style={{ padding: "8px 6px", textAlign: "center" }}>הדרישה</div>
             </div>
             {FORM8_REQUIREMENTS.map((req, i) => (
-              <div key={req.id} data-pdf-no-break="" style={{ display: "grid", gridTemplateColumns: "44px 2fr 1.3fr", borderTop: `1px solid ${accent}`, background: i % 2 === 0 ? "#ffffff" : "#faf9ff" }}>
+              <div key={req.id} data-pdf-no-break="" style={{ display: "grid", gridTemplateColumns: "44px 2fr 1.3fr", borderTop: `1px solid ${accent}`, background: i % 2 === 0 ? "#ffffff" : "#f0f4ff" }}>
                 <div style={{ padding: "8px 6px", textAlign: "center", fontWeight: 700, borderLeft: `1px solid ${accent}` }}>{req.id}</div>
                 <div style={{ padding: "8px 8px", borderLeft: `1px solid ${accent}`, lineHeight: 1.6 }}>
                   {req.staticText.map((line, li) => <div key={li}>{line}</div>)}
