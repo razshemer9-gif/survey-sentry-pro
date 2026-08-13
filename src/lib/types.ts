@@ -217,6 +217,10 @@ export interface SurveyReport {
   form8OpinionDate?: string;         // תאריך חוות הדעת (ליד חתימת המורשה)
   // חלק ד' — טבלת 14 הדרישות הקבועות; רק response משתנה בין דוחות
   form8Requirements?: { id: number; response: string }[];
+  // קלט לחישובי עזר בשורות 4/5 (עמדות צפייה / תאים נגישים) — הצעה בלבד,
+  // לעולם לא נכתב אוטומטית ל-response עצמו
+  form8SeatingCalcInput?: number;  // ברירת מחדל: form8Attendance
+  form8UnitsCalcInput?: number;    // ברירת מחדל: תוצאת חישוב שורה 4
   // אישור בעל העסק לעניין העברת הרשימה לחייב
   form8OwnerDeclarationName?: string; // ברירת מחדל מ-form8BusinessOwnerName, ניתן לעריכה
   form8OwnerSignature?: string;       // dataURL, אופציונלי
