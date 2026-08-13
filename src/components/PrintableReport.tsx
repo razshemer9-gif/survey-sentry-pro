@@ -219,7 +219,7 @@ export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, sett
           <SectionTitle>{"חלק א' - פרטי העסק"}</SectionTitle>
           <div data-pdf-no-break="" style={{ fontSize: 13, marginBottom: 10, display: "flex", alignItems: "flex-end", gap: 6 }}>
             <span style={{ fontWeight: 700, flexShrink: 0 }}>מס' תיק/בקשה לרישיון עסק:</span>
-            <span style={{ flex: 1, borderBottom: "1px solid #94a3b8" }}>{report.form8FileNumber || ""}</span>
+            <span style={{ flex: 1, borderBottom: "1px solid #94a3b8", paddingBottom: 2, minHeight: 18 }}>{report.form8FileNumber || ""}</span>
           </div>
           <div data-pdf-no-break="" style={{ display: "grid", gridTemplateColumns: "1.6fr 1fr 1.2fr 1fr 1fr" }}>
             <Cell label="שם העסק" value={report.form8BusinessName} />
