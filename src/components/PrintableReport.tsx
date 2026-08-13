@@ -201,7 +201,7 @@ export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, sett
 
           {/* Recipient + subject */}
           <div data-pdf-no-break="" style={{ textAlign: "center" }}>
-            <div style={{ fontSize: 13 }}>אל: רשות רישוי עסקים {report.form8LocalAuthority || ""}</div>
+            <div style={{ fontSize: 13 }}>אל: רשות רישוי עסקים <strong style={{ fontWeight: 800 }}>{report.form8LocalAuthority || ""}</strong></div>
             <h1 style={{ fontSize: 19, fontWeight: 800, color: accent, margin: "12px 0 6px", lineHeight: 1.3 }}>
               הנדון: חוות דעת מורשה נגישות – התקיימות הוראות הנגישות בעסק
             </h1>
