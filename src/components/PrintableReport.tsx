@@ -935,30 +935,42 @@ export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, sett
             The official form's pages above must stay an exact replica, so
             neither the facility photo nor per-finding photos are inserted
             into those tables — they get their own page instead. */}
-        {(report.coverPhoto || report.items.some((i) => i.photo)) && (
-          <section data-pdf-page-break="" style={{ padding: "40px 56px", background: "#fff" }}>
-            <MinistryHeader />
-            <h2 style={{ fontSize: 16, fontWeight: 800, textDecoration: "underline", marginBottom: 20, textAlign: "center" }}>תמונות מצורפות</h2>
+        {(() => {
+          const itemPhotos = (i: typeof report.items[0]) => [...(i.photos ?? []), ...(i.photo ? [i.photo] : [])];
+          const itemsWithPhotos = report.items.filter((i) => itemPhotos(i).length > 0);
+          if (!report.coverPhoto && itemsWithPhotos.length === 0) return null;
+          return (
+            <section data-pdf-page-break="" style={{ padding: "40px 56px", background: "#fff" }}>
+              <MinistryHeader />
+              <h2 style={{ fontSize: 16, fontWeight: 800, textDecoration: "underline", marginBottom: 20, textAlign: "center" }}>תמונות מצורפות</h2>
 
-            {report.coverPhoto && (
-              <div data-pdf-no-break="" style={{ marginBottom: 24 }}>
-                <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 6, textAlign: "center" }}>תמונת המסגרת</div>
-                <img src={report.coverPhoto} alt="תמונת המסגרת" crossOrigin="anonymous"
-                  style={{ maxWidth: "100%", height: "auto", display: "block", margin: "0 auto", borderRadius: 8, border: "1px solid #e2e8f0" }} />
-              </div>
-            )}
+              {report.coverPhoto && (
+                <div data-pdf-no-break="" style={{ marginBottom: 24 }}>
+                  <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 6, textAlign: "center" }}>תמונת המסגרת</div>
+                  <img src={report.coverPhoto} alt="תמונת המסגרת" crossOrigin="anonymous"
+                    style={{ maxWidth: "100%", height: "auto", display: "block", margin: "0 auto", borderRadius: 8, border: "1px solid #e2e8f0" }} />
+                </div>
+              )}
 
-            {report.items.filter((i) => i.photo).map((item, idx) => (
-              <div key={item.id} data-pdf-no-break="" style={{ marginBottom: 24 }}>
-                <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 6, textAlign: "center" }}>{item.title || `ממצא ${idx + 1}`}</div>
-                <img src={item.photo} alt={item.title || ""} crossOrigin="anonymous"
-                  style={{ maxWidth: "100%", height: "auto", display: "block", margin: "0 auto", borderRadius: 8, border: "1px solid #e2e8f0" }} />
-              </div>
-            ))}
+              {itemsWithPhotos.map((item, idx) => {
+                const photos = itemPhotos(item);
+                return (
+                  <div key={item.id} data-pdf-no-break="" style={{ marginBottom: 24 }}>
+                    <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 6, textAlign: "center" }}>{item.title || `ממצא ${idx + 1}`}</div>
+                    <div style={{ display: "grid", gridTemplateColumns: photos.length > 1 ? "1fr 1fr" : "1fr", gap: 8 }}>
+                      {photos.map((p, i) => (
+                        <img key={i} src={p} alt={item.title || ""} crossOrigin="anonymous"
+                          style={{ width: "100%", height: "auto", display: "block", borderRadius: 8, border: "1px solid #e2e8f0" }} />
+                      ))}
+                    </div>
+                  </div>
+                );
+              })}
 
-            <MinistryFooter />
-          </section>
-        )}
+              <MinistryFooter />
+            </section>
+          );
+        })()}
 
       </div>
     );

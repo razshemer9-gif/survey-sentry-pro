@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { useNavigate, useParams } from "react-router-dom";
-import { AlertTriangle, ArrowRight, Check, Download, Eye, FileDown, Images, Loader2, PenLine, Plus, RotateCw, Save, Trash2 } from "lucide-react";
+import { AlertTriangle, ArrowRight, Check, Download, Eye, FileDown, Images, Loader2, PenLine, Plus, RotateCw, Save, Trash2, X } from "lucide-react";
 import { v4 as uuid } from "uuid";
 import { toast } from "sonner";
 
@@ -348,6 +348,7 @@ export default function ReportEditor() {
       const num = String(idx + 1).padStart(2, "0");
       const photos: string[] = [];
       if (item.photo) photos.push(item.photo);
+      if (item.photos?.length) photos.push(...item.photos);
       if (item.referencePhotos?.length) photos.push(...item.referencePhotos);
       else if (item.referencePhoto) photos.push(item.referencePhoto);
 
@@ -908,14 +909,44 @@ export default function ReportEditor() {
 
                 {/* ── Client-specific (editable) ── */}
                 <div className="px-4 py-3 space-y-3">
-                  <div>
-                    <Label className="mb-1 block text-xs font-semibold text-foreground">תמונת מצב קיים</Label>
-                    <PhotoPicker
-                      value={item.photo}
-                      onChange={(u) => updateItem(item.id, { photo: u })}
-                      label="צרף תמונה מהשטח"
-                    />
-                  </div>
+                  {report.surveyType === "welfare_inspection" ? (
+                    <div>
+                      <Label className="mb-1 block text-xs font-semibold text-foreground">תמונות מצב קיים</Label>
+                      <div className="space-y-2">
+                        {(item.photos?.length ?? 0) > 0 && (
+                          <div className="grid grid-cols-2 gap-1.5">
+                            {item.photos!.map((p, i) => (
+                              <div key={i} className="relative">
+                                <img src={p} alt="" className="w-full aspect-square object-cover rounded-lg border border-border bg-muted" />
+                                <button
+                                  type="button"
+                                  onClick={() => updateItem(item.id, { photos: item.photos!.filter((_, j) => j !== i) })}
+                                  className="absolute top-1 left-1 grid h-6 w-6 place-items-center rounded-full bg-background/90 text-foreground shadow-elev"
+                                  aria-label="הסר תמונה"
+                                >
+                                  <X className="h-3.5 w-3.5" />
+                                </button>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                        <PhotoPicker
+                          value={undefined}
+                          onChange={(u) => { if (u) updateItem(item.id, { photos: [...(item.photos ?? []), u] }); }}
+                          label="הוסף תמונה מהשטח"
+                        />
+                      </div>
+                    </div>
+                  ) : (
+                    <div>
+                      <Label className="mb-1 block text-xs font-semibold text-foreground">תמונת מצב קיים</Label>
+                      <PhotoPicker
+                        value={item.photo}
+                        onChange={(u) => updateItem(item.id, { photo: u })}
+                        label="צרף תמונה מהשטח"
+                      />
+                    </div>
+                  )}
 
                   <div>
                     <Label className="mb-1 block text-xs font-semibold text-foreground">פירוט מצב קיים</Label>

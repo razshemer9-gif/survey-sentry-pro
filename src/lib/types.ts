@@ -87,7 +87,8 @@ export interface ChecklistItem {
   quantity?: number;     // units (default 1); total = estimatedCost × quantity
   includeInCost?: boolean;
   priority?: 0 | 1 | 2; // קדימות לתיקון (0=דחוף, 1=גבוה, 2=רגיל)
-  photo?: string; // dataURL — תמונת מצב קיים
+  photo?: string; // dataURL — תמונת מצב קיים (single-photo report types)
+  photos?: string[]; // dataURL[] — תמונות מצב קיים מרובות (welfare_inspection only)
   referencePhoto?: string; // legacy single photo — read for backwards compat
   referencePhotos?: string[]; // multiple detail photos (preferred)
   referenceLabel?: string; // טקסט תיאור הפרט
