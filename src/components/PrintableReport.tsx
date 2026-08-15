@@ -640,8 +640,12 @@ export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, sett
       </div>
     );
     const CheckBox = ({ checked }: { checked: boolean }) => (
-      <span style={{ display: "inline-block", width: 14, height: 14, border: "1px solid #0f172a", textAlign: "center", lineHeight: "12px", fontSize: 11, fontWeight: 700, flexShrink: 0, marginTop: 2 }}>
-        {checked ? "✓" : ""}
+      <span style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", width: 14, height: 14, border: "1px solid #0f172a", boxSizing: "border-box", flexShrink: 0, marginTop: 2 }}>
+        {checked && (
+          <svg width="10" height="8" viewBox="0 0 11 9" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M1 4.5L4 7.5L10 1" stroke="#0f172a" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+        )}
       </span>
     );
 
