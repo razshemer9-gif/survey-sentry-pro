@@ -316,8 +316,7 @@ export default function ReportEditor() {
     if (latest.surveyType === "risk_survey") {
       const missing = latest.items.findIndex((it) => !it.fieldNotes?.trim());
       if (missing !== -1) {
-        toast.error(`לתמונה ${missing + 1} חסר תיאור — יש להשלים לפני הפקת ה-PDF`);
-        return;
+        toast.error(`לתמונה ${missing + 1} חסר תיאור — מומלץ להשלים, אך ניתן להפיק את ה-PDF גם כך`);
       }
     }
     setGenerating(true);
