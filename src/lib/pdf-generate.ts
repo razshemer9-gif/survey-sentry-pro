@@ -124,12 +124,15 @@ export async function generateReportPdf(
   let cursor = 0;
 
   while (cursor < contentHeight) {
-    let end = cursor + PAGE_H;
-
-    if (end >= contentHeight) {
-      slices.push({ top: cursor, height: contentHeight - cursor });
-      break;
-    }
+    // Cap at content end up front (rather than only checking this after page-break
+    // handling) so a forced break is still honored even when the remaining content
+    // would otherwise all fit in one slice — previously, whenever cursor + PAGE_H
+    // already reached the end of the document, the loop took a shortcut that pushed
+    // the *entire* remainder as a single slice without ever consulting `pageBreaks`,
+    // silently ignoring every data-pdf-page-break marker in reports short enough to
+    // fit under PAGE_H (e.g. welfare_inspection's officially-multi-page government
+    // form collapsing onto one or two continuous slices instead of five).
+    let end = Math.min(cursor + PAGE_H, contentHeight);
 
     // Force break at the nearest page-break marker that falls between cursor+1 and end.
     for (const pb of pageBreaks) {
@@ -151,7 +154,7 @@ export async function generateReportPdf(
     // rather than cutting it — push end to the card's bottom edge.
     if (end <= cursor) {
       const tall = noBreaks.find((nb) => nb.top <= cursor && nb.bottom > cursor);
-      end = tall ? tall.bottom : cursor + PAGE_H;
+      end = tall ? tall.bottom : Math.min(cursor + PAGE_H, contentHeight);
     }
 
     slices.push({ top: cursor, height: end - cursor });
@@ -202,14 +205,25 @@ export async function generateReportPdf(
 
       const imgData = canvas.toDataURL("image/jpeg", 0.95);
 
+      // jsPDF's [w, h] format array must match the orientation label it's
+      // given, or jsPDF "corrects" it by swapping w/h — e.g. asking for
+      // "portrait" with a slice shorter than it is wide (any section that
+      // doesn't fill a full page) silently swaps to [h, w], while the image
+      // is still placed using the original pageWmm/contentHmm, so the right
+      // side of the content lands outside the now-narrower page and gets
+      // clipped. Every one of our slices is conceptually a portrait page —
+      // just label it "landscape" whenever it happens to be wider than tall
+      // so jsPDF's swap-correction never fires and the MediaBox always
+      // matches exactly what was drawn.
+      const pageOrientation = pageHmm < pageWmm ? "landscape" : "portrait";
       if (i === 0) {
         pdf = new jsPDF({
-          orientation: "portrait",
+          orientation: pageOrientation,
           unit:        "mm",
           format:      [pageWmm, pageHmm],
         });
       } else {
-        (pdf as any).addPage([pageWmm, pageHmm]);
+        (pdf as any).addPage([pageWmm, pageHmm], pageOrientation);
       }
 
       pdf.addImage(imgData, "JPEG", 0, 0, pageWmm, contentHmm, undefined, "FAST");
