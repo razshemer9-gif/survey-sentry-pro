@@ -1,1 +1,0 @@
-import{s as r}from"./index-DDD8OwYb.js";async function o(a,n){const{data:s,error:t}=await r.auth.signUp({email:a,password:n});if(t)throw t;return s}async function u(a,n){const{data:s,error:t}=await r.auth.signInWithPassword({email:a,password:n});if(t)throw t;return s}async function c(){const{error:a}=await r.auth.signOut();if(a)throw a}export{u as a,o as b,c as s};
