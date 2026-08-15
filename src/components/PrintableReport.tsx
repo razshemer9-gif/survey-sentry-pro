@@ -14,6 +14,7 @@ import { ELEMENT_STABILITY_HEADER_BANNER } from "@/lib/element-stability-banner"
 import { ACCESSIBILITY_HEADER_BANNER_APPROVAL, ACCESSIBILITY_HEADER_BANNER_SURVEY } from "@/lib/accessibility-header-banner";
 import { GENERAL_SAFETY_HEADER_BANNER_APPROVAL, GENERAL_SAFETY_HEADER_BANNER_SURVEY } from "@/lib/general-safety-banner";
 import { RISK_SURVEY_DEFAULT_FENCING_NOTE, RISK_SURVEY_SUBTITLE } from "@/lib/risk-survey";
+import { RISK_SURVEY_HEADER_BANNER } from "@/lib/risk-survey-banner";
 import React, { forwardRef } from "react";
 
 interface Props {
@@ -538,7 +539,7 @@ export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, sett
 
   // ── Risk survey: תיעוד תמונות מפגעים לפני אירוע ─────────────────────────────
   if (report.surveyType === "risk_survey") {
-    const accent = "#c2410c";
+    const accent = "#1e3a8a";
     const fencingNote = report.riskFencingNote ?? RISK_SURVEY_DEFAULT_FENCING_NOTE;
     const showFencingNote = report.riskFencingNoteEnabled !== false && fencingNote.trim().length > 0;
 
@@ -547,14 +548,17 @@ export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, sett
       // (see pdf-generate.ts) — this report type is the only one using it.
       <div ref={ref} dir="rtl" lang="he" data-pdf-page-numbers=""
         style={{ width: "794px", background: "#ffffff", color: "#0f172a", fontFamily: "Heebo, Assistant, sans-serif" }}>
-        <section style={{ padding: "40px 48px 44px" }}>
+        {/* Full-bleed banner — title text is already baked into the image */}
+        <img src={RISK_SURVEY_HEADER_BANNER} alt="" style={{ width: "100%", display: "block" }} />
 
-          {/* Header: title (+ event name) on the right, logo on the left */}
+        <section style={{ padding: "24px 48px 44px" }}>
+
+          {/* Place name + logo, since the banner has no room for the dynamic event name */}
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", borderBottom: `3px solid ${accent}`, paddingBottom: 16, marginBottom: 8 }}>
             <div>
-              <h1 style={{ margin: 0, fontSize: 25, fontWeight: 800, color: accent }}>
-                {surveyConfig.pdfTitle}{report.placeName ? ` - ${report.placeName}` : ""}
-              </h1>
+              {report.placeName && (
+                <h1 style={{ margin: 0, fontSize: 22, fontWeight: 800, color: accent }}>{report.placeName}</h1>
+              )}
               <div style={{ marginTop: 6, fontSize: 13, color: "#64748b" }}>{RISK_SURVEY_SUBTITLE}</div>
             </div>
             {coverLogo && (
@@ -596,7 +600,7 @@ export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, sett
 
           {/* Fencing note — appears once, at the very end, framed across the page width */}
           {showFencingNote && (
-            <div data-pdf-no-break="" style={{ marginTop: 28, border: `2px solid ${accent}`, borderRadius: 12, padding: "16px 20px", background: "#fdf4ee" }}>
+            <div data-pdf-no-break="" style={{ marginTop: 28, border: `2px solid ${accent}`, borderRadius: 12, padding: "16px 20px", background: "#f0f4ff" }}>
               <div style={{ fontWeight: 800, color: accent, fontSize: 14, marginBottom: 6 }}>הנחיה לעניין הגדרות</div>
               <div style={{ fontSize: 13, lineHeight: 1.7, color: "#1e293b", whiteSpace: "pre-wrap" }}>{fencingNote}</div>
             </div>
