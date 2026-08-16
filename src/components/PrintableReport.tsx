@@ -605,6 +605,20 @@ export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, sett
               <div style={{ fontSize: 13, lineHeight: 1.7, color: "#1e293b", whiteSpace: "pre-wrap" }}>{fencingNote}</div>
             </div>
           )}
+
+          {/* Signature — bottom of the report */}
+          <div data-pdf-no-break="" style={{ marginTop: 32 }}>
+            {(fmt.signatureImage || report.signatureDataUrl) ? (
+              <img src={fmt.signatureImage || report.signatureDataUrl} alt="חתימה" crossOrigin="anonymous"
+                style={{ maxHeight: 64, maxWidth: 200, display: "block" }} />
+            ) : (
+              <div style={{ height: 56, width: 200, borderBottom: "1px solid #94a3b8" }} />
+            )}
+            <div style={{ fontSize: 12, color: "#64748b", marginTop: 4 }}>
+              {sigName || "חתימת הבודק"}
+              {report.signatureDate ? ` • ${report.signatureDate}` : ""}
+            </div>
+          </div>
         </section>
       </div>
     );
