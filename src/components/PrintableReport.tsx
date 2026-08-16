@@ -220,7 +220,7 @@ export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, sett
           <SectionTitle>{"חלק א' - פרטי העסק"}</SectionTitle>
           <div data-pdf-no-break="" style={{ fontSize: 13, marginBottom: 10, display: "flex", alignItems: "flex-end", gap: 6 }}>
             <span style={{ fontWeight: 700, flexShrink: 0 }}>מס' תיק/בקשה לרישיון עסק:</span>
-            <span style={{ flex: 1, borderBottom: "1px solid #94a3b8", paddingBottom: 2, minHeight: 18 }}>{report.form8FileNumber || ""}</span>
+            <span style={{ flex: 1, borderBottom: "1px solid #94a3b8", paddingBottom: 5, minHeight: 21 }}>{report.form8FileNumber || ""}</span>
           </div>
           <div data-pdf-no-break="" style={{ display: "grid", gridTemplateColumns: "1.6fr 1fr 1.2fr 1fr 1fr" }}>
             <Cell label="שם העסק" value={report.form8BusinessName} />
@@ -286,7 +286,7 @@ export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, sett
               <div style={{ fontSize: 12, color: "#64748b", marginTop: 4 }}>{"שם + חתימת המורשה — "}{report.form8ExpertName || ""}</div>
             </div>
             <div style={{ textAlign: "center" }}>
-              <div style={{ minWidth: 100, borderBottom: "1px solid #94a3b8", paddingBottom: 4 }}>
+              <div style={{ minWidth: 100, borderBottom: "1px solid #94a3b8", paddingBottom: 5 }}>
                 {report.form8OpinionDate ? formatHebrewDate(report.form8OpinionDate) : ""}
               </div>
               <div style={{ fontSize: 12, color: "#64748b", marginTop: 4 }}>תאריך</div>
@@ -345,7 +345,7 @@ export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, sett
               <div style={{ fontSize: 12, color: "#64748b", marginTop: 4 }}>חתימה</div>
             </div>
             <div style={{ textAlign: "center" }}>
-              <div style={{ minWidth: 100, borderBottom: "1px solid #94a3b8", paddingBottom: 4 }}>
+              <div style={{ minWidth: 100, borderBottom: "1px solid #94a3b8", paddingBottom: 5 }}>
                 {report.form8OwnerSignatureDate ? formatHebrewDate(report.form8OwnerSignatureDate) : ""}
               </div>
               <div style={{ fontSize: 12, color: "#64748b", marginTop: 4 }}>תאריך</div>
@@ -640,7 +640,7 @@ export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, sett
     const Line = ({ label, value }: { label: string; value?: string }) => (
       <div style={{ display: "flex", alignItems: "flex-end", gap: 6, marginBottom: 16, fontSize: 13, direction: "rtl" }}>
         <span style={{ fontWeight: 700, flexShrink: 0 }}>{label}</span>
-        <span style={{ flex: 1, borderBottom: "1px solid #000000", paddingBottom: 2, minHeight: 18 }}>{value || ""}</span>
+        <span style={{ flex: 1, borderBottom: "1px solid #000000", paddingBottom: 5, minHeight: 21 }}>{value || ""}</span>
       </div>
     );
     const CheckBox = ({ checked }: { checked: boolean }) => (
@@ -723,7 +723,7 @@ export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, sett
           <div style={{ marginBottom: 16 }}>
             <div style={{ display: "flex", alignItems: "flex-end", gap: 6, fontSize: 13, direction: "rtl" }}>
               <span style={{ fontWeight: 700, flexShrink: 0 }}>ייעוד המסגרת:</span>
-              <span style={{ flex: 1, borderBottom: "1px solid #000000", paddingBottom: 2, minHeight: 18 }}>{purposeLabel}</span>
+              <span style={{ flex: 1, borderBottom: "1px solid #000000", paddingBottom: 5, minHeight: 21 }}>{purposeLabel}</span>
             </div>
             <div style={{ fontSize: 12, marginTop: 2 }}>(מסגרת חוץ ביתית/מסגרת יומית/אחר)</div>
           </div>
@@ -836,7 +836,7 @@ export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, sett
         <section data-pdf-page-break="" style={{ padding: "24px 56px", background: "#fff" }}>
           <div style={{ display: "flex", alignItems: "baseline", gap: 8, marginBottom: 12 }}>
             <span style={{ fontWeight: 700, fontSize: 14 }}>אני</span>
-            <span style={{ flex: 1, borderBottom: "1px solid #0f172a", paddingBottom: 2, minHeight: 20, fontSize: 14 }}>{report.welfareSignatoryName || ""}</span>
+            <span style={{ flex: 1, borderBottom: "1px solid #0f172a", paddingBottom: 5, minHeight: 23, fontSize: 14 }}>{report.welfareSignatoryName || ""}</span>
           </div>
           <div style={{ fontSize: 12, marginBottom: 12 }}>(מורשה חתימה מטעם מפעיל המסגרת), מצהיר ומתחייב בזאת כי:</div>
           <div style={{ paddingRight: 12, fontSize: 12, lineHeight: 1.75, margin: "8px 0" }}>
@@ -863,7 +863,7 @@ export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, sett
             <CheckBox checked={report.welfareSummaryStatus === "no_impediment"} />
             <span style={{ display: "flex", alignItems: "baseline", gap: 6, flex: 1 }}>
               <span>אין מניעה כי המתקן שנבדק ישמש כ</span>
-              <span style={{ flex: 1, borderBottom: "1px solid #94a3b8", minHeight: 16, paddingBottom: 1 }}>{report.welfareSummaryUsage || ""}</span>
+              <span style={{ flex: 1, borderBottom: "1px solid #94a3b8", minHeight: 19, paddingBottom: 5 }}>{report.welfareSummaryUsage || ""}</span>
             </span>
           </div>
           <div style={{ display: "flex", alignItems: "flex-start", gap: 8, marginBottom: 8, fontSize: 13 }}>
@@ -873,7 +873,7 @@ export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, sett
           {(["א", "ב", "ג"] as const).map((letter, idx) => (
             <div key={letter} style={{ display: "flex", alignItems: "baseline", gap: 6, marginBottom: 6, marginRight: 22, fontSize: 12 }}>
               <span style={{ fontWeight: 700 }}>{letter}.</span>
-              <span style={{ flex: 1, borderBottom: "1px solid #94a3b8", minHeight: 16, paddingBottom: 1 }}>{report.welfareRepairList?.[idx] || ""}</span>
+              <span style={{ flex: 1, borderBottom: "1px solid #94a3b8", minHeight: 19, paddingBottom: 5 }}>{report.welfareRepairList?.[idx] || ""}</span>
             </div>
           ))}
 
@@ -932,7 +932,7 @@ export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, sett
             </div>
             <div style={{ display: "flex", alignItems: "flex-end", gap: 6, flex: 1 }}>
               <span style={{ fontWeight: 700, flexShrink: 0 }}>תאריך:</span>
-              <span style={{ flex: 1, borderBottom: "1px solid #000000", minHeight: 18, textAlign: "center", paddingBottom: 2 }}>{formatHebrewDate(report.surveyDate)}</span>
+              <span style={{ flex: 1, borderBottom: "1px solid #000000", minHeight: 21, textAlign: "center", paddingBottom: 5 }}>{formatHebrewDate(report.surveyDate)}</span>
             </div>
           </div>
 
