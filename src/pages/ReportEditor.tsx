@@ -980,6 +980,7 @@ export default function ReportEditor() {
                   </div>
                   )}
 
+                  {report.surveyType !== "general_safety" && (
                   <div className="flex flex-wrap items-center gap-2">
                     <Label className="shrink-0 text-xs text-muted-foreground">מחיר יחידה (₪)</Label>
                     <Input
@@ -1015,6 +1016,7 @@ export default function ReportEditor() {
                       כלול באומדן
                     </label>
                   </div>
+                  )}
                 </div>
 
               </div>
@@ -1027,7 +1029,7 @@ export default function ReportEditor() {
           </Button>
           )}
 
-          {report.surveyType !== "element_stability" && report.surveyType !== "risk_survey" && (
+          {report.surveyType !== "element_stability" && report.surveyType !== "risk_survey" && report.surveyType !== "general_safety" && (
           <div className="rounded-2xl bg-primary text-primary-foreground p-4 shadow-glow">
             <div className="flex items-center justify-between">
               <span className="text-sm opacity-90">אומדן תיקונים כולל</span>
