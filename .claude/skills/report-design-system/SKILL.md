@@ -47,6 +47,29 @@ Import from the barrel:
 import { ReportShell, Section, KeepTogether, color, type, space } from "@/reporting/design-system";
 ```
 
+## The three government-template reports (read this first)
+
+`accessibility_form_8`, `welfare_inspection` and `education_safety` reproduce
+**fixed government templates**. They are explicitly **exempt** from the company
+visual template that the other report types follow.
+
+For these three:
+
+- **Do not restyle them.** No spacing normalisation onto the token scale, no
+  font-size changes, no colour "corrections", no radius/border tweaks. Their
+  measurements are a fidelity requirement, not a style choice.
+- They may adopt shared components **only** where the result is provably
+  pixel-identical (e.g. `ReportShell`, which emits the same markup).
+- Any change to them must be verified as **0.00% pixel diff** against a
+  baseline PDF before it is committed.
+- Improving *raster quality* (resolution, JPEG quality) is fine and welcome —
+  that sharpens the same layout without altering it.
+
+This has been got wrong once: `education_safety` was migrated to the token
+scale, which silently re-spaced a statutory document. It was reverted to be
+byte-identical. If you find yourself editing spacing in one of these three
+branches, stop.
+
 ## Shared vs report-specific
 
 The design system owns the **visual language**. Each report owns its **layout**.
@@ -181,11 +204,7 @@ clip each other.
 - Create a second report renderer, or a preview-only component.
 - Add a second `[data-pdf-page-footer]` — only the first is used.
 - Cap the slice height to A4.
-- Change the geometry of `welfare_inspection` or `accessibility_form_8` without
-  re-verifying against the source government forms. Those two branches are
-  pixel-faithful statutory reproductions; their exact spacing is a legal
-  fidelity requirement, not a style choice. They take colour and type from
-  tokens but keep their own measurements.
+- **Touch the layout of the three government-template reports.** See below.
 - Solve an overflow by hiding content.
 
 ## Verifying a change

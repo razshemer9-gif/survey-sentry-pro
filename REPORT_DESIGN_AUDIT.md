@@ -348,20 +348,26 @@ not a verdict on its own — confirm the artefact before believing it.
 
 Measured against the baseline, all three data sizes per type:
 
-| Report type | Migration | Measured vs baseline |
-| --- | --- | --- |
-| `accessibility_form_8` | Shell + checkbox dedup, statutory geometry untouched | **0.00% — identical** |
-| `welfare_inspection` | Shell + `FormLine`/checkbox dedup, statutory geometry untouched | **0.00% — identical** |
-| `element_stability` | Shared shell | **0.00% — identical** |
-| `accessibility` | Shared shell | **0.00% — identical** |
-| `general_safety` | Shared shell | **0.00% — identical** |
-| `education_safety` | Full — tokens, primitives, pagination wrappers | re-spaced; page counts held |
-| `risk_survey` | Full — tokens, primitives, pagination wrappers | re-spaced; page counts held |
+**Three report types reproduce fixed government templates and are exempt from
+the company visual template**: `accessibility_form_8`, `welfare_inspection` and
+`education_safety`. They may adopt shared components only where the result is
+provably pixel-identical, and their layout is never restyled.
 
-**15 of 21 fixtures pixel-identical.** The 6 that changed are the two fully
-migrated branches, whose spacing was deliberately normalised onto the token
-scale; page counts held at every size and content was visually confirmed
-present.
+| Report type | Category | Migration | Measured vs baseline |
+| --- | --- | --- | --- |
+| `accessibility_form_8` | government | Shell + checkbox dedup only | **0.00% — identical** |
+| `welfare_inspection` | government | Shell + `FormLine`/checkbox dedup only | **0.00% — identical** |
+| `education_safety` | government | **none** — reverted, see below | **0.00% — identical** |
+| `element_stability` | company | Shared shell | **0.00% — identical** |
+| `accessibility` | company | Shared shell | **0.00% — identical** |
+| `general_safety` | company | Shared shell | **0.00% — identical** |
+| `risk_survey` | company | Full — tokens, primitives, pagination wrappers | re-spaced; page counts held |
+
+`education_safety` was initially migrated in full to the token scale. That was
+wrong: it is a government-template report, and normalising its spacing silently
+altered a statutory document. The branch was restored **byte-identical** to its
+pre-refactor source. Only `risk_survey` is now fully migrated; it is a company
+template, where re-spacing is intended.
 
 The three "shell only" branches keep their existing inline styles. This is a
 deliberate stopping point, not an oversight: the design system and the
@@ -396,6 +402,33 @@ fix, welfare returned to 0.00% on all three sizes. The rule is recorded in
 
 The remaining literals are concentrated in the four not-yet-fully-migrated
 branches; the two fully-migrated branches draw everything from tokens.
+
+### 5.5a Raster quality
+
+The PDF contains bitmaps, so resolution — not layout — governs how sharp the
+Hebrew glyphs, table rules and photographs look when zoomed. `pdf-generate.ts`
+now separates the concerns explicitly:
+
+| Constant | Role |
+| --- | --- |
+| `scale` | Raster resolution. The only knob to turn for sharpness. |
+| `TARGET_H` | Content height per slice — decides where pages break. Pinned to the historical values. |
+| `MAX_PX` / `MAX_H` | Hard canvas ceilings (iOS caps ~4096px height, ~16 MP area). Safety clamps only. |
+
+`MAX_PX` is sized so `TARGET_H`, not the area budget, is what binds — which is
+what lets the scale rise without repaginating a single existing report.
+
+| | Before | After |
+| --- | --- | --- |
+| Mobile raster scale | 1.5× | **2×** |
+| Desktop raster scale | 2× | **2.5×** |
+| JPEG quality | 0.95 | **0.98** |
+| Uploaded photo | 1600px / q0.82 | **2000px / q0.90** |
+
+`PAGE_H` is arithmetically unchanged on both platforms (7000 desktop, 2938
+mobile). Mobile canvas stays 1588 × 2938 = 4.7 MP, height well under the 4096
+cap. The photo change affects newly uploaded images only; photos already stored
+keep their original encoding.
 
 ### 5.6 Other fixes
 
