@@ -353,21 +353,31 @@ the company visual template**: `accessibility_form_8`, `welfare_inspection` and
 `education_safety`. They may adopt shared components only where the result is
 provably pixel-identical, and their layout is never restyled.
 
-| Report type | Category | Migration | Measured vs baseline |
+| Report type | Category | Migration | Layout vs baseline |
 | --- | --- | --- | --- |
 | `accessibility_form_8` | government | Shell + checkbox dedup only | **0.00% — identical** |
 | `welfare_inspection` | government | Shell + `FormLine`/checkbox dedup only | **0.00% — identical** |
 | `education_safety` | government | **none** — reverted, see below | **0.00% — identical** |
-| `element_stability` | company | Shared shell | **0.00% — identical** |
-| `accessibility` | company | Shared shell | **0.00% — identical** |
-| `general_safety` | company | Shared shell | **0.00% — identical** |
-| `risk_survey` | company | Full — tokens, primitives, pagination wrappers | re-spaced; page counts held |
+| `risk_survey` | company | Full | re-spaced; page count held |
+| `element_stability` | company | Full | re-spaced; page count held |
+| `accessibility` | company | Full | re-spaced; blank page removed |
+| `general_safety` | company | Full | re-spaced; page count held |
+
+All four company templates are fully migrated. All three government templates
+are byte-for-byte untouched.
 
 `education_safety` was initially migrated in full to the token scale. That was
 wrong: it is a government-template report, and normalising its spacing silently
 altered a statutory document. The branch was restored **byte-identical** to its
-pre-refactor source. Only `risk_survey` is now fully migrated; it is a company
-template, where re-spacing is intended.
+pre-refactor source.
+
+**Page counts: 20 of 21 fixtures unchanged.** The single change —
+`accessibility` at stress size, 5 → 4 pages — is a fix, not a regression: the
+baseline's fifth page was 32 pt tall and completely blank (zero non-white
+pixels), an orphan created by content ending just past a page boundary. Total
+content height fell by 480 pt (2.4%), consistent with spacing normalisation; a
+genuinely lost page would have removed ~5,000 pt. Blank pages are listed as a
+defect in §3.2.
 
 The three "shell only" branches keep their existing inline styles. This is a
 deliberate stopping point, not an oversight: the design system and the
@@ -392,16 +402,28 @@ fix, welfare returned to 0.00% on all three sizes. The rule is recorded in
 | Metric | Before | After |
 | --- | --- | --- |
 | Duplicated root shells | 6 | **1** (shared `ReportShell`) |
-| Inline `style={{…}}` objects | 404 | 388 |
-| Hex colour literals | 252 | 192 |
-| `fontSize` literals | 147 | 114 |
-| `padding` string literals | 95 | 68 |
+| Hex colour literals | 252 | **146** |
+| Distinct colours | 43 | **36** |
+| `fontSize` literals | 147 | **91** |
+| `padding` string literals | 95 | **65** |
+| Hand-written `data-pdf-*` attributes | 44 | **30** |
+| Redundant `direction: "rtl"` | 20+ | **10** |
 | Checkbox implementations | 2 | **1** (parameterized) |
 | Ruled-field implementations | 5 | **1** (`FormLine`) |
+| Inert `pageBreakInside` declarations | 3 | **0** |
 | Dead CSS selectors | 3 | **0** |
 
-The remaining literals are concentrated in the four not-yet-fully-migrated
-branches; the two fully-migrated branches draw everything from tokens.
+What remains is concentrated in the three government-template branches, where
+explicit measurements are a fidelity requirement rather than a smell.
+
+### 5.5b Pagination bug fixed during migration
+
+Three blocks in the shared default branch — the findings card, the opinion
+summary and the general-notes/sign-off block — were protected only by
+`pageBreakInside: "avoid"`. As established in §1.2 that property does nothing
+in this pipeline, so those blocks could be sliced in half across a page
+boundary. They now use `KeepTogether`, which is the mechanism that actually
+works.
 
 ### 5.5a Raster quality
 
