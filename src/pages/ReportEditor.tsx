@@ -404,6 +404,12 @@ export default function ReportEditor() {
     .filter((i) => i.includeInCost)
     .reduce((s, i) => s + (Number(i.estimatedCost) || 0) * (i.quantity ?? 1), 0);
 
+  // The exact report object that gets rendered as a document. Both the preview
+  // dialog and the hidden PDF mount use this, so what you see is what prints.
+  const printedReport = croppedCoverPhoto
+    ? { ...report, coverPhoto: croppedCoverPhoto }
+    : report;
+
   return (
     <>
     <AppShell>
@@ -1820,9 +1826,11 @@ export default function ReportEditor() {
           <DialogHeader className="px-2">
             <DialogTitle>תצוגה מקדימה</DialogTitle>
           </DialogHeader>
-          <div data-pdf-content="" className="overflow-auto rounded-lg bg-muted p-2">
-            <div className="pdf-scale-wrapper origin-top-right scale-[0.42] sm:scale-[0.6]" style={{ transformOrigin: "top right" }}>
-              <PrintableReport report={report} settings={settings} />
+          <div className="overflow-auto rounded-lg bg-muted p-2">
+            {/* Same report object the PDF mount uses, so the preview is a true
+                representation of the printed document. */}
+            <div className="origin-top-right scale-[0.42] sm:scale-[0.6]" style={{ transformOrigin: "top right" }}>
+              <PrintableReport report={printedReport} settings={settings} />
             </div>
           </div>
           <DialogFooter className="px-2">
@@ -1903,9 +1911,10 @@ export default function ReportEditor() {
 
     </AppShell>
 
-    {/* Dedicated print mount — id="pdf-print-mount" is the ONLY selector used
-        by @media print, so there is no dependency on Radix or any other
-        third-party portal attribute. Always rendered, always up-to-date. */}
+    {/* Dedicated capture mount for PDF generation. Kept off-screen with
+        top:100vh rather than display:none/opacity:0 — html2canvas needs a
+        laid-out, painted element. pdf-generate.ts also mutates this wrapper's
+        height/overflow while slicing, so it must wrap exactly one report. */}
     {createPortal(
       <div
         id="pdf-print-mount"
@@ -1914,7 +1923,7 @@ export default function ReportEditor() {
       >
         <PrintableReport
           ref={printRef}
-          report={croppedCoverPhoto ? { ...report, coverPhoto: croppedCoverPhoto } : report}
+          report={printedReport}
           settings={settings}
         />
       </div>,
