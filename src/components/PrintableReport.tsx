@@ -83,11 +83,11 @@ export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, sett
   const hasHeaderBanner = isAccessibilityType || isGeneralSafetyType;
 
   const hasPriorities = report.items.some(i => i.priority !== undefined);
-  const PRIORITY_GROUPS: { priority: 0 | 1 | 2 | undefined; label: string; color: string; bg: string; border: string }[] = [
-    { priority: 0, label: "קדימות 0 — דחוף",  color: "#dc2626", bg: "#fef2f2", border: "#fecaca" },
-    { priority: 1, label: "קדימות 1 — גבוה",  color: "#ea580c", bg: "#fff7ed", border: "#fdba74" },
-    { priority: 2, label: "קדימות 2 — רגיל",  color: "#d97706", bg: "#fffbeb", border: "#fde68a" },
-    { priority: undefined, label: "ממצאים נוספים", color: "#64748b", bg: "#f8fafc", border: "#e2e8f0" },
+  const PRIORITY_GROUPS: { priority: 0 | 1 | 2 | undefined; label: string; fg: string; bg: string; edge: string }[] = [
+    { priority: 0, label: "קדימות 0 — דחוף",  fg: "#dc2626", bg: color.dangerBg, edge: "#fecaca" },
+    { priority: 1, label: "קדימות 1 — גבוה",  fg: "#ea580c", bg: "#fff7ed", edge: "#fdba74" },
+    { priority: 2, label: "קדימות 2 — רגיל",  fg: color.warning, bg: color.warningBg, edge: "#fde68a" },
+    { priority: undefined, label: "ממצאים נוספים", fg: color.muted, bg: color.surfaceAlt, edge: color.border },
   ];
   const PRIORITY_BADGE_LABEL = ["דחוף", "גבוה", "רגיל"] as const;
 
@@ -97,80 +97,79 @@ export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, sett
       : (item.referencePhoto ? [item.referencePhoto] : []);
     const priorityMeta = item.priority !== undefined ? PRIORITY_GROUPS.find(g => g.priority === item.priority) : undefined;
     return (
-      <div
+      <KeepTogether
         key={item.id}
-        data-pdf-no-break=""
-        style={{ border: "1px solid #e2e8f0", borderRadius: 14, overflow: "hidden", background: "#fff", pageBreakInside: "avoid" }}
+        style={{ border: `${border.hairline}px solid ${color.border}`, borderRadius: radius.lg, overflow: "hidden", background: color.surface }}
       >
         {/* ── Section 1: Template / professional data ── */}
-        <div data-pdf-no-break="" style={{ padding: "16px 20px 14px", background: "#f8fafc", borderBottom: "1px solid #e2e8f0" }}>
-          <div style={{ fontSize: 13, color: "#64748b", marginBottom: 3, display: "flex", alignItems: "center", gap: 8 }}>
+        <KeepTogether style={{ padding: `${space.xl}px ${space["2xl"]}px`, background: color.surfaceAlt, borderBottom: `${border.hairline}px solid ${color.border}` }}>
+          <div style={{ fontSize: text.body, color: color.muted, marginBottom: space.xs, display: "flex", alignItems: "center", gap: space.md }}>
             <span>ממצא {globalIdx + 1}</span>
             {priorityMeta && item.priority !== undefined && (
-              <span style={{ background: priorityMeta.bg, color: priorityMeta.color, border: `1px solid ${priorityMeta.border}`, borderRadius: 999, padding: "1px 8px", fontSize: 11, fontWeight: 700 }}>
+              <span style={{ background: priorityMeta.bg, color: priorityMeta.fg, border: `${border.hairline}px solid ${priorityMeta.edge}`, borderRadius: 999, padding: `${space.xs}px ${space.md}px`, fontSize: text.caption, fontWeight: weight.bold }}>
                 {PRIORITY_BADGE_LABEL[item.priority]}
               </span>
             )}
           </div>
-          <div style={{ fontSize: 19, fontWeight: 700, color: "#0f172a" }}>{item.title}</div>
+          <div style={{ fontSize: text.h2, fontWeight: weight.bold, color: color.ink }}>{item.title}</div>
           {item.notes && item.notes.split("\n").map((line, li) => (
-            <div key={`n${li}`} data-pdf-no-break="" style={{ marginTop: li === 0 ? 10 : 0, fontSize: 15, color: "#334155", lineHeight: 1.7, whiteSpace: "pre-wrap" }}>
-              {li === 0 ? <><span style={{ fontWeight: 700 }}>ממצא: </span>{line}</> : line}
+            <div key={`n${li}`} style={{ marginTop: li === 0 ? space.md : 0, fontSize: text.h4, color: color.inkSoft, lineHeight: leading.normal, whiteSpace: "pre-wrap" }}>
+              {li === 0 ? <><span style={{ fontWeight: weight.bold }}>ממצא: </span>{line}</> : line}
             </div>
           ))}
           {item.suggestedCorrection && item.suggestedCorrection.split("\n").map((line, li) => (
-            <div key={`c${li}`} data-pdf-no-break="" style={{ marginTop: li === 0 ? 8 : 0, fontSize: 15, color: "#1e40af", lineHeight: 1.7, whiteSpace: "pre-wrap" }}>
-              {li === 0 ? <><span style={{ fontWeight: 700 }}>פתרון: </span>{line}</> : line}
+            <div key={`c${li}`} style={{ marginTop: li === 0 ? space.md : 0, fontSize: text.h4, color: color.brand, lineHeight: leading.normal, whiteSpace: "pre-wrap" }}>
+              {li === 0 ? <><span style={{ fontWeight: weight.bold }}>פתרון: </span>{line}</> : line}
             </div>
           ))}
           {refPhotos.length > 0 && (
-            <div data-pdf-no-break="" style={{ marginTop: 12, display: "grid", gridTemplateColumns: refPhotos.length > 1 ? "1fr 1fr" : "260px", gap: 10 }}>
+            <div style={{ marginTop: space.lg, display: "grid", gridTemplateColumns: refPhotos.length > 1 ? "1fr 1fr" : "260px", gap: space.md }}>
               {refPhotos.map((p, i) => (
-                <div key={i} data-pdf-no-break="">
+                <KeepTogether key={i}>
                   <img
                     src={p}
                     alt={item.referenceLabel || `פרט ${i + 1}`}
-                    style={{ maxWidth: "100%", height: "auto", display: "block", background: "#fff", borderRadius: 8, border: "1px solid #bfdbfe" }}
+                    style={{ maxWidth: "100%", height: "auto", display: "block", background: color.surface, borderRadius: radius.md, border: `${border.hairline}px solid #bfdbfe` }}
                   />
-                </div>
+                </KeepTogether>
               ))}
             </div>
           )}
-        </div>
+        </KeepTogether>
 
         {/* ── Section 2: Client / field data ── */}
         {(item.photo || item.fieldNotes || (item.estimatedCost || 0) > 0) && (
-          <div data-pdf-no-break="" style={{ padding: "14px 20px" }}>
+          <KeepTogether style={{ padding: `${space.lg}px ${space["2xl"]}px` }}>
             {(item.photo || item.fieldNotes) && (
-              <div style={{ display: "grid", gridTemplateColumns: item.photo && item.fieldNotes ? "1fr 1fr" : "1fr", gap: 14, alignItems: "start" }}>
+              <div style={{ display: "grid", gridTemplateColumns: item.photo && item.fieldNotes ? "1fr 1fr" : "1fr", gap: space.lg, alignItems: "start" }}>
                 {item.photo && (
-                  <div data-pdf-no-break="">
-                    <div style={{ fontSize: 13, color: "#64748b", marginBottom: 5, fontWeight: 600 }}>מצב קיים</div>
+                  <KeepTogether>
+                    <div style={{ fontSize: text.body, color: color.muted, marginBottom: space.sm, fontWeight: weight.semibold }}>מצב קיים</div>
                     <img
                       src={item.photo}
                       alt="מצב קיים"
-                      style={{ maxWidth: "100%", height: "auto", display: "block", borderRadius: 8, border: "1px solid #e2e8f0" }}
+                      style={{ maxWidth: "100%", height: "auto", display: "block", borderRadius: radius.md, border: `${border.hairline}px solid ${color.border}` }}
                     />
-                  </div>
+                  </KeepTogether>
                 )}
                 {item.fieldNotes && (
-                  <div data-pdf-no-break="">
-                    <div style={{ fontSize: 13, color: "#64748b", marginBottom: 5, fontWeight: 600 }}>פירוט מצב קיים</div>
-                    <div style={{ fontSize: 15, color: "#334155", lineHeight: 1.7, whiteSpace: "pre-wrap", background: "#f8fafc", borderRadius: 8, padding: "12px 14px", border: "1px solid #e2e8f0" }}>
+                  <KeepTogether>
+                    <div style={{ fontSize: text.body, color: color.muted, marginBottom: space.sm, fontWeight: weight.semibold }}>פירוט מצב קיים</div>
+                    <div style={{ fontSize: text.h4, color: color.inkSoft, lineHeight: leading.normal, whiteSpace: "pre-wrap", background: color.surfaceAlt, borderRadius: radius.md, padding: `${space.lg}px`, border: `${border.hairline}px solid ${color.border}` }}>
                       {item.fieldNotes}
                     </div>
-                  </div>
+                  </KeepTogether>
                 )}
               </div>
             )}
             {(item.estimatedCost || 0) > 0 && (
-              <div style={{ marginTop: 12, display: "inline-block", background: "#fef2f2", color: "#991b1b", border: "1px solid #fecaca", fontSize: 15, padding: "6px 14px", borderRadius: 999, fontWeight: 600 }}>
-                אומדן עלות תיקון: {(item.quantity ?? 1) > 1 ? `${formatCurrency(item.estimatedCost)} × ${item.quantity} = ${formatCurrency(itemTotal(item))}` : formatCurrency(item.estimatedCost)}
+              <div style={{ marginTop: space.lg, display: "inline-block", background: color.dangerBg, color: color.danger, border: `${border.hairline}px solid #fecaca`, fontSize: text.h4, padding: `${space.sm}px ${space.lg}px`, borderRadius: 999, fontWeight: weight.semibold }}>
+                <span style={{ unicodeBidi: "plaintext" }}>אומדן עלות תיקון: {(item.quantity ?? 1) > 1 ? `${formatCurrency(item.estimatedCost)} × ${item.quantity} = ${formatCurrency(itemTotal(item))}` : formatCurrency(item.estimatedCost)}</span>
               </div>
             )}
-          </div>
+          </KeepTogether>
         )}
-      </div>
+      </KeepTogether>
     );
   };
 
@@ -375,7 +374,7 @@ export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, sett
 
   // ── Element stability inspection: דוח בדיקת יציבות אלמנטים ─────────────────
   if (report.surveyType === "element_stability") {
-    const accent = "#1e3a8a"; // blue accent (matches brand)
+    const accent = color.brand;
     const inspectorName = report.elementInspectorName || sigName;
 
     // Always the company's own identity — not personalized per consultant
@@ -387,28 +386,28 @@ export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, sett
     // Explicit top/bottom padding (not margin) so the captured box fully
     // contains the text with breathing room and can never clip the last line.
     const ElementFooter = () => (
-      <div data-pdf-page-footer="" style={{ direction: "rtl", padding: "14px 0 12px", boxSizing: "border-box" }}>
+      <PageFooter style={{ padding: `${space.lg}px 0` }}>
         {footerImg ? (
           <img src={footerImg} alt="footer" crossOrigin="anonymous" style={{ width: "100%", height: "auto", display: "block" }} />
         ) : (
           <>
-            <div style={{ height: 3, background: "#2f5eb3", borderRadius: 2, marginBottom: 8 }} />
-            <div style={{ textAlign: "center", fontSize: 12, color: "#0f172a", lineHeight: 1.9 }}>
-              <div style={{ fontWeight: 700 }}>{footer.company}{footer.phone ? `, נייד : ${footer.phone}` : ""}</div>
+            <div style={{ height: border.heavy, background: accent, borderRadius: space.xs, marginBottom: space.md }} />
+            <div style={{ textAlign: "center", fontSize: text.table, color: color.ink, lineHeight: leading.relaxed }}>
+              <div style={{ fontWeight: weight.bold }}>{footer.company}{footer.phone ? `, נייד : ${footer.phone}` : ""}</div>
               <div>
-                <span style={{ fontWeight: 700 }}>דוא"ל: </span>
-                <span style={{ color: "#1d4ed8", textDecoration: "underline" }}>{footer.email}</span>
+                <span style={{ fontWeight: weight.bold }}>דוא"ל: </span>
+                <span style={{ color: color.brandAlt, textDecoration: "underline" }} dir="ltr">{footer.email}</span>
                 {footer.website ? (
                   <>
                     {"   אתר : "}
-                    <span style={{ color: "#1d4ed8", textDecoration: "underline" }}>{footer.website}</span>
+                    <span style={{ color: color.brandAlt, textDecoration: "underline" }} dir="ltr">{footer.website}</span>
                   </>
                 ) : null}
               </div>
             </div>
           </>
         )}
-      </div>
+      </PageFooter>
     );
 
     // Valid-until may carry a time part (datetime-local: "YYYY-MM-DDTHH:mm").
@@ -432,24 +431,24 @@ export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, sett
     const sigImg = showSig ? (report.signatureDataUrl || fmt.signatureImage) : undefined;
 
     const CoverLine = ({ label, value }: { label: string; value?: string }) => (
-      <div style={{ display: "flex", alignItems: "baseline", gap: 6, marginBottom: 10, fontSize: 14, direction: "rtl" }}>
-        <span style={{ fontWeight: 700, flexShrink: 0 }}>{label}:</span>
+      <div style={{ display: "flex", alignItems: "baseline", gap: space.md, marginBottom: space.md, fontSize: text.bodyLg }}>
+        <span style={{ fontWeight: weight.bold, flexShrink: 0 }}>{label}:</span>
         <span>{value || ""}</span>
       </div>
     );
 
     return (
       <ReportShell ref={ref}>
-        <section style={{ padding: "32px 56px 28px", background: "#fff" }}>
+        <section style={{ padding: `${space["4xl"]}px ${page.padXForm}px ${space["3xl"]}px` }}>
           {/* 1. Header banner — dedicated to this report type only */}
-          <div style={{ marginBottom: isElementApproval ? 12 : 22 }}>
+          <div style={{ marginBottom: isElementApproval ? space.lg : space["2xl"] }}>
             <img src={ELEMENT_STABILITY_HEADER_BANNER} alt="דו״ח יציבות קונסטרוקציה" crossOrigin="anonymous"
               style={{ width: "100%", height: "auto", display: "block" }} />
           </div>
           {/* Title only shown when it differs from the banner's baked-in "דו״ח
               יציבות קונסטרוקציה" — i.e. only in approval mode. */}
           {isElementApproval && (
-            <h1 style={{ fontSize: 22, fontWeight: 800, color: accent, textAlign: "center", margin: "0 0 20px" }}>
+            <h1 style={{ fontSize: text.h1, fontWeight: weight.heavy, color: accent, textAlign: "center", margin: `0 0 ${space["2xl"]}px` }}>
               אישור יציבות קונסטרוקציה
             </h1>
           )}
@@ -462,83 +461,83 @@ export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, sett
           <CoverLine label={isElementApproval ? "תוקף האישור" : "תוקף הבדיקה"} value={validUntilText} />
 
           {report.elementIntroText && (
-            <div style={{ marginTop: 14, fontSize: 14, lineHeight: 1.8, whiteSpace: "pre-wrap", direction: "rtl" }}>
-              <span style={{ fontWeight: 700 }}>הקדמה: </span>{report.elementIntroText}
+            <div style={{ marginTop: space.lg, fontSize: text.bodyLg, lineHeight: leading.relaxed, whiteSpace: "pre-wrap" }}>
+              <span style={{ fontWeight: weight.bold }}>הקדמה: </span>{report.elementIntroText}
             </div>
           )}
 
           {/* 3. Elements table — container may span pages; individual rows never split */}
-          <div style={{ marginTop: 22, border: `1px solid ${accent}`, direction: "rtl", fontSize: 13 }}>
-            <div data-pdf-no-break="" style={{ display: "grid", gridTemplateColumns: "60px 1.6fr 1fr", background: "#eff6ff", fontWeight: 800 }}>
-              <div style={{ padding: "8px 6px", borderLeft: `1px solid ${accent}`, textAlign: "center" }}>מס׳ סד׳</div>
-              <div style={{ padding: "8px 6px", borderLeft: `1px solid ${accent}`, textAlign: "center" }}>תיאור האלמנט / תמונה</div>
-              <div style={{ padding: "8px 6px", textAlign: "center" }}>תקין / לא תקין</div>
-            </div>
+          <div style={{ marginTop: space["2xl"], border: `${border.hairline}px solid ${accent}`, fontSize: text.body }}>
+            <KeepTogether style={{ display: "grid", gridTemplateColumns: "60px 1.6fr 1fr", background: color.surfaceTint, fontWeight: weight.heavy }}>
+              <div style={{ padding: `${space.md}px`, borderLeft: `${border.hairline}px solid ${accent}`, textAlign: "center" }}>מס׳ סד׳</div>
+              <div style={{ padding: `${space.md}px`, borderLeft: `${border.hairline}px solid ${accent}`, textAlign: "center" }}>תיאור האלמנט / תמונה</div>
+              <div style={{ padding: `${space.md}px`, textAlign: "center" }}>תקין / לא תקין</div>
+            </KeepTogether>
             {report.items.map((item, i) => {
               const ok = item.status === "compliant";
               return (
-                <div key={item.id} data-pdf-no-break="" style={{ display: "grid", gridTemplateColumns: "60px 1.6fr 1fr", borderTop: `1px solid ${accent}` }}>
-                  <div style={{ padding: "10px 6px", borderLeft: `1px solid ${accent}`, textAlign: "center", fontWeight: 700, color: accent }}>{i + 1}</div>
-                  <div style={{ padding: "10px 10px", borderLeft: `1px solid ${accent}` }}>
+                <KeepTogether key={item.id} style={{ display: "grid", gridTemplateColumns: "60px 1.6fr 1fr", borderTop: `${border.hairline}px solid ${accent}` }}>
+                  <div style={{ padding: `${space.md}px`, borderLeft: `${border.hairline}px solid ${accent}`, textAlign: "center", fontWeight: weight.bold, color: accent }}>{i + 1}</div>
+                  <div style={{ padding: `${space.md}px`, borderLeft: `${border.hairline}px solid ${accent}` }}>
                     {item.title && (
-                      <div style={{ fontSize: 14, lineHeight: 1.7, whiteSpace: "pre-wrap", marginBottom: item.photo ? 8 : 0 }}>{item.title}</div>
+                      <div style={{ fontSize: text.bodyLg, lineHeight: leading.normal, whiteSpace: "pre-wrap", marginBottom: item.photo ? space.md : 0 }}>{item.title}</div>
                     )}
                     {item.photo && (
                       <img src={item.photo} alt={item.title || `אלמנט ${i + 1}`} crossOrigin="anonymous"
-                        style={{ maxWidth: "100%", height: "auto", display: "block", borderRadius: 6, border: "1px solid #e2e8f0" }} />
+                        style={{ maxWidth: "100%", height: "auto", display: "block", borderRadius: radius.md, border: `${border.hairline}px solid ${color.border}` }} />
                     )}
                   </div>
-                  <div style={{ padding: "10px 10px" }}>
-                    <div style={{ textAlign: "center", fontWeight: 800, fontSize: 15, color: ok ? accent : "#b91c1c" }}>
+                  <div style={{ padding: `${space.md}px` }}>
+                    <div style={{ textAlign: "center", fontWeight: weight.heavy, fontSize: text.h4, color: ok ? accent : color.danger }}>
                       {ok ? "תקין" : "לא תקין"}
                     </div>
                     {item.fieldNotes && (
-                      <div style={{ marginTop: 8, fontSize: 13, lineHeight: 1.7, color: "#0f172a", whiteSpace: "pre-wrap", textAlign: "right", unicodeBidi: "plaintext" }}>
+                      <div style={{ marginTop: space.md, fontSize: text.body, lineHeight: leading.normal, color: color.ink, whiteSpace: "pre-wrap", textAlign: "right" }}>
                         {item.fieldNotes}
                       </div>
                     )}
                   </div>
-                </div>
+                </KeepTogether>
               );
             })}
           </div>
 
           {/* 5. Notes */}
           {report.elementNotes && (
-            <div data-pdf-no-break="" style={{ marginTop: 20 }}>
-              <h3 style={{ fontSize: 16, fontWeight: 800, color: accent, margin: "0 0 6px" }}>הערות:</h3>
-              <div style={{ fontSize: 14, lineHeight: 1.8, whiteSpace: "pre-wrap", direction: "rtl", unicodeBidi: "plaintext" }}>{report.elementNotes}</div>
-            </div>
+            <KeepTogether style={{ marginTop: space["2xl"] }}>
+              <h3 style={{ fontSize: text.h3, fontWeight: weight.heavy, color: accent, margin: `0 0 ${space.sm}px` }}>הערות:</h3>
+              <div style={{ fontSize: text.bodyLg, lineHeight: leading.relaxed, whiteSpace: "pre-wrap" }}>{report.elementNotes}</div>
+            </KeepTogether>
           )}
 
           {/* 6+7. Result + fixed terms — kept together on one page */}
-          <div data-pdf-no-break="" style={{ marginTop: 24 }}>
-            <h3 style={{ fontSize: 18, fontWeight: 800, color: accent, margin: "0 0 10px" }}>
+          <KeepTogether style={{ marginTop: space["3xl"] }}>
+            <h3 style={{ fontSize: text.h2, fontWeight: weight.heavy, color: accent, margin: `0 0 ${space.md}px` }}>
               {resultText}
             </h3>
             {/* When 'unstable', omit the stable-only clauses (1,3,4,8); keep the rest. */}
-            <div style={{ direction: "rtl" }}>
+            <div>
               {terms
                 .filter((_, i) => report.elementStabilityStatus !== "unstable" || !ELEMENT_STABILITY_STABLE_ONLY_INDICES.includes(i))
                 .map((t, i) => (
-                  <div key={i} style={{ display: "flex", alignItems: "flex-start", gap: 8, marginBottom: 6, fontSize: 13, lineHeight: 1.7 }}>
-                    <span style={{ flexShrink: 0, fontWeight: 700, minWidth: 20, textAlign: "right", color: accent }}>{i + 1}.</span>
+                  <div key={i} style={{ display: "flex", alignItems: "flex-start", gap: space.md, marginBottom: space.sm, fontSize: text.body, lineHeight: leading.normal }}>
+                    <span style={{ flexShrink: 0, fontWeight: weight.bold, minWidth: 20, textAlign: "right", color: accent }}>{i + 1}.</span>
                     <span style={{ flex: 1, whiteSpace: "pre-wrap", unicodeBidi: "plaintext" }}>{t}</span>
                   </div>
                 ))}
             </div>
-          </div>
+          </KeepTogether>
 
           {/* 9. Signature/stamp — left side of the page, last page only, when present */}
           {sigImg && (
-            <div data-pdf-no-break="" style={{ marginTop: 48, display: "flex", justifyContent: "flex-end", direction: "rtl" }}>
+            <KeepTogether style={{ marginTop: space["6xl"], display: "flex", justifyContent: "flex-end" }}>
               <div style={{ textAlign: "center" }}>
-                <img src={sigImg} alt="חתימה" crossOrigin="anonymous" style={{ maxHeight: 70, maxWidth: 200, height: "auto", display: "block", margin: "0 auto" }} />
-                <div style={{ borderTop: "1px solid #0f172a", marginTop: 4, paddingTop: 4, fontSize: 12, color: "#64748b" }}>
+                <img src={sigImg} alt="חתימה" crossOrigin="anonymous" style={{ maxHeight: 70, maxWidth: image.signatureMaxW, height: "auto", display: "block", margin: "0 auto", objectFit: "contain" }} />
+                <div style={{ borderTop: `${border.hairline}px solid ${color.ink}`, marginTop: space.sm, paddingTop: space.sm, fontSize: text.small, color: color.muted }}>
                   חתימת הבודק{inspectorName ? ` — ${inspectorName}` : ""}
                 </div>
               </div>
-            </div>
+            </KeepTogether>
           )}
 
         </section>
@@ -1393,22 +1392,22 @@ export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, sett
       </section>
 
       {/* CHECKLIST PAGE(S) */}
-      <section style={{ padding: "48px", background: "#fff" }}>
+      <section style={{ padding: `${space["6xl"]}px` }}>
         <PageHeader title="חוות דעת מקצועית" company={settings.companyName} accentColor={surveyConfig.color} />
 
-        <div style={{ marginTop: 24, display: "flex", flexDirection: "column", gap: 14 }}>
+        <div style={{ marginTop: space["3xl"], display: "flex", flexDirection: "column", gap: space.lg }}>
           {hasPriorities
-            ? PRIORITY_GROUPS.flatMap(({ priority, label, color, bg, border }) => {
+            ? PRIORITY_GROUPS.flatMap(({ priority, label, fg, bg, edge }) => {
                 const groupItems = report.items.filter(i => i.priority === priority);
                 if (groupItems.length === 0) return [];
                 return [
                   <div
                     key={`group-${String(priority ?? "none")}`}
-                    style={{ padding: "10px 18px", background: bg, border: `2px solid ${border}`, borderRadius: 10, display: "flex", alignItems: "center", gap: 10, marginBottom: -4 }}
+                    style={{ padding: `${space.md}px ${space.xl}px`, background: bg, border: `${border.thick}px solid ${edge}`, borderRadius: radius.md, display: "flex", alignItems: "center", gap: space.md, marginBottom: -space.sm }}
                   >
-                    <div style={{ width: 14, height: 14, borderRadius: "50%", background: color, flexShrink: 0 }} />
-                    <span style={{ fontSize: 16, fontWeight: 800, color }}>{label}</span>
-                    <span style={{ fontSize: 13, color: "#64748b", marginRight: "auto" }}>({groupItems.length} ממצאים)</span>
+                    <div style={{ width: 14, height: 14, borderRadius: "50%", background: fg, flexShrink: 0 }} />
+                    <span style={{ fontSize: text.h3, fontWeight: weight.heavy, color: fg }}>{label}</span>
+                    <span style={{ fontSize: text.body, color: color.muted, marginRight: "auto" }}>({groupItems.length} ממצאים)</span>
                   </div>,
                   ...groupItems.map(item => renderItem(item, report.items.indexOf(item))),
                 ];
