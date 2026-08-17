@@ -56,10 +56,7 @@ export async function generateReportPdf(
   // once regardless of how many pages the report has — nowhere near iOS
   // Safari's canvas-size limits even at a high scale — so unlike the main
   // content slices, there's no reason to cap it lower on mobile.
-  const scaleForFooter = 2.5;
-  // JPEG quality for every captured slice. 0.95 left visible ringing around
-  // Hebrew glyph edges; 0.98 removes most of it for a modest size increase.
-  const JPEG_QUALITY = 0.98;
+  const scaleForFooter = 2;
   const footerEl = element.querySelector<HTMLElement>("[data-pdf-page-footer]");
   let footerData: string | null = null;
   let footerHpx = 0;
@@ -74,7 +71,7 @@ export async function generateReportPdf(
       width: element.scrollWidth,
       height: footerHpx,
     });
-    footerData = fCanvas.toDataURL("image/jpeg", JPEG_QUALITY);
+    footerData = fCanvas.toDataURL("image/jpeg", 0.95);
     // Remove from content flow so it isn't rendered inline in the slices.
     footerEl.style.display = "none";
     await new Promise<void>((r) => requestAnimationFrame(() => requestAnimationFrame(() => r())));
@@ -91,33 +88,18 @@ export async function generateReportPdf(
   const showPageNumbers = element.hasAttribute("data-pdf-page-numbers");
 
   // ── Page sizing and smart break calculation ──────────────────────────────
-  // The PDF contains bitmaps, not text, so `scale` alone decides how sharp the
-  // Hebrew glyphs, table rules and photographs look when the reader zooms in.
-  //
-  // The three quantities below are deliberately separated:
-  //
-  //   scale     raster resolution — the ONLY knob to turn for sharpness.
-  //   TARGET_H  content height per page slice. This is what determines where
-  //             pages break, so it is pinned to the values these reports have
-  //             always used. Never tune it to chase image quality: changing it
-  //             re-paginates every existing report.
-  //   MAX_PX /  hard canvas ceilings (iOS Safari caps canvas height at ~4096px
-  //   MAX_H     and total area at ~16 MP). They are safety clamps only; they
-  //             are sized so TARGET_H — not the area budget — is what binds,
-  //             which is what keeps pagination identical across a scale change.
-  //
-  // Resulting canvases: desktop 1985 x 7000 (13.9 MP), mobile 1588 x 2938
-  // (4.7 MP, height well under the 4096 cap).
+  // iOS Safari limits canvas height to ~4096px and total area to ~16 MP.
+  // scale=1 produced visibly soft/pixelated text and images when a mobile-
+  // generated PDF was zoomed in, so we bump it to 1.5 — MAX_PX/MAX_H stay the
+  // same hard physical-pixel ceiling per captured canvas (PAGE_H below is
+  // computed to respect them regardless of scale), so this only means
+  // slightly shorter page slices on mobile, never a canvas-size violation.
   const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
-  const scale    = isMobile ? 2 : 2.5;
-  const TARGET_H = isMobile ? 2_938     : 7_000;
-  const MAX_PX   = isMobile ? 8_000_000 : 24_000_000;
+  const scale    = isMobile ? 1.5 : 2;
+  const MAX_PX   = isMobile ? 3_500_000 : 14_000_000;
   const MAX_H    = isMobile ? 3_500     : 7_000;
   // Reserve room for the footer so content + footer stays within the canvas cap.
-  const PAGE_H   = Math.max(
-    200,
-    Math.min(TARGET_H, MAX_H, Math.floor(MAX_PX / (elWidth * scale))) - footerHpx - GAP_PX,
-  );
+  const PAGE_H   = Math.max(200, Math.min(MAX_H, Math.floor(MAX_PX / (elWidth * scale))) - footerHpx - GAP_PX);
 
   // Content height without the (now hidden) footer.
   const contentHeight = footerEl ? element.scrollHeight : elHeight;
@@ -221,7 +203,7 @@ export async function generateReportPdf(
         height:          pageH,
       });
 
-      const imgData = canvas.toDataURL("image/jpeg", JPEG_QUALITY);
+      const imgData = canvas.toDataURL("image/jpeg", 0.95);
 
       // jsPDF's [w, h] format array must match the orientation label it's
       // given, or jsPDF "corrects" it by swapping w/h — e.g. asking for
