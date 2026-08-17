@@ -430,6 +430,17 @@ mobile). Mobile canvas stays 1588 × 2938 = 4.7 MP, height well under the 4096
 cap. The photo change affects newly uploaded images only; photos already stored
 keep their original encoding.
 
+Measured on the full 21-fixture set after the change:
+
+- **Page count identical on all 21.** No report repaginates.
+- **Page dimensions identical on all** except `risk_survey`, whose change is
+  the intended company-template migration.
+- Embedded raster went from **1588 × 1667 @ 192 ppi → 1985 × 2084 @ 240 ppi**
+  (welfare page 1), the expected 25% desktop increase.
+- Residual pixel diff of 3–7% across the government forms is glyph-edge
+  resampling from the higher-resolution source, not layout movement — confirmed
+  by zooming in on identical text at 200 DPI before and after.
+
 ### 5.6 Other fixes
 
 - **Preview/PDF parity** — the preview dialog omitted the `croppedCoverPhoto`
