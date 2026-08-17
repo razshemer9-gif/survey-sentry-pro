@@ -1,11 +1,17 @@
 /**
  * Convert a File (image) into a downscaled JPEG dataURL for storage.
- * Keeps localStorage small and PDF generation snappy.
+ *
+ * Sized for the PDF, not the screen: report photos are rasterized at up to
+ * 2.5x by the PDF generator, so a photo shown ~350px wide needs ~900 device px.
+ * 2000px on the long edge covers full-width photos with headroom, and q=0.90
+ * avoids the visible JPEG ringing that q=0.82 left in flat areas like walls
+ * and sky. Only affects newly added photos — existing ones keep their
+ * original encoding.
  */
 export async function fileToCompressedDataUrl(
   file: File,
-  maxDim = 1600,
-  quality = 0.82,
+  maxDim = 2000,
+  quality = 0.9,
 ): Promise<string> {
   const dataUrl = await readAsDataURL(file);
   const img = await loadImage(dataUrl);
