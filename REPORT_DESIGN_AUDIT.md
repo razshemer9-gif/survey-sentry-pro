@@ -337,20 +337,31 @@ headless Chromium *before* any source change. After each migration step the
 same 21 were regenerated and diffed page-by-page (page count, page size,
 per-pixel delta above an anti-aliasing tolerance).
 
-That baseline is what makes this refactor safe, and it caught a real regression
-(§5.4).
+That baseline is what makes this refactor safe. It caught a real regression
+(§5.4), and it also caught a false alarm worth noting: one fixture reported a
+1 → 5 page jump that turned out to be the capture harness picking up a stray
+in-flight download from an earlier interrupted run, not a rendering change.
+Re-running it cleanly gave 0.00%. A structural diff is a prompt to investigate,
+not a verdict on its own — confirm the artefact before believing it.
 
 ### 5.3 Migration status
 
-| Report type | Migration | Expected vs baseline |
+Measured against the baseline, all three data sizes per type:
+
+| Report type | Migration | Measured vs baseline |
 | --- | --- | --- |
-| `accessibility_form_8` | Shell + checkbox dedup, statutory geometry untouched | **pixel-identical** |
-| `welfare_inspection` | Shell + `FormLine`/checkbox dedup, statutory geometry untouched | **pixel-identical** |
-| `education_safety` | Full — tokens, primitives, pagination wrappers | intentionally re-spaced |
-| `risk_survey` | Full — tokens, primitives, pagination wrappers | intentionally re-spaced |
-| `element_stability` | Shell only | near-identical |
-| `accessibility` | Shell only | near-identical |
-| `general_safety` | Shell only | near-identical |
+| `accessibility_form_8` | Shell + checkbox dedup, statutory geometry untouched | **0.00% — identical** |
+| `welfare_inspection` | Shell + `FormLine`/checkbox dedup, statutory geometry untouched | **0.00% — identical** |
+| `element_stability` | Shared shell | **0.00% — identical** |
+| `accessibility` | Shared shell | **0.00% — identical** |
+| `general_safety` | Shared shell | **0.00% — identical** |
+| `education_safety` | Full — tokens, primitives, pagination wrappers | re-spaced; page counts held |
+| `risk_survey` | Full — tokens, primitives, pagination wrappers | re-spaced; page counts held |
+
+**15 of 21 fixtures pixel-identical.** The 6 that changed are the two fully
+migrated branches, whose spacing was deliberately normalised onto the token
+scale; page counts held at every size and content was visually confirmed
+present.
 
 The three "shell only" branches keep their existing inline styles. This is a
 deliberate stopping point, not an oversight: the design system and the
