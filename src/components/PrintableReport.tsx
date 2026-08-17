@@ -15,25 +15,6 @@ import { ACCESSIBILITY_HEADER_BANNER_APPROVAL, ACCESSIBILITY_HEADER_BANNER_SURVE
 import { GENERAL_SAFETY_HEADER_BANNER_APPROVAL, GENERAL_SAFETY_HEADER_BANNER_SURVEY } from "@/lib/general-safety-banner";
 import { RISK_SURVEY_DEFAULT_FENCING_NOTE, RISK_SURVEY_SUBTITLE } from "@/lib/risk-survey";
 import { RISK_SURVEY_HEADER_BANNER } from "@/lib/risk-survey-banner";
-import {
-  Checkbox as DsCheckbox,
-  FormLine,
-  ImageFrame,
-  KeepTogether,
-  PageBreak,
-  PageFooter,
-  ReportShell,
-  SignatureBlock,
-  border,
-  color,
-  image,
-  leading,
-  page,
-  radius,
-  space,
-  text,
-  weight,
-} from "@/reporting/design-system";
 import React, { forwardRef } from "react";
 
 interface Props {
@@ -83,11 +64,11 @@ export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, sett
   const hasHeaderBanner = isAccessibilityType || isGeneralSafetyType;
 
   const hasPriorities = report.items.some(i => i.priority !== undefined);
-  const PRIORITY_GROUPS: { priority: 0 | 1 | 2 | undefined; label: string; fg: string; bg: string; edge: string }[] = [
-    { priority: 0, label: "קדימות 0 — דחוף",  fg: "#dc2626", bg: color.dangerBg, edge: "#fecaca" },
-    { priority: 1, label: "קדימות 1 — גבוה",  fg: "#ea580c", bg: "#fff7ed", edge: "#fdba74" },
-    { priority: 2, label: "קדימות 2 — רגיל",  fg: color.warning, bg: color.warningBg, edge: "#fde68a" },
-    { priority: undefined, label: "ממצאים נוספים", fg: color.muted, bg: color.surfaceAlt, edge: color.border },
+  const PRIORITY_GROUPS: { priority: 0 | 1 | 2 | undefined; label: string; color: string; bg: string; border: string }[] = [
+    { priority: 0, label: "קדימות 0 — דחוף",  color: "#dc2626", bg: "#fef2f2", border: "#fecaca" },
+    { priority: 1, label: "קדימות 1 — גבוה",  color: "#ea580c", bg: "#fff7ed", border: "#fdba74" },
+    { priority: 2, label: "קדימות 2 — רגיל",  color: "#d97706", bg: "#fffbeb", border: "#fde68a" },
+    { priority: undefined, label: "ממצאים נוספים", color: "#64748b", bg: "#f8fafc", border: "#e2e8f0" },
   ];
   const PRIORITY_BADGE_LABEL = ["דחוף", "גבוה", "רגיל"] as const;
 
@@ -97,79 +78,80 @@ export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, sett
       : (item.referencePhoto ? [item.referencePhoto] : []);
     const priorityMeta = item.priority !== undefined ? PRIORITY_GROUPS.find(g => g.priority === item.priority) : undefined;
     return (
-      <KeepTogether
+      <div
         key={item.id}
-        style={{ border: `${border.hairline}px solid ${color.border}`, borderRadius: radius.lg, overflow: "hidden", background: color.surface }}
+        data-pdf-no-break=""
+        style={{ border: "1px solid #e2e8f0", borderRadius: 14, overflow: "hidden", background: "#fff", pageBreakInside: "avoid" }}
       >
         {/* ── Section 1: Template / professional data ── */}
-        <KeepTogether style={{ padding: `${space.xl}px ${space["2xl"]}px`, background: color.surfaceAlt, borderBottom: `${border.hairline}px solid ${color.border}` }}>
-          <div style={{ fontSize: text.body, color: color.muted, marginBottom: space.xs, display: "flex", alignItems: "center", gap: space.md }}>
+        <div data-pdf-no-break="" style={{ padding: "16px 20px 14px", background: "#f8fafc", borderBottom: "1px solid #e2e8f0" }}>
+          <div style={{ fontSize: 13, color: "#64748b", marginBottom: 3, display: "flex", alignItems: "center", gap: 8 }}>
             <span>ממצא {globalIdx + 1}</span>
             {priorityMeta && item.priority !== undefined && (
-              <span style={{ background: priorityMeta.bg, color: priorityMeta.fg, border: `${border.hairline}px solid ${priorityMeta.edge}`, borderRadius: 999, padding: `${space.xs}px ${space.md}px`, fontSize: text.caption, fontWeight: weight.bold }}>
+              <span style={{ background: priorityMeta.bg, color: priorityMeta.color, border: `1px solid ${priorityMeta.border}`, borderRadius: 999, padding: "1px 8px", fontSize: 11, fontWeight: 700 }}>
                 {PRIORITY_BADGE_LABEL[item.priority]}
               </span>
             )}
           </div>
-          <div style={{ fontSize: text.h2, fontWeight: weight.bold, color: color.ink }}>{item.title}</div>
+          <div style={{ fontSize: 19, fontWeight: 700, color: "#0f172a" }}>{item.title}</div>
           {item.notes && item.notes.split("\n").map((line, li) => (
-            <div key={`n${li}`} style={{ marginTop: li === 0 ? space.md : 0, fontSize: text.h4, color: color.inkSoft, lineHeight: leading.normal, whiteSpace: "pre-wrap" }}>
-              {li === 0 ? <><span style={{ fontWeight: weight.bold }}>ממצא: </span>{line}</> : line}
+            <div key={`n${li}`} data-pdf-no-break="" style={{ marginTop: li === 0 ? 10 : 0, fontSize: 15, color: "#334155", lineHeight: 1.7, whiteSpace: "pre-wrap" }}>
+              {li === 0 ? <><span style={{ fontWeight: 700 }}>ממצא: </span>{line}</> : line}
             </div>
           ))}
           {item.suggestedCorrection && item.suggestedCorrection.split("\n").map((line, li) => (
-            <div key={`c${li}`} style={{ marginTop: li === 0 ? space.md : 0, fontSize: text.h4, color: color.brand, lineHeight: leading.normal, whiteSpace: "pre-wrap" }}>
-              {li === 0 ? <><span style={{ fontWeight: weight.bold }}>פתרון: </span>{line}</> : line}
+            <div key={`c${li}`} data-pdf-no-break="" style={{ marginTop: li === 0 ? 8 : 0, fontSize: 15, color: "#1e40af", lineHeight: 1.7, whiteSpace: "pre-wrap" }}>
+              {li === 0 ? <><span style={{ fontWeight: 700 }}>פתרון: </span>{line}</> : line}
             </div>
           ))}
           {refPhotos.length > 0 && (
-            <div style={{ marginTop: space.lg, display: "grid", gridTemplateColumns: refPhotos.length > 1 ? "1fr 1fr" : "260px", gap: space.md }}>
+            <div data-pdf-no-break="" style={{ marginTop: 12, display: "grid", gridTemplateColumns: refPhotos.length > 1 ? "1fr 1fr" : "260px", gap: 10 }}>
               {refPhotos.map((p, i) => (
-                <KeepTogether key={i}>
+                <div key={i} data-pdf-no-break="">
                   <img
                     src={p}
                     alt={item.referenceLabel || `פרט ${i + 1}`}
-                    style={{ maxWidth: "100%", height: "auto", display: "block", background: color.surface, borderRadius: radius.md, border: `${border.hairline}px solid #bfdbfe` }}
+                    style={{ maxWidth: "100%", height: "auto", display: "block", background: "#fff", borderRadius: 8, border: "1px solid #bfdbfe" }}
                   />
-                </KeepTogether>
+                </div>
               ))}
             </div>
           )}
-        </KeepTogether>
+        </div>
 
         {/* ── Section 2: Client / field data ── */}
         {(item.photo || item.fieldNotes || (item.estimatedCost || 0) > 0) && (
-          <KeepTogether style={{ padding: `${space.lg}px ${space["2xl"]}px` }}>
+          <div data-pdf-no-break="" style={{ padding: "14px 20px" }}>
             {(item.photo || item.fieldNotes) && (
-              <div style={{ display: "grid", gridTemplateColumns: item.photo && item.fieldNotes ? "1fr 1fr" : "1fr", gap: space.lg, alignItems: "start" }}>
+              <div style={{ display: "grid", gridTemplateColumns: item.photo && item.fieldNotes ? "1fr 1fr" : "1fr", gap: 14, alignItems: "start" }}>
                 {item.photo && (
-                  <KeepTogether>
-                    <div style={{ fontSize: text.body, color: color.muted, marginBottom: space.sm, fontWeight: weight.semibold }}>מצב קיים</div>
+                  <div data-pdf-no-break="">
+                    <div style={{ fontSize: 13, color: "#64748b", marginBottom: 5, fontWeight: 600 }}>מצב קיים</div>
                     <img
                       src={item.photo}
                       alt="מצב קיים"
-                      style={{ maxWidth: "100%", height: "auto", display: "block", borderRadius: radius.md, border: `${border.hairline}px solid ${color.border}` }}
+                      style={{ maxWidth: "100%", height: "auto", display: "block", borderRadius: 8, border: "1px solid #e2e8f0" }}
                     />
-                  </KeepTogether>
+                  </div>
                 )}
                 {item.fieldNotes && (
-                  <KeepTogether>
-                    <div style={{ fontSize: text.body, color: color.muted, marginBottom: space.sm, fontWeight: weight.semibold }}>פירוט מצב קיים</div>
-                    <div style={{ fontSize: text.h4, color: color.inkSoft, lineHeight: leading.normal, whiteSpace: "pre-wrap", background: color.surfaceAlt, borderRadius: radius.md, padding: `${space.lg}px`, border: `${border.hairline}px solid ${color.border}` }}>
+                  <div data-pdf-no-break="">
+                    <div style={{ fontSize: 13, color: "#64748b", marginBottom: 5, fontWeight: 600 }}>פירוט מצב קיים</div>
+                    <div style={{ fontSize: 15, color: "#334155", lineHeight: 1.7, whiteSpace: "pre-wrap", background: "#f8fafc", borderRadius: 8, padding: "12px 14px", border: "1px solid #e2e8f0" }}>
                       {item.fieldNotes}
                     </div>
-                  </KeepTogether>
+                  </div>
                 )}
               </div>
             )}
             {(item.estimatedCost || 0) > 0 && (
-              <div style={{ marginTop: space.lg, display: "inline-block", background: color.dangerBg, color: color.danger, border: `${border.hairline}px solid #fecaca`, fontSize: text.h4, padding: `${space.sm}px ${space.lg}px`, borderRadius: 999, fontWeight: weight.semibold }}>
-                <span style={{ unicodeBidi: "plaintext" }}>אומדן עלות תיקון: {(item.quantity ?? 1) > 1 ? `${formatCurrency(item.estimatedCost)} × ${item.quantity} = ${formatCurrency(itemTotal(item))}` : formatCurrency(item.estimatedCost)}</span>
+              <div style={{ marginTop: 12, display: "inline-block", background: "#fef2f2", color: "#991b1b", border: "1px solid #fecaca", fontSize: 15, padding: "6px 14px", borderRadius: 999, fontWeight: 600 }}>
+                אומדן עלות תיקון: {(item.quantity ?? 1) > 1 ? `${formatCurrency(item.estimatedCost)} × ${item.quantity} = ${formatCurrency(itemTotal(item))}` : formatCurrency(item.estimatedCost)}
               </div>
             )}
-          </KeepTogether>
+          </div>
         )}
-      </KeepTogether>
+      </div>
     );
   };
 
@@ -188,11 +170,14 @@ export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, sett
       </h2>
     );
 
-    // Form 8's printed original uses a slightly larger, rounded box than the
-    // welfare form — hence the explicit geometry rather than the defaults.
     const Checkbox = ({ checked }: { checked?: boolean }) => (
-      <DsCheckbox checked={checked} size={16} borderWidth={1.5} cornerRadius={2}
-        tickWidth={11} tickHeight={9} offsetTop={0} />
+      <span style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", width: 16, height: 16, border: "1.5px solid #0f172a", borderRadius: 2, boxSizing: "border-box", flexShrink: 0 }}>
+        {checked && (
+          <svg width="11" height="9" viewBox="0 0 11 9" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M1 4.5L4 7.5L10 1" stroke="#0f172a" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+        )}
+      </span>
     );
 
     const Cell = ({ label, value, full }: { label: string; value?: string; full?: boolean }) => (
@@ -217,7 +202,8 @@ export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, sett
     );
 
     return (
-      <ReportShell ref={ref}>
+      <div ref={ref} dir="rtl" lang="he"
+        style={{ width: "794px", background: "#ffffff", color: "#0f172a", fontFamily: "Heebo, Assistant, sans-serif" }}>
         <section style={{ padding: "32px 48px 4px" }}>
 
           {/* Recipient + subject */}
@@ -368,13 +354,13 @@ export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, sett
 
         </section>
         {showFooter && <Footer />}
-      </ReportShell>
+      </div>
     );
   }
 
   // ── Element stability inspection: דוח בדיקת יציבות אלמנטים ─────────────────
   if (report.surveyType === "element_stability") {
-    const accent = color.brand;
+    const accent = "#1e3a8a"; // blue accent (matches brand)
     const inspectorName = report.elementInspectorName || sigName;
 
     // Always the company's own identity — not personalized per consultant
@@ -386,28 +372,28 @@ export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, sett
     // Explicit top/bottom padding (not margin) so the captured box fully
     // contains the text with breathing room and can never clip the last line.
     const ElementFooter = () => (
-      <PageFooter style={{ padding: `${space.lg}px 0` }}>
+      <div data-pdf-page-footer="" style={{ direction: "rtl", padding: "14px 0 12px", boxSizing: "border-box" }}>
         {footerImg ? (
           <img src={footerImg} alt="footer" crossOrigin="anonymous" style={{ width: "100%", height: "auto", display: "block" }} />
         ) : (
           <>
-            <div style={{ height: border.heavy, background: accent, borderRadius: space.xs, marginBottom: space.md }} />
-            <div style={{ textAlign: "center", fontSize: text.table, color: color.ink, lineHeight: leading.relaxed }}>
-              <div style={{ fontWeight: weight.bold }}>{footer.company}{footer.phone ? `, נייד : ${footer.phone}` : ""}</div>
+            <div style={{ height: 3, background: "#2f5eb3", borderRadius: 2, marginBottom: 8 }} />
+            <div style={{ textAlign: "center", fontSize: 12, color: "#0f172a", lineHeight: 1.9 }}>
+              <div style={{ fontWeight: 700 }}>{footer.company}{footer.phone ? `, נייד : ${footer.phone}` : ""}</div>
               <div>
-                <span style={{ fontWeight: weight.bold }}>דוא"ל: </span>
-                <span style={{ color: color.brandAlt, textDecoration: "underline" }} dir="ltr">{footer.email}</span>
+                <span style={{ fontWeight: 700 }}>דוא"ל: </span>
+                <span style={{ color: "#1d4ed8", textDecoration: "underline" }}>{footer.email}</span>
                 {footer.website ? (
                   <>
                     {"   אתר : "}
-                    <span style={{ color: color.brandAlt, textDecoration: "underline" }} dir="ltr">{footer.website}</span>
+                    <span style={{ color: "#1d4ed8", textDecoration: "underline" }}>{footer.website}</span>
                   </>
                 ) : null}
               </div>
             </div>
           </>
         )}
-      </PageFooter>
+      </div>
     );
 
     // Valid-until may carry a time part (datetime-local: "YYYY-MM-DDTHH:mm").
@@ -431,24 +417,25 @@ export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, sett
     const sigImg = showSig ? (report.signatureDataUrl || fmt.signatureImage) : undefined;
 
     const CoverLine = ({ label, value }: { label: string; value?: string }) => (
-      <div style={{ display: "flex", alignItems: "baseline", gap: space.md, marginBottom: space.md, fontSize: text.bodyLg }}>
-        <span style={{ fontWeight: weight.bold, flexShrink: 0 }}>{label}:</span>
+      <div style={{ display: "flex", alignItems: "baseline", gap: 6, marginBottom: 10, fontSize: 14, direction: "rtl" }}>
+        <span style={{ fontWeight: 700, flexShrink: 0 }}>{label}:</span>
         <span>{value || ""}</span>
       </div>
     );
 
     return (
-      <ReportShell ref={ref}>
-        <section style={{ padding: `${space["4xl"]}px ${page.padXForm}px ${space["3xl"]}px` }}>
+      <div ref={ref} dir="rtl" lang="he"
+        style={{ width: "794px", background: "#ffffff", color: "#0f172a", fontFamily: "Heebo, Assistant, sans-serif" }}>
+        <section style={{ padding: "32px 56px 28px", background: "#fff" }}>
           {/* 1. Header banner — dedicated to this report type only */}
-          <div style={{ marginBottom: isElementApproval ? space.lg : space["2xl"] }}>
+          <div style={{ marginBottom: isElementApproval ? 12 : 22 }}>
             <img src={ELEMENT_STABILITY_HEADER_BANNER} alt="דו״ח יציבות קונסטרוקציה" crossOrigin="anonymous"
               style={{ width: "100%", height: "auto", display: "block" }} />
           </div>
           {/* Title only shown when it differs from the banner's baked-in "דו״ח
               יציבות קונסטרוקציה" — i.e. only in approval mode. */}
           {isElementApproval && (
-            <h1 style={{ fontSize: text.h1, fontWeight: weight.heavy, color: accent, textAlign: "center", margin: `0 0 ${space["2xl"]}px` }}>
+            <h1 style={{ fontSize: 22, fontWeight: 800, color: accent, textAlign: "center", margin: "0 0 20px" }}>
               אישור יציבות קונסטרוקציה
             </h1>
           )}
@@ -461,83 +448,83 @@ export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, sett
           <CoverLine label={isElementApproval ? "תוקף האישור" : "תוקף הבדיקה"} value={validUntilText} />
 
           {report.elementIntroText && (
-            <div style={{ marginTop: space.lg, fontSize: text.bodyLg, lineHeight: leading.relaxed, whiteSpace: "pre-wrap" }}>
-              <span style={{ fontWeight: weight.bold }}>הקדמה: </span>{report.elementIntroText}
+            <div style={{ marginTop: 14, fontSize: 14, lineHeight: 1.8, whiteSpace: "pre-wrap", direction: "rtl" }}>
+              <span style={{ fontWeight: 700 }}>הקדמה: </span>{report.elementIntroText}
             </div>
           )}
 
           {/* 3. Elements table — container may span pages; individual rows never split */}
-          <div style={{ marginTop: space["2xl"], border: `${border.hairline}px solid ${accent}`, fontSize: text.body }}>
-            <KeepTogether style={{ display: "grid", gridTemplateColumns: "60px 1.6fr 1fr", background: color.surfaceTint, fontWeight: weight.heavy }}>
-              <div style={{ padding: `${space.md}px`, borderLeft: `${border.hairline}px solid ${accent}`, textAlign: "center" }}>מס׳ סד׳</div>
-              <div style={{ padding: `${space.md}px`, borderLeft: `${border.hairline}px solid ${accent}`, textAlign: "center" }}>תיאור האלמנט / תמונה</div>
-              <div style={{ padding: `${space.md}px`, textAlign: "center" }}>תקין / לא תקין</div>
-            </KeepTogether>
+          <div style={{ marginTop: 22, border: `1px solid ${accent}`, direction: "rtl", fontSize: 13 }}>
+            <div data-pdf-no-break="" style={{ display: "grid", gridTemplateColumns: "60px 1.6fr 1fr", background: "#eff6ff", fontWeight: 800 }}>
+              <div style={{ padding: "8px 6px", borderLeft: `1px solid ${accent}`, textAlign: "center" }}>מס׳ סד׳</div>
+              <div style={{ padding: "8px 6px", borderLeft: `1px solid ${accent}`, textAlign: "center" }}>תיאור האלמנט / תמונה</div>
+              <div style={{ padding: "8px 6px", textAlign: "center" }}>תקין / לא תקין</div>
+            </div>
             {report.items.map((item, i) => {
               const ok = item.status === "compliant";
               return (
-                <KeepTogether key={item.id} style={{ display: "grid", gridTemplateColumns: "60px 1.6fr 1fr", borderTop: `${border.hairline}px solid ${accent}` }}>
-                  <div style={{ padding: `${space.md}px`, borderLeft: `${border.hairline}px solid ${accent}`, textAlign: "center", fontWeight: weight.bold, color: accent }}>{i + 1}</div>
-                  <div style={{ padding: `${space.md}px`, borderLeft: `${border.hairline}px solid ${accent}` }}>
+                <div key={item.id} data-pdf-no-break="" style={{ display: "grid", gridTemplateColumns: "60px 1.6fr 1fr", borderTop: `1px solid ${accent}` }}>
+                  <div style={{ padding: "10px 6px", borderLeft: `1px solid ${accent}`, textAlign: "center", fontWeight: 700, color: accent }}>{i + 1}</div>
+                  <div style={{ padding: "10px 10px", borderLeft: `1px solid ${accent}` }}>
                     {item.title && (
-                      <div style={{ fontSize: text.bodyLg, lineHeight: leading.normal, whiteSpace: "pre-wrap", marginBottom: item.photo ? space.md : 0 }}>{item.title}</div>
+                      <div style={{ fontSize: 14, lineHeight: 1.7, whiteSpace: "pre-wrap", marginBottom: item.photo ? 8 : 0 }}>{item.title}</div>
                     )}
                     {item.photo && (
                       <img src={item.photo} alt={item.title || `אלמנט ${i + 1}`} crossOrigin="anonymous"
-                        style={{ maxWidth: "100%", height: "auto", display: "block", borderRadius: radius.md, border: `${border.hairline}px solid ${color.border}` }} />
+                        style={{ maxWidth: "100%", height: "auto", display: "block", borderRadius: 6, border: "1px solid #e2e8f0" }} />
                     )}
                   </div>
-                  <div style={{ padding: `${space.md}px` }}>
-                    <div style={{ textAlign: "center", fontWeight: weight.heavy, fontSize: text.h4, color: ok ? accent : color.danger }}>
+                  <div style={{ padding: "10px 10px" }}>
+                    <div style={{ textAlign: "center", fontWeight: 800, fontSize: 15, color: ok ? accent : "#b91c1c" }}>
                       {ok ? "תקין" : "לא תקין"}
                     </div>
                     {item.fieldNotes && (
-                      <div style={{ marginTop: space.md, fontSize: text.body, lineHeight: leading.normal, color: color.ink, whiteSpace: "pre-wrap", textAlign: "right" }}>
+                      <div style={{ marginTop: 8, fontSize: 13, lineHeight: 1.7, color: "#0f172a", whiteSpace: "pre-wrap", textAlign: "right", unicodeBidi: "plaintext" }}>
                         {item.fieldNotes}
                       </div>
                     )}
                   </div>
-                </KeepTogether>
+                </div>
               );
             })}
           </div>
 
           {/* 5. Notes */}
           {report.elementNotes && (
-            <KeepTogether style={{ marginTop: space["2xl"] }}>
-              <h3 style={{ fontSize: text.h3, fontWeight: weight.heavy, color: accent, margin: `0 0 ${space.sm}px` }}>הערות:</h3>
-              <div style={{ fontSize: text.bodyLg, lineHeight: leading.relaxed, whiteSpace: "pre-wrap" }}>{report.elementNotes}</div>
-            </KeepTogether>
+            <div data-pdf-no-break="" style={{ marginTop: 20 }}>
+              <h3 style={{ fontSize: 16, fontWeight: 800, color: accent, margin: "0 0 6px" }}>הערות:</h3>
+              <div style={{ fontSize: 14, lineHeight: 1.8, whiteSpace: "pre-wrap", direction: "rtl", unicodeBidi: "plaintext" }}>{report.elementNotes}</div>
+            </div>
           )}
 
           {/* 6+7. Result + fixed terms — kept together on one page */}
-          <KeepTogether style={{ marginTop: space["3xl"] }}>
-            <h3 style={{ fontSize: text.h2, fontWeight: weight.heavy, color: accent, margin: `0 0 ${space.md}px` }}>
+          <div data-pdf-no-break="" style={{ marginTop: 24 }}>
+            <h3 style={{ fontSize: 18, fontWeight: 800, color: accent, margin: "0 0 10px" }}>
               {resultText}
             </h3>
             {/* When 'unstable', omit the stable-only clauses (1,3,4,8); keep the rest. */}
-            <div>
+            <div style={{ direction: "rtl" }}>
               {terms
                 .filter((_, i) => report.elementStabilityStatus !== "unstable" || !ELEMENT_STABILITY_STABLE_ONLY_INDICES.includes(i))
                 .map((t, i) => (
-                  <div key={i} style={{ display: "flex", alignItems: "flex-start", gap: space.md, marginBottom: space.sm, fontSize: text.body, lineHeight: leading.normal }}>
-                    <span style={{ flexShrink: 0, fontWeight: weight.bold, minWidth: 20, textAlign: "right", color: accent }}>{i + 1}.</span>
+                  <div key={i} style={{ display: "flex", alignItems: "flex-start", gap: 8, marginBottom: 6, fontSize: 13, lineHeight: 1.7 }}>
+                    <span style={{ flexShrink: 0, fontWeight: 700, minWidth: 20, textAlign: "right", color: accent }}>{i + 1}.</span>
                     <span style={{ flex: 1, whiteSpace: "pre-wrap", unicodeBidi: "plaintext" }}>{t}</span>
                   </div>
                 ))}
             </div>
-          </KeepTogether>
+          </div>
 
           {/* 9. Signature/stamp — left side of the page, last page only, when present */}
           {sigImg && (
-            <KeepTogether style={{ marginTop: space["6xl"], display: "flex", justifyContent: "flex-end" }}>
+            <div data-pdf-no-break="" style={{ marginTop: 48, display: "flex", justifyContent: "flex-end", direction: "rtl" }}>
               <div style={{ textAlign: "center" }}>
-                <img src={sigImg} alt="חתימה" crossOrigin="anonymous" style={{ maxHeight: 70, maxWidth: image.signatureMaxW, height: "auto", display: "block", margin: "0 auto", objectFit: "contain" }} />
-                <div style={{ borderTop: `${border.hairline}px solid ${color.ink}`, marginTop: space.sm, paddingTop: space.sm, fontSize: text.small, color: color.muted }}>
+                <img src={sigImg} alt="חתימה" crossOrigin="anonymous" style={{ maxHeight: 70, maxWidth: 200, height: "auto", display: "block", margin: "0 auto" }} />
+                <div style={{ borderTop: "1px solid #0f172a", marginTop: 4, paddingTop: 4, fontSize: 12, color: "#64748b" }}>
                   חתימת הבודק{inspectorName ? ` — ${inspectorName}` : ""}
                 </div>
               </div>
-            </KeepTogether>
+            </div>
           )}
 
         </section>
@@ -546,83 +533,94 @@ export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, sett
             can span the full page width instead of stopping at the
             section's side padding. */}
         {showFooter && <ElementFooter />}
-      </ReportShell>
+      </div>
     );
   }
 
   // ── Risk survey: תיעוד תמונות מפגעים לפני אירוע ─────────────────────────────
   if (report.surveyType === "risk_survey") {
-    const accent = color.brand;
+    const accent = "#1e3a8a";
     const fencingNote = report.riskFencingNote ?? RISK_SURVEY_DEFAULT_FENCING_NOTE;
     const showFencingNote = report.riskFencingNoteEnabled !== false && fencingNote.trim().length > 0;
 
     return (
-      // pageNumbers: opt-in digits-only "1 / N" indicator — this is the only
-      // report type using it (see the pagination contract in the design system).
-      <ReportShell ref={ref} pageNumbers>
+      // data-pdf-page-numbers: opt-in digits-only "1 / N" page indicator
+      // (see pdf-generate.ts) — this report type is the only one using it.
+      <div ref={ref} dir="rtl" lang="he" data-pdf-page-numbers=""
+        style={{ width: "794px", background: "#ffffff", color: "#0f172a", fontFamily: "Heebo, Assistant, sans-serif" }}>
         {/* Full-bleed banner — title text is already baked into the image */}
         <img src={RISK_SURVEY_HEADER_BANNER} alt="" style={{ width: "100%", display: "block" }} />
 
-        <section style={{ padding: `${space["3xl"]}px ${page.padX}px ${space["5xl"]}px` }}>
+        <section style={{ padding: "24px 48px 44px" }}>
 
           {/* Place name + logo, since the banner has no room for the dynamic event name */}
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", borderBottom: `${border.heavy}px solid ${accent}`, paddingBottom: space.xl, marginBottom: space.md }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", borderBottom: `3px solid ${accent}`, paddingBottom: 16, marginBottom: 8 }}>
             <div>
               {report.placeName && (
-                <h1 style={{ margin: 0, fontSize: text.h1, fontWeight: weight.heavy, color: accent }}>{report.placeName}</h1>
+                <h1 style={{ margin: 0, fontSize: 22, fontWeight: 800, color: accent }}>{report.placeName}</h1>
               )}
-              <div style={{ marginTop: space.sm, fontSize: text.body, color: color.muted }}>{RISK_SURVEY_SUBTITLE}</div>
+              <div style={{ marginTop: 6, fontSize: 13, color: "#64748b" }}>{RISK_SURVEY_SUBTITLE}</div>
             </div>
             {coverLogo && (
-              <img src={coverLogo} alt="לוגו" crossOrigin="anonymous" style={{ maxHeight: image.logoMaxH, maxWidth: image.logoMaxW, height: "auto", width: "auto", display: "block", objectFit: "contain" }} />
+              <img src={coverLogo} alt="לוגו" crossOrigin="anonymous" style={{ maxHeight: 60, maxWidth: 150, height: "auto", width: "auto", display: "block", objectFit: "contain" }} />
             )}
           </div>
 
           {/* Compact event details — one slim line, not a form */}
           {(report.clientName || report.address || report.surveyDate || report.riskInspectorName) && (
-            <div style={{ display: "flex", flexWrap: "wrap", gap: `${space.sm}px ${space["2xl"]}px`, fontSize: text.small, color: color.inkSoft, marginBottom: space["2xl"] }}>
-              {report.clientName && <span><span style={{ fontWeight: weight.bold }}>לקוח/רשות: </span>{report.clientName}</span>}
-              {report.address && <span><span style={{ fontWeight: weight.bold }}>מיקום: </span><span style={{ unicodeBidi: "plaintext" }}>{report.address}</span></span>}
-              {report.surveyDate && <span><span style={{ fontWeight: weight.bold }}>תאריך סיור: </span><span style={{ unicodeBidi: "plaintext" }}>{formatHebrewDate(report.surveyDate)}</span></span>}
-              {report.riskInspectorName && <span><span style={{ fontWeight: weight.bold }}>עורך הדו״ח: </span>{report.riskInspectorName}</span>}
+            <div style={{ display: "flex", flexWrap: "wrap", gap: "4px 20px", fontSize: 12.5, color: "#334155", marginBottom: 22 }}>
+              {report.clientName && <span><span style={{ fontWeight: 700 }}>לקוח/רשות: </span>{report.clientName}</span>}
+              {report.address && <span><span style={{ fontWeight: 700 }}>מיקום: </span>{report.address}</span>}
+              {report.surveyDate && <span><span style={{ fontWeight: 700 }}>תאריך סיור: </span>{formatHebrewDate(report.surveyDate)}</span>}
+              {report.riskInspectorName && <span><span style={{ fontWeight: 700 }}>עורך הדו״ח: </span>{report.riskInspectorName}</span>}
             </div>
           )}
 
           {/* Photo cards — 2 per row; image + caption never split across pages */}
           {report.items.length > 0 ? (
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: space.xl }}>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
               {report.items.map((item) => (
-                <KeepTogether key={item.id} style={{ border: `${border.hairline}px solid ${color.border}`, borderRadius: radius.lg, overflow: "hidden", background: color.surface }}>
-                  {item.photo && <ImageFrame src={item.photo} height={image.cardHeight} />}
+                <div key={item.id} data-pdf-no-break="" style={{ border: "1px solid #e2e8f0", borderRadius: 12, overflow: "hidden", background: "#fff" }}>
+                  {item.photo && (
+                    <div style={{ width: "100%", height: 210, background: "#f8fafc", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                      <img src={item.photo} alt="" crossOrigin="anonymous" style={{ maxWidth: "100%", maxHeight: "100%", objectFit: "contain", display: "block" }} />
+                    </div>
+                  )}
                   {item.fieldNotes && (
-                    <div style={{ padding: `${space.md}px ${space.lg}px`, fontSize: text.body, lineHeight: leading.normal, color: color.ink, textAlign: "center", unicodeBidi: "plaintext" }}>
+                    <div style={{ padding: "10px 14px", fontSize: 13, lineHeight: 1.65, color: "#1e293b", textAlign: "center" }}>
                       {item.fieldNotes}
                     </div>
                   )}
-                </KeepTogether>
+                </div>
               ))}
             </div>
           ) : (
-            <div style={{ fontSize: text.bodyLg, color: color.mutedLight, textAlign: "center", padding: `${space["5xl"]}px 0` }}>לא נוספו תמונות</div>
+            <div style={{ fontSize: 14, color: "#94a3b8", textAlign: "center", padding: "40px 0" }}>לא נוספו תמונות</div>
           )}
 
           {/* Fencing note — appears once, at the very end, framed across the page width */}
           {showFencingNote && (
-            <KeepTogether style={{ marginTop: space["3xl"], border: `${border.thick}px solid ${accent}`, borderRadius: radius.lg, padding: `${space.xl}px ${space["2xl"]}px`, background: color.surfaceTint }}>
-              <div style={{ fontWeight: weight.heavy, color: accent, fontSize: text.bodyLg, marginBottom: space.sm }}>הנחיה לעניין הגדרות</div>
-              <div style={{ fontSize: text.body, lineHeight: leading.normal, color: color.ink, whiteSpace: "pre-wrap" }}>{fencingNote}</div>
-            </KeepTogether>
+            <div data-pdf-no-break="" style={{ marginTop: 28, border: `2px solid ${accent}`, borderRadius: 12, padding: "16px 20px", background: "#f0f4ff" }}>
+              <div style={{ fontWeight: 800, color: accent, fontSize: 14, marginBottom: 6 }}>הנחיה לעניין הגדרות</div>
+              <div style={{ fontSize: 13, lineHeight: 1.7, color: "#1e293b", whiteSpace: "pre-wrap" }}>{fencingNote}</div>
+            </div>
           )}
 
           {/* Signature — bottom of the report */}
-          <SignatureBlock
-            style={{ marginTop: space["4xl"] }}
-            src={fmt.signatureImage || report.signatureDataUrl}
-            caption={sigName || "חתימת הבודק"}
-            date={report.signatureDate}
-          />
+          <div data-pdf-no-break="" style={{ marginTop: 32 }}>
+            {(fmt.signatureImage || report.signatureDataUrl) ? (
+              <img src={fmt.signatureImage || report.signatureDataUrl} alt="חתימה" crossOrigin="anonymous"
+                style={{ maxHeight: 64, maxWidth: 200, display: "block" }} />
+            ) : (
+              <div style={{ height: 56, width: 200, borderBottom: "1px solid #94a3b8" }} />
+            )}
+            <div style={{ fontSize: 12, color: "#64748b", marginTop: 4 }}>
+              {sigName || "חתימת הבודק"}
+              {report.signatureDate ? ` • ${report.signatureDate}` : ""}
+            </div>
+          </div>
         </section>
-      </ReportShell>
+      </div>
     );
   }
 
@@ -652,12 +650,22 @@ export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, sett
       return "";
     })();
 
-    // Renders label exactly as given (colon included only where the original form has one).
-    // gap/marginBottom are the printed original's measurements, not the token scale.
+    // Renders label exactly as given (colon included only where the original form has one)
     const Line = ({ label, value }: { label: string; value?: string }) => (
-      <FormLine label={label} value={value} style={{ gap: 6, marginBottom: space.xl }} />
+      <div style={{ display: "flex", alignItems: "flex-end", gap: 6, marginBottom: 16, fontSize: 13, direction: "rtl" }}>
+        <span style={{ fontWeight: 700, flexShrink: 0 }}>{label}</span>
+        <span style={{ flex: 1, borderBottom: "1px solid #000000", paddingBottom: 5, minHeight: 21 }}>{value || ""}</span>
+      </div>
     );
-    const CheckBox = ({ checked }: { checked: boolean }) => <DsCheckbox checked={checked} />;
+    const CheckBox = ({ checked }: { checked: boolean }) => (
+      <span style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", width: 14, height: 14, border: "1px solid #0f172a", boxSizing: "border-box", flexShrink: 0, marginTop: 2 }}>
+        {checked && (
+          <svg width="10" height="8" viewBox="0 0 11 9" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M1 4.5L4 7.5L10 1" stroke="#0f172a" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+        )}
+      </span>
+    );
 
     // Original state emblem image from the official form footer
     const GovEmblem = () => (
@@ -686,7 +694,8 @@ export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, sett
     );
 
     return (
-      <ReportShell ref={ref}>
+      <div ref={ref} dir="rtl" lang="he"
+        style={{ width: "794px", background: "#ffffff", color: "#0f172a", fontFamily: "Heebo, Assistant, sans-serif" }}>
 
         {/* Page 1: Header + כללי */}
         <section style={{ padding: "40px 56px", background: "#fff" }}>
@@ -985,7 +994,7 @@ export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, sett
           );
         })()}
 
-      </ReportShell>
+      </div>
     );
   }
 
@@ -1237,18 +1246,28 @@ export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, sett
       </div>
     );
   }
-
   // ─────────────────────────────────────────────────────────────────────────
 
   return (
-    <ReportShell ref={ref}>
+    <div
+      ref={ref}
+      className="report-preview"
+      dir="rtl"
+      lang="he"
+      style={{
+        width: "794px",
+        background: "#ffffff",
+        color: "#0f172a",
+        fontFamily: "Heebo, Assistant, sans-serif",
+      }}
+    >
       {/* White band — outside the blue section so html2canvas never composites it against a colored parent.
           Banner-carrying types (accessibility/general_safety) run the banner full-bleed, edge to edge,
           instead of inset in a padded box — the banner is a finished graphic on its own. */}
       <div
         style={{
-          backgroundColor: color.surface,
-          padding: hasHeaderBanner ? 0 : `${space["3xl"]}px ${page.padX}px`,
+          backgroundColor: "#ffffff",
+          padding: hasHeaderBanner ? 0 : "28px 48px 24px",
           display: "flex",
           flexDirection: "column",
           alignItems: "center",
@@ -1271,7 +1290,7 @@ export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, sett
           <img
             src={coverLogo}
             alt={settings.companyName || "לוגו"}
-            style={{ maxHeight: 140, height: "auto", maxWidth: "100%", objectFit: "contain" }}
+            style={{ maxHeight: 140, height: "auto", maxWidth: "100%" }}
             crossOrigin="anonymous"
           />
         )}
@@ -1283,7 +1302,7 @@ export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, sett
           padding: "0",
           position: "relative",
           background: `linear-gradient(160deg,${surveyConfig.color}dd 0%,${surveyConfig.color} 55%,${surveyConfig.color}99 100%)`,
-          color: color.surface,
+          color: "#ffffff",
           display: "flex",
           flexDirection: "column",
         }}
@@ -1292,26 +1311,27 @@ export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, sett
             precedes this section; banner-carrying types flow the banner's
             own (already dark) bottom edge straight into the color below. */}
         {!hasHeaderBanner && (
-          <div style={{ height: space["5xl"], background: `linear-gradient(to bottom, ${color.surface} 0%, ${surveyConfig.color}dd 100%)` }} />
+          <div style={{ height: 40, background: `linear-gradient(to bottom, #ffffff 0%, ${surveyConfig.color}dd 100%)` }} />
         )}
 
-        <div style={{ padding: hasHeaderBanner ? `${space.xl}px ${page.padX}px` : `${space.md}px ${page.padX}px ${space["3xl"]}px` }}>
+        <div style={{ padding: hasHeaderBanner ? "16px 48px" : "10px 48px 24px" }}>
           {!hasHeaderBanner && (
-            <h1 style={{ fontSize: text.display, fontWeight: weight.heavy, lineHeight: leading.tight, margin: 0 }}>
+            <h1 style={{ fontSize: 46, fontWeight: 800, lineHeight: 1.05, margin: 0 }}>
               {(() => {
                 const base = fmt.reportTitle || surveyConfig.pdfTitle;
                 return isApproval ? base.replace(/^סקר/, "אישור") : base;
               })()}
             </h1>
           )}
-          <div style={{ fontSize: text.h1, marginTop: hasHeaderBanner ? 0 : space.lg, opacity: 0.95 }}>{report.placeName || "ללא שם"}</div>
+          <div style={{ fontSize: 22, marginTop: hasHeaderBanner ? 0 : 14, opacity: 0.95 }}>{report.placeName || "ללא שם"}</div>
         </div>
 
-        <KeepTogether
+        <div
+          data-pdf-no-break=""
           style={{
-            margin: `${space["3xl"]}px 0 0`,
-            background: color.surface,
-            color: color.ink,
+            margin: "24px 0 0",
+            background: "#ffffff",
+            color: "#0f172a",
           }}
         >
           {report.coverPhoto && (
@@ -1320,17 +1340,17 @@ export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, sett
               alt="cover"
               width={698}
               height={400}
-              style={{ width: "100%", height: 400, display: "block", objectFit: "cover" }}
+              style={{ width: "100%", height: 400, display: "block" }}
             />
           )}
           <div style={{
-            padding: `${space["3xl"]}px`,
+            padding: "24px 28px",
             display: "grid",
             gridTemplateColumns: "1fr 1fr",
-            gap: `${space.xl}px ${space["3xl"]}px`,
-            fontSize: text.h4,
-            background: color.surfaceAlt,
-            border: `${border.hairline}px solid ${color.border}`,
+            gap: "16px 28px",
+            fontSize: 15,
+            background: "#f1f5f9",
+            border: "1px solid #e2e8f0",
           }}>
             <Field label="שם המקום / העסק" value={report.placeName} />
             <Field label="שם הלקוח" value={report.clientName} />
@@ -1347,33 +1367,34 @@ export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, sett
               />
             )}
           </div>
-        </KeepTogether>
+        </div>
       </section>
 
       {/* CONSULTANT PAGE */}
-      <section style={{ padding: `${space["6xl"]}px` }}>
+      <section style={{ padding: "48px", background: "#fff" }}>
         {/* Fixed introduction */}
         {fmt.fixedIntroduction && (
-          <div style={{ fontSize: text.bodyLg, lineHeight: leading.relaxed, color: color.inkSoft, whiteSpace: "pre-wrap" }}>
+          <div style={{ fontSize: 14, lineHeight: 1.8, color: "#334155", whiteSpace: "pre-wrap" }}>
             {fmt.fixedIntroduction}
           </div>
         )}
 
-        <div style={{ marginTop: fmt.fixedIntroduction ? space["3xl"] : 0 }}>
+        <div style={{ marginTop: fmt.fixedIntroduction ? 28 : 0 }}>
           <PageHeader title="פרטי בעל המקצוע" company={settings.companyName} accentColor={surveyConfig.color} />
         </div>
 
-        <KeepTogether
+        <div
+          data-pdf-no-break=""
           style={{
-            marginTop: space["3xl"],
+            marginTop: 24,
             display: "grid",
             gridTemplateColumns: "1fr 1fr",
-            gap: `${space.xl}px ${space["3xl"]}px`,
-            fontSize: text.h4,
-            background: color.surfaceAlt,
-            border: `${border.hairline}px solid ${color.border}`,
-            borderRadius: radius.lg,
-            padding: space["3xl"],
+            gap: "18px 28px",
+            fontSize: 15,
+            background: "#f1f5f9",
+            border: "1px solid #e2e8f0",
+            borderRadius: 14,
+            padding: 24,
           }}
         >
           <Field label="חברה" value={settings.companyName} dark />
@@ -1384,26 +1405,28 @@ export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, sett
           <Field label="טלפון" value={settings.phone} dark />
           <Field label='דוא"ל' value={settings.email} dark />
           <Field label="כתובת המשרד" value={settings.address} dark />
-        </KeepTogether>
+        </div>
+
+
       </section>
 
       {/* CHECKLIST PAGE(S) */}
-      <section style={{ padding: `${space["6xl"]}px` }}>
+      <section style={{ padding: "48px", background: "#fff" }}>
         <PageHeader title="חוות דעת מקצועית" company={settings.companyName} accentColor={surveyConfig.color} />
 
-        <div style={{ marginTop: space["3xl"], display: "flex", flexDirection: "column", gap: space.lg }}>
+        <div style={{ marginTop: 24, display: "flex", flexDirection: "column", gap: 14 }}>
           {hasPriorities
-            ? PRIORITY_GROUPS.flatMap(({ priority, label, fg, bg, edge }) => {
+            ? PRIORITY_GROUPS.flatMap(({ priority, label, color, bg, border }) => {
                 const groupItems = report.items.filter(i => i.priority === priority);
                 if (groupItems.length === 0) return [];
                 return [
                   <div
                     key={`group-${String(priority ?? "none")}`}
-                    style={{ padding: `${space.md}px ${space.xl}px`, background: bg, border: `${border.thick}px solid ${edge}`, borderRadius: radius.md, display: "flex", alignItems: "center", gap: space.md, marginBottom: -space.sm }}
+                    style={{ padding: "10px 18px", background: bg, border: `2px solid ${border}`, borderRadius: 10, display: "flex", alignItems: "center", gap: 10, marginBottom: -4 }}
                   >
-                    <div style={{ width: 14, height: 14, borderRadius: "50%", background: fg, flexShrink: 0 }} />
-                    <span style={{ fontSize: text.h3, fontWeight: weight.heavy, color: fg }}>{label}</span>
-                    <span style={{ fontSize: text.body, color: color.muted, marginRight: "auto" }}>({groupItems.length} ממצאים)</span>
+                    <div style={{ width: 14, height: 14, borderRadius: "50%", background: color, flexShrink: 0 }} />
+                    <span style={{ fontSize: 16, fontWeight: 800, color }}>{label}</span>
+                    <span style={{ fontSize: 13, color: "#64748b", marginRight: "auto" }}>({groupItems.length} ממצאים)</span>
                   </div>,
                   ...groupItems.map(item => renderItem(item, report.items.indexOf(item))),
                 ];
@@ -1414,56 +1437,50 @@ export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, sett
 
         {/* Disclaimer clauses — general_safety: 1-5 always, 6 conditional */}
         {report.surveyType === "general_safety" && (
-          <>
-            <PageBreak />
-            <KeepTogether style={{ marginTop: space["4xl"], border: `${border.thick}px solid ${color.brand}`, borderRadius: radius.lg, padding: `${space["2xl"]}px ${space["3xl"]}px`, backgroundColor: color.surfaceTint }}>
-            <h3 style={{ margin: `0 0 ${space.lg}px`, fontSize: text.h2, fontWeight: weight.heavy, color: color.brand }}>הערות וסייגים</h3>
-            <div>
+          <div data-pdf-page-break="" style={{ marginTop: 32, border: "2px solid #1e3a8a", borderRadius: 14, padding: "20px 24px", backgroundColor: "#f0f4ff" }}>
+            <h3 style={{ margin: "0 0 14px", fontSize: 17, fontWeight: 800, color: "#1e3a8a" }}>הערות וסייגים</h3>
+            <div style={{ direction: "rtl" }}>
               {SAFETY_CLAUSES_FIXED.map((clause, idx) => (
-                <div key={idx} style={{ display: "flex", alignItems: "flex-start", marginBottom: space.sm, gap: space.md }}>
-                  <span style={{ flexShrink: 0, fontWeight: weight.bold, minWidth: 22, textAlign: "right", fontSize: text.body, color: color.ink }}>{idx + 1}.</span>
-                  <span style={{ flex: 1, fontSize: text.body, lineHeight: leading.relaxed, color: color.ink }}>{clause}</span>
+                <div key={idx} style={{ display: "flex", alignItems: "flex-start", marginBottom: 6, gap: 8 }}>
+                  <span style={{ flexShrink: 0, fontWeight: 700, minWidth: 22, textAlign: "right", fontSize: 13, color: "#1e293b" }}>{idx + 1}.</span>
+                  <span style={{ flex: 1, fontSize: 13, lineHeight: 1.8, color: "#1e293b" }}>{clause}</span>
                 </div>
               ))}
               {(report.selectedClauses === undefined || report.selectedClauses.includes(5)) && (
-                <div style={{ display: "flex", alignItems: "flex-start", marginBottom: space.sm, gap: space.md }}>
-                  <span style={{ flexShrink: 0, fontWeight: weight.bold, minWidth: 22, textAlign: "right", fontSize: text.body, color: color.ink }}>6.</span>
-                  <span style={{ flex: 1, fontSize: text.body, lineHeight: leading.relaxed, color: color.ink }}>{SAFETY_CLAUSE_6}</span>
+                <div style={{ display: "flex", alignItems: "flex-start", marginBottom: 6, gap: 8 }}>
+                  <span style={{ flexShrink: 0, fontWeight: 700, minWidth: 22, textAlign: "right", fontSize: 13, color: "#1e293b" }}>6.</span>
+                  <span style={{ flex: 1, fontSize: 13, lineHeight: 1.8, color: "#1e293b" }}>{SAFETY_CLAUSE_6}</span>
                 </div>
               )}
             </div>
-            </KeepTogether>
-          </>
+          </div>
         )}
 
         {/* Required approvals — general_safety only */}
         {report.surveyType === "general_safety" && (report.requiredApprovals?.length ?? 0) > 0 && (
-          <>
-            <PageBreak />
-            <KeepTogether style={{ marginTop: space["4xl"], border: `${border.thick}px solid ${color.brand}`, borderRadius: radius.lg, padding: `${space["2xl"]}px ${space["3xl"]}px`, backgroundColor: color.surfaceTint }}>
-            <h3 style={{ margin: `0 0 ${space.lg}px`, fontSize: text.h2, fontWeight: weight.heavy, color: color.brand }}>אישורים נדרשים</h3>
-            <div style={{ fontSize: text.bodyLg, border: `${border.hairline}px solid ${color.brand}`, borderRadius: radius.md, overflow: "hidden" }}>
-              <div style={{ display: "flex", backgroundColor: color.brand, color: color.surface, fontWeight: weight.bold }}>
-                <div style={{ flex: 1, padding: `${space.md}px ${space.lg}px`, textAlign: "right" }}></div>
-                <div style={{ width: 80, padding: `${space.md}px ${space.lg}px`, textAlign: "center", borderRight: `${border.hairline}px solid rgba(255,255,255,0.3)` }}>נדרש</div>
+          <div data-pdf-page-break="" style={{ marginTop: 32, border: "2px solid #1e3a8a", borderRadius: 14, padding: "20px 24px", backgroundColor: "#f0f4ff" }}>
+            <h3 style={{ margin: "0 0 12px", fontSize: 17, fontWeight: 800, color: "#1e3a8a" }}>אישורים נדרשים</h3>
+            <div style={{ direction: "rtl", fontSize: 14, border: "1px solid #1e3a8a", borderRadius: 6, overflow: "hidden" }}>
+              <div style={{ display: "flex", backgroundColor: "#1e3a8a", color: "#ffffff", fontWeight: 700 }}>
+                <div style={{ flex: 1, padding: "8px 12px", textAlign: "right" }}></div>
+                <div style={{ width: 80, padding: "8px 12px", textAlign: "center", borderRight: "1px solid rgba(255,255,255,0.3)" }}>נדרש</div>
               </div>
               {(report.requiredApprovals ?? []).map((a, i) => (
-                <KeepTogether key={i} style={{ display: "flex", backgroundColor: i % 2 === 0 ? color.surface : color.surfaceAlt, borderTop: `${border.hairline}px solid ${color.borderStrong}` }}>
-                  <div style={{ flex: 1, padding: `${space.md}px ${space.lg}px` }}>{a}</div>
-                  <div style={{ width: 80, padding: `${space.md}px ${space.lg}px`, textAlign: "center", borderRight: `${border.hairline}px solid ${color.borderStrong}` }}>
-                    <span style={{ display: "inline-block", width: 14, height: 14, backgroundColor: color.brand, borderRadius: radius.sm }} />
+                <div key={i} style={{ display: "flex", backgroundColor: i % 2 === 0 ? "#ffffff" : "#f8fafc", borderTop: "1px solid #cbd5e1" }}>
+                  <div style={{ flex: 1, padding: "9px 12px" }}>{a}</div>
+                  <div style={{ width: 80, padding: "9px 12px", textAlign: "center", borderRight: "1px solid #cbd5e1" }}>
+                    <span style={{ display: "inline-block", width: 14, height: 14, backgroundColor: "#1e3a8a", borderRadius: 3 }} />
                   </div>
-                </KeepTogether>
+                </div>
               ))}
             </div>
-            </KeepTogether>
-          </>
+          </div>
         )}
 
         {/* Opinion summary */}
         {report.accessibilityComplianceStatus && (
-          <KeepTogether style={{ marginTop: space["4xl"], border: `${border.thick}px solid ${color.brand}`, borderRadius: radius.lg, padding: `${space["2xl"]}px ${space["3xl"]}px`, backgroundColor: color.surfaceTint }}>
-            <h3 style={{ margin: `0 0 ${space.lg}px`, fontSize: text.h2, fontWeight: weight.heavy, color: color.brand }}>
+          <div style={{ marginTop: 32, border: "2px solid #1e3a8a", borderRadius: 14, padding: "20px 24px", backgroundColor: "#f0f4ff", pageBreakInside: "avoid" }}>
+            <h3 style={{ margin: "0 0 12px", fontSize: 17, fontWeight: 800, color: "#1e3a8a" }}>
               {report.surveyType === "general_safety" ? "סיכום ממצאי הבדיקה:" : "סיכום חוות הדעת:"}
             </h3>
             {report.surveyType === "general_safety" ? (
@@ -1499,16 +1516,16 @@ export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, sett
                 </div>
               </>
             )}
-          </KeepTogether>
+          </div>
         )}
 
         {/* CLOSING: general notes + professional sign-off */}
         {(report.generalNotes || fmt.professionalName || settings.consultantName || fmt.signatureImage || report.signatureDataUrl) && (
-          <KeepTogether style={{ marginTop: space["5xl"] }}>
+          <div style={{ marginTop: 40, pageBreakInside: "avoid" }}>
             {report.generalNotes && (
               <>
-                <h3 style={{ margin: `0 0 ${space.md}px`, fontSize: text.h2, color: color.brand }}>הערות כלליות</h3>
-                <div style={{ whiteSpace: "pre-wrap", lineHeight: leading.normal, background: color.surfaceAlt, border: `${border.hairline}px solid ${color.border}`, borderRadius: radius.lg, padding: space.xl, fontSize: text.bodyLg, marginBottom: space["4xl"] }}>
+                <h3 style={{ margin: "0 0 8px", fontSize: 18, color: "#1e3a8a" }}>הערות כלליות</h3>
+                <div style={{ whiteSpace: "pre-wrap", lineHeight: 1.7, background: "#f8fafc", border: "1px solid #e2e8f0", borderRadius: 12, padding: 16, fontSize: 14, marginBottom: 32 }}>
                   {report.generalNotes}
                 </div>
               </>
@@ -1517,12 +1534,12 @@ export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, sett
             {totalCost > 0 && (
               <div
                 style={{
-                  marginBottom: space["4xl"],
+                  marginBottom: 32,
                   background: surveyConfig.color,
-                  color: color.surface,
-                  borderRadius: radius.lg,
+                  color: "#fff",
+                  borderRadius: 14,
                   overflow: "hidden",
-                  fontSize: text.h3,
+                  fontSize: 16,
                 }}
               >
                 {report.items.filter((i) => i.includeInCost && (Number(i.estimatedCost) || 0) > 0).map((item, idx, arr) => (
@@ -1532,19 +1549,19 @@ export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, sett
                       display: "flex",
                       justifyContent: "space-between",
                       alignItems: "center",
-                      padding: `${space.md}px ${space["2xl"]}px`,
-                      borderBottom: idx < arr.length - 1 ? `${border.hairline}px solid rgba(255,255,255,0.2)` : undefined,
-                      fontSize: text.bodyLg,
-                      gap: space.lg,
+                      padding: "10px 20px",
+                      borderBottom: idx < arr.length - 1 ? "1px solid rgba(255,255,255,0.2)" : undefined,
+                      fontSize: 14,
+                      gap: 12,
                     }}
                   >
                     <span style={{ opacity: 0.85, flex: 1 }}>{item.title || `ממצא ${idx + 1}`}</span>
                     {(item.quantity ?? 1) > 1 && (
-                      <span style={{ opacity: 0.7, whiteSpace: "nowrap", fontSize: text.small, unicodeBidi: "plaintext" }}>
+                      <span style={{ opacity: 0.7, whiteSpace: "nowrap", fontSize: 12 }}>
                         {formatCurrency(item.estimatedCost)} × {item.quantity}
                       </span>
                     )}
-                    <span style={{ fontWeight: weight.semibold, whiteSpace: "nowrap", unicodeBidi: "plaintext" }}>{formatCurrency(itemTotal(item))}</span>
+                    <span style={{ fontWeight: 600, whiteSpace: "nowrap" }}>{formatCurrency(itemTotal(item))}</span>
                   </div>
                 ))}
                 <div
@@ -1552,18 +1569,18 @@ export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, sett
                     display: "flex",
                     justifyContent: "space-between",
                     alignItems: "center",
-                    padding: `${space.lg}px ${space["2xl"]}px`,
-                    borderTop: `${border.thick}px solid rgba(255,255,255,0.35)`,
+                    padding: "14px 20px",
+                    borderTop: "2px solid rgba(255,255,255,0.35)",
                   }}
                 >
                   <span style={{ opacity: 0.9 }}>אומדן עלות תיקונים כולל</span>
-                  <strong style={{ fontSize: text.h1, unicodeBidi: "plaintext" }}>{formatCurrency(totalCost)}</strong>
+                  <strong style={{ fontSize: 22 }}>{formatCurrency(totalCost)}</strong>
                 </div>
               </div>
             )}
 
-            <h3 style={{ margin: `0 0 ${space.lg}px`, fontSize: text.h2, color: color.brand }}>פרטי עורך הדוח</h3>
-            <div style={{ fontSize: text.bodyLg, color: color.inkSoft, lineHeight: 2 }}>
+            <h3 style={{ margin: "0 0 12px", fontSize: 18, color: "#1e3a8a" }}>פרטי עורך הדוח</h3>
+            <div style={{ fontSize: 14, color: "#334155", lineHeight: 2 }}>
               {(fmt.professionalName || settings.consultantName) && (
                 <div><strong>שם:</strong> {fmt.professionalName || settings.consultantName}</div>
               )}
@@ -1576,22 +1593,33 @@ export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, sett
 
             </div>
 
-            <div style={{ marginTop: space["3xl"], display: "flex", justifyContent: "flex-start", gap: space["6xl"], alignItems: "flex-end" }}>
-              <SignatureBlock
-                src={fmt.signatureImage || report.signatureDataUrl}
-                caption={sigName || "חתימת בעל המקצוע"}
-                date={report.signatureDate}
-              />
+            <div style={{ marginTop: 28, display: "flex", justifyContent: "flex-start", gap: 48, alignItems: "flex-end" }}>
+              <div>
+                {(fmt.signatureImage || report.signatureDataUrl) ? (
+                  <img
+                    src={fmt.signatureImage || report.signatureDataUrl}
+                    alt="חתימה"
+                    style={{ maxHeight: 64, height: "auto", maxWidth: 200, display: "block" }}
+                    crossOrigin="anonymous"
+                  />
+                ) : (
+                  <div style={{ height: 64, width: 200, borderBottom: "1px solid #94a3b8" }} />
+                )}
+                <div style={{ fontSize: 12, color: "#64748b", marginTop: 4 }}>
+                  {sigName || "חתימת בעל המקצוע"}
+                  {report.signatureDate ? ` • ${report.signatureDate}` : ""}
+                </div>
+              </div>
             </div>
-          </KeepTogether>
+          </div>
         )}
 
-        <div style={{ marginTop: space["4xl"], paddingTop: space.xl, borderTop: `${border.hairline}px solid ${color.border}`, display: "flex", justifyContent: "space-between", fontSize: text.small, color: color.muted }}>
+        <div style={{ marginTop: 36, paddingTop: 16, borderTop: "1px solid #e2e8f0", display: "flex", justifyContent: "space-between", fontSize: 12, color: "#64748b" }}>
           <span>{settings.companyName}</span>
-          <span style={{ unicodeBidi: "plaintext" }}>הופק בתאריך {formatHebrewDate(new Date().toISOString().slice(0, 10))}</span>
+          <span>הופק בתאריך {formatHebrewDate(new Date().toISOString().slice(0, 10))}</span>
         </div>
       </section>
-    </ReportShell>
+    </div>
   );
 });
 
