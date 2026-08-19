@@ -1,12 +1,12 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Plus, FileText, Trash2, Calendar, MapPin } from "lucide-react";
+import { Plus, FileText, Trash2, Calendar, MapPin, User } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
 import { Button } from "@/components/ui/button";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle,
 } from "@/components/ui/dialog";
-import { deleteReport, listReports, listTemplates, loadUserSettings, newReport, saveReport } from "@/lib/storage";
+import { deleteReport, listReportAuthors, listReports, listTemplates, loadUserSettings, newReport, saveReport } from "@/lib/storage";
 import { isDirty } from "@/lib/offline-db";
 import { subscribeSyncStatus } from "@/lib/sync-engine";
 import { getSurveyType, SURVEY_TYPES, SurveyReport, SurveyType } from "@/lib/types";
@@ -25,6 +25,10 @@ const Index = () => {
   const [selectedType, setSelectedType] = useState<SurveyType | null>(null);
   const [creating, setCreating] = useState(false);
   const [dirtyIds, setDirtyIds] = useState<Set<string>>(new Set());
+  // Account id -> display name, used to label reports written by someone else.
+  // Only populated with other people's names for owners/admins; RLS returns
+  // just the current user's profile to everyone else.
+  const [authors, setAuthors] = useState<Record<string, string>>({});
 
   // ProtectedRoute (App.tsx) already gates this page on a logged-in user —
   // no need to re-check the session here. listReports() itself is
@@ -40,6 +44,8 @@ const Index = () => {
         toast.error(`שגיאה בטעינת הדוחות: ${detail}`);
       })
       .finally(() => setLoading(false));
+    // Best-effort: a failure here only means no author badges.
+    listReportAuthors().then(setAuthors).catch(() => setAuthors({}));
   }, []);
 
   // Show a "pending sync" badge on reports that are saved locally but
@@ -209,6 +215,14 @@ const Index = () => {
                             <Calendar className="h-3 w-3" />
                             {formatHebrewDate(r.surveyDate)}
                           </span>
+                          {/* Who wrote it — shown only for reports belonging to
+                              another account, so your own list stays uncluttered. */}
+                          {r.ownerId && user?.id && r.ownerId !== user.id && (
+                            <span className="inline-flex items-center gap-1 text-primary">
+                              <User className="h-3 w-3" />
+                              {authors[r.ownerId] || "משתמש אחר"}
+                            </span>
+                          )}
                         </div>
                         <div className="mt-2 flex flex-wrap items-center gap-2">
                           <span

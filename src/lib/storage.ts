@@ -20,7 +20,7 @@ import {
   markDeletedLocally,
   putCachedReport,
 } from "./offline-db";
-import { remoteGetReport, remoteListReports } from "./reports-remote";
+import { remoteGetReport, remoteListReports, remoteListReportAuthors } from "./reports-remote";
 import { startSyncEngine, syncPendingReports } from "./sync-engine";
 
 const K_TEMPLATES = "ans.templates.v1";
@@ -62,6 +62,19 @@ export async function listReports(): Promise<SurveyReport[]> {
   }
   const cached = await getAllCachedReports();
   return cached.sort((a, b) => (b.updatedAt ?? 0) - (a.updatedAt ?? 0));
+}
+
+/**
+ * Account id -> display name, for labelling reports written by someone else.
+ * Returns {} when offline or when the profiles table is unreachable; callers
+ * treat a missing name as "no badge" rather than an error.
+ */
+export async function listReportAuthors(): Promise<Record<string, string>> {
+  try {
+    return await withTimeout(remoteListReportAuthors(), 6000, {} as Record<string, string>);
+  } catch {
+    return {};
+  }
 }
 
 export async function getReport(id: string): Promise<SurveyReport | undefined> {
