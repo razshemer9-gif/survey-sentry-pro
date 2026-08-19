@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle,
 } from "@/components/ui/dialog";
-import { deleteReport, listReportAuthors, listReports, listTemplates, loadUserSettings, newReport, saveReport } from "@/lib/storage";
+import { deleteReport, getLastRefreshError, listReportAuthors, listReports, listTemplates, loadUserSettings, newReport, saveReport } from "@/lib/storage";
 import { isDirty } from "@/lib/offline-db";
 import { subscribeSyncStatus } from "@/lib/sync-engine";
 import { getSurveyType, SURVEY_TYPES, SurveyReport, SurveyType } from "@/lib/types";
@@ -35,7 +35,14 @@ const Index = () => {
   // local-first: it serves the IndexedDB cache even if the network is down.
   useEffect(() => {
     listReports()
-      .then(setReports)
+      .then((rs) => {
+        setReports(rs);
+        // A refresh that quietly failed leaves stale data on screen — say so,
+        // otherwise "I can't see the other users' reports" looks like a bug in
+        // permissions rather than a connection problem.
+        const refreshErr = getLastRefreshError();
+        if (refreshErr) toast.warning(refreshErr, { duration: 8000 });
+      })
       .catch((err: unknown) => {
         const detail = err instanceof Error
           ? err.message

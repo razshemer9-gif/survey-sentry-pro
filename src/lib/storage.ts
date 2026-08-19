@@ -46,19 +46,47 @@ function write<T>(key: string, value: T) {
 }
 
 // ---------- Reports (local-first: IndexedDB cache + background sync) ----------
+/**
+ * Why the last listReports() call could not refresh from the server, or null
+ * if it did. Falling back to the local cache is normal offline behaviour, but
+ * it also silently hides reports the cache has never seen — anything written
+ * by another user, for instance. Callers surface this so a failed refresh
+ * looks like a failure rather than like an empty result.
+ */
+let lastRefreshError: string | null = null;
+export function getLastRefreshError(): string | null {
+  return lastRefreshError;
+}
+
+// A report row carries its photos inline, so listing every user's reports can
+// mean tens of megabytes. The old 6s budget was tuned for "my reports only"
+// and is far too tight for that on a mobile connection.
+const LIST_TIMEOUT_MS = 30_000;
+
 export async function listReports(): Promise<SurveyReport[]> {
   startSyncEngine();
+  lastRefreshError = null;
   try {
-    const remote = await withTimeout(remoteListReports(), 6000, null as SurveyReport[] | null);
-    if (remote) {
+    const TIMED_OUT = Symbol("timeout");
+    const remote = await withTimeout<SurveyReport[] | typeof TIMED_OUT>(
+      remoteListReports(),
+      LIST_TIMEOUT_MS,
+      TIMED_OUT,
+    );
+    if (remote === TIMED_OUT) {
+      lastRefreshError = `הרשימה לא התרעננה מהשרת (יותר מ-${LIST_TIMEOUT_MS / 1000} שניות). מוצגים הדוחות השמורים במכשיר.`;
+    } else {
       const dirty = await getDirtyRows();
       const dirtyIds = new Set(dirty.map((r) => r.id));
       for (const r of remote) {
         if (!dirtyIds.has(r.id)) await putCachedReport(r, false);
       }
     }
-  } catch {
-    // offline or request failed — serve from local cache below
+  } catch (err) {
+    // Still serve the cache — but do not pretend the refresh succeeded.
+    const detail = err instanceof Error ? err.message : String((err as { message?: string })?.message ?? err);
+    lastRefreshError = `שגיאה בטעינה מהשרת: ${detail}`;
+    console.error("[listReports] remote refresh failed:", err);
   }
   const cached = await getAllCachedReports();
   return cached.sort((a, b) => (b.updatedAt ?? 0) - (a.updatedAt ?? 0));
