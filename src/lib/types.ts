@@ -143,6 +143,12 @@ export interface SurveyReport {
   signatureDataUrl?: string;
   signatureDate?: string;
   signatureConsultantName?: string;
+
+  // Account that owns this report. Stamped from the row's device_id when a
+  // report is loaded, so that an admin editing someone else's report saves it
+  // back under the ORIGINAL author rather than taking it over. Undefined for a
+  // freshly created report, which is always owned by whoever creates it.
+  ownerId?: string;
   // Opinion summary
   accessibilityComplianceStatus?: "yes" | "no" | "safe";
   // Document mode

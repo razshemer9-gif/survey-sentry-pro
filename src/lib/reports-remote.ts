@@ -2,6 +2,14 @@
 // logic. Used by both `storage.ts` (local-first orchestration) and
 // `sync-engine.ts` (pushing queued changes), kept here to avoid a circular
 // import between those two modules.
+//
+// Access control lives in the database (RLS), not here. An employee's policy
+// matches only rows where device_id = their uid; owners/admins additionally
+// match every row (see admin-reports-access.sql). That means these queries
+// deliberately do NOT filter by device_id themselves — doing so would re-apply
+// the employee rule to admins and hide the very rows they are allowed to see.
+// If the admin migration has not been run, admins simply get their own reports
+// back and the feature stays dormant.
 import { SurveyReport } from "./types";
 import { supabase } from "./supabase";
 
@@ -11,24 +19,46 @@ async function getUserId(): Promise<string> {
   return user.id;
 }
 
+/** Stamp the owning account onto the report payload — see SurveyReport.ownerId. */
+function withOwner(data: SurveyReport, deviceId: string): SurveyReport {
+  return { ...data, ownerId: deviceId };
+}
+
+/**
+ * Which account a report must be stored under.
+ *
+ * Always the original author when known, never simply "whoever is saving".
+ * An admin may edit a colleague's report; writing their own id here would
+ * hand them the report and remove it from the author's list. A report with
+ * no recorded owner is new, so the saver owns it.
+ */
+export function resolveOwnerId(report: Pick<SurveyReport, "ownerId">, currentUserId: string): string {
+  return report.ownerId || currentUserId;
+}
+
 export async function remoteListReports(): Promise<SurveyReport[]> {
-  const { data, error } = await supabase.rpc("list_my_reports");
+  // Read the table directly rather than the list_my_reports RPC: the RPC is
+  // scoped to the caller, which would hide other users' reports from an admin.
+  // RLS still decides what comes back.
+  const { data, error } = await supabase
+    .from("reports")
+    .select("device_id, data")
+    .order("updated_at", { ascending: false });
   if (error) throw error;
   return (data ?? [])
-    .map((row: { data: SurveyReport }) => row.data)
+    .map((row: { device_id: string; data: SurveyReport }) => withOwner(row.data, row.device_id))
     .sort((a, b) => (b.updatedAt ?? 0) - (a.updatedAt ?? 0));
 }
 
 export async function remoteGetReport(id: string): Promise<SurveyReport | undefined> {
-  const userId = await getUserId();
   const { data, error } = await supabase
     .from("reports")
-    .select("data")
+    .select("device_id, data")
     .eq("id", id)
-    .eq("device_id", userId)
     .single();
   if (error) return undefined;
-  return data?.data as SurveyReport;
+  if (!data) return undefined;
+  return withOwner(data.data as SurveyReport, data.device_id as string);
 }
 
 export async function remoteSaveReport(report: SurveyReport): Promise<SurveyReport> {
@@ -36,7 +66,10 @@ export async function remoteSaveReport(report: SurveyReport): Promise<SurveyRepo
   const updated = { ...report, updatedAt: Date.now() };
   const { error } = await supabase.from("reports").upsert({
     id: report.id,
-    device_id: userId,
+    // Preserve the original author. Without this, an admin editing someone
+    // else's report would rewrite device_id to their own id and quietly take
+    // the report away from whoever wrote it.
+    device_id: resolveOwnerId(report, userId),
     data: updated,
     created_at: updated.createdAt,
     updated_at: updated.updatedAt,
@@ -46,11 +79,23 @@ export async function remoteSaveReport(report: SurveyReport): Promise<SurveyRepo
 }
 
 export async function remoteDeleteReport(id: string): Promise<void> {
-  const userId = await getUserId();
-  const { error } = await supabase
-    .from("reports")
-    .delete()
-    .eq("id", id)
-    .eq("device_id", userId);
+  const { error } = await supabase.from("reports").delete().eq("id", id);
   if (error) throw error;
+}
+
+/**
+ * Display name per account id, for showing who wrote a report.
+ * Only owners/admins can read other people's profiles (RLS), so for an
+ * employee this resolves to just themselves — which is all they ever need.
+ * profiles.full_name is frequently empty, hence the email fallback.
+ */
+export async function remoteListReportAuthors(): Promise<Record<string, string>> {
+  const { data, error } = await supabase.from("profiles").select("user_id, full_name, email");
+  if (error) return {};
+  const map: Record<string, string> = {};
+  for (const row of (data ?? []) as { user_id: string; full_name: string | null; email: string | null }[]) {
+    const name = (row.full_name || "").trim() || (row.email || "").trim();
+    if (name) map[row.user_id] = name;
+  }
+  return map;
 }
