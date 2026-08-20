@@ -36,17 +36,46 @@ export function resolveOwnerId(report: Pick<SurveyReport, "ownerId">, currentUse
   return report.ownerId || currentUserId;
 }
 
+/**
+ * The caller's OWN reports, in full.
+ *
+ * Deliberately scoped to one account even though RLS would allow an admin to
+ * read every row: a report stores its photos inline, so pulling everyone's
+ * full rows shipped tens of megabytes and Postgres cancelled the statement
+ * ("canceling statement due to statement timeout"). Own reports are a bounded
+ * set, and fetching them in full is what keeps the offline cache complete.
+ * Other people's reports arrive as summaries instead — see below.
+ */
 export async function remoteListReports(): Promise<SurveyReport[]> {
-  // Read the table directly rather than the list_my_reports RPC: the RPC is
-  // scoped to the caller, which would hide other users' reports from an admin.
-  // RLS still decides what comes back.
+  const userId = await getUserId();
   const { data, error } = await supabase
     .from("reports")
     .select("device_id, data")
+    .eq("device_id", userId)
     .order("updated_at", { ascending: false });
   if (error) throw error;
   return (data ?? [])
     .map((row: { device_id: string; data: SurveyReport }) => withOwner(row.data, row.device_id))
+    .sort((a, b) => (b.updatedAt ?? 0) - (a.updatedAt ?? 0));
+}
+
+/**
+ * Every report the caller may see, stripped to what the list renders: no
+ * photos, notes or costs. `items` keeps only {id, status} so status counts
+ * still work.
+ *
+ * These are NOT complete reports and must never be written to the offline
+ * cache — the editor would then be able to save a stripped summary over the
+ * real row. Opening a report always fetches the full row via remoteGetReport.
+ *
+ * Requires report-summaries.sql. Without it the RPC is missing and the caller
+ * falls back to own-reports-only, which is the pre-existing behaviour.
+ */
+export async function remoteListReportSummaries(): Promise<SurveyReport[]> {
+  const { data, error } = await supabase.rpc("list_report_summaries", { p_limit: 300 });
+  if (error) throw error;
+  return ((data ?? []) as { id: string; device_id: string; summary: SurveyReport }[])
+    .map((row) => withOwner(row.summary, row.device_id))
     .sort((a, b) => (b.updatedAt ?? 0) - (a.updatedAt ?? 0));
 }
 
