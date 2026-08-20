@@ -222,14 +222,6 @@ const Index = () => {
                             <Calendar className="h-3 w-3" />
                             {formatHebrewDate(r.surveyDate)}
                           </span>
-                          {/* Who wrote it — shown only for reports belonging to
-                              another account, so your own list stays uncluttered. */}
-                          {r.ownerId && user?.id && r.ownerId !== user.id && (
-                            <span className="inline-flex items-center gap-1 text-primary">
-                              <User className="h-3 w-3" />
-                              {authors[r.ownerId] || "משתמש אחר"}
-                            </span>
-                          )}
                         </div>
                         <div className="mt-2 flex flex-wrap items-center gap-2">
                           <span
@@ -251,6 +243,15 @@ const Index = () => {
                               ✕ {r.items.filter((i) => i.status === "non_compliant").length} לא תקין
                             </span>
                           )}
+                          {/* Who wrote the report. Shown on every card — including
+                              your own — so the list reads consistently. me-auto
+                              pushes it to the far end of the row (left, in RTL). */}
+                          <span className="me-auto inline-flex items-center gap-1 text-[10px] text-muted-foreground">
+                            <User className="h-3 w-3" />
+                            {r.ownerId
+                              ? (authors[r.ownerId] || (r.ownerId === user?.id ? "אני" : "משתמש אחר"))
+                              : "אני"}
+                          </span>
                         </div>
                       </div>
                       <button
