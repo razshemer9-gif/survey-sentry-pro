@@ -30,6 +30,29 @@ function getFormat(settings: ConsultantSettings, report: SurveyReport): SurveyRe
  * Printable A4 (210mm) layout — RTL Hebrew, blue/white themed.
  * Width is fixed in px to give html2canvas a stable canvas to rasterize.
  */
+/**
+ * Page-wide header banner, drawn at one fixed height for every report type.
+ *
+ * The banner artworks were produced at different times and have different
+ * aspect ratios (6.45 for accessibility, 5.65 for general_safety and
+ * risk_survey), so rendering them at width:100% alone made the same brand
+ * banner 246px tall on one report and 281px on another. Pinning the height
+ * and letting the excess crop keeps them identical without re-encoding any
+ * image — no quality is lost, and the change is reversible.
+ *
+ * Height matches the accessibility banner's natural proportions, the tightest
+ * of the set, so no artwork has to be stretched. Implemented with a clipping
+ * wrapper rather than object-fit because html2canvas — which rasterizes these
+ * pages — renders overflow:hidden reliably and object-fit inconsistently.
+ */
+const BANNER_H = 123; // 794px page / 6.455
+
+const HeaderBanner = ({ src, alt = "" }: { src: string; alt?: string }) => (
+  <div style={{ width: "100%", height: BANNER_H, overflow: "hidden", display: "flex", alignItems: "center" }}>
+    <img src={src} alt={alt} crossOrigin="anonymous" style={{ width: "100%", display: "block" }} />
+  </div>
+);
+
 export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, settings }, ref) => {
   const surveyConfig = getSurveyType(report.surveyType);
   const fmt = getFormat(settings, report);
@@ -429,8 +452,7 @@ export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, sett
         <section style={{ padding: "32px 56px 28px", background: "#fff" }}>
           {/* 1. Header banner — dedicated to this report type only */}
           <div style={{ marginBottom: isElementApproval ? 12 : 22 }}>
-            <img src={ELEMENT_STABILITY_HEADER_BANNER} alt="דו״ח יציבות קונסטרוקציה" crossOrigin="anonymous"
-              style={{ width: "100%", height: "auto", display: "block" }} />
+            <HeaderBanner src={ELEMENT_STABILITY_HEADER_BANNER} alt="דו״ח יציבות קונסטרוקציה" />
           </div>
           {/* Title only shown when it differs from the banner's baked-in "דו״ח
               יציבות קונסטרוקציה" — i.e. only in approval mode. */}
@@ -549,7 +571,7 @@ export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, sett
       <div ref={ref} dir="rtl" lang="he" data-pdf-page-numbers=""
         style={{ width: "794px", background: "#ffffff", color: "#0f172a", fontFamily: "Heebo, Assistant, sans-serif" }}>
         {/* Full-bleed banner — title text is already baked into the image */}
-        <img src={RISK_SURVEY_HEADER_BANNER} alt="" style={{ width: "100%", display: "block" }} />
+        <HeaderBanner src={RISK_SURVEY_HEADER_BANNER} />
 
         <section style={{ padding: "24px 48px 44px" }}>
 
@@ -1275,16 +1297,14 @@ export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, sett
         }}
       >
         {isAccessibilityType ? (
-          <img
+          <HeaderBanner
             src={isApproval ? ACCESSIBILITY_HEADER_BANNER_APPROVAL : ACCESSIBILITY_HEADER_BANNER_SURVEY}
             alt={isApproval ? "אישור נגישות מתו״ס ושירות" : "סקר נגישות מתו״ס ושירות"}
-            style={{ width: "100%", height: "auto", display: "block" }}
           />
         ) : isGeneralSafetyType ? (
-          <img
+          <HeaderBanner
             src={isApproval ? GENERAL_SAFETY_HEADER_BANNER_APPROVAL : GENERAL_SAFETY_HEADER_BANNER_SURVEY}
             alt={isApproval ? "אישור בטיחות כללי" : "סקר בטיחות כללי"}
-            style={{ width: "100%", height: "auto", display: "block" }}
           />
         ) : coverLogo && (
           <img
