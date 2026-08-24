@@ -51,3 +51,27 @@ describe("sanitizeFileNamePart", () => {
     expect(sanitizeFileNamePart(nasty)).toMatch(/^[א-תa-zA-Z0-9 _-]*$/);
   });
 });
+
+// Every report type flows through the same builder, so a fix here covers all
+// of them — this pins that down rather than assuming it.
+describe("buildPdfFileName across all report types", () => {
+  const PREFIXES = [
+    "סקר-נגישות", "סקר-בטיחות-חינוך", "סקר-בטיחות", "מבדק-רווחה",
+    "דוח-יציבות-אלמנטים", "סקר-סיכונים", "טופס-8-חוות-דעת-נגישות",
+  ];
+  const SAFE = /^[א-תa-zA-Z0-9 _.-]+$/;
+
+  it("produces a clean name for every type, even with a hostile place name", () => {
+    for (const prefix of PREFIXES) {
+      const name = `${sanitizeFileNamePart(prefix)}-${sanitizeFileNamePart('מוס״ח בֵּית‏ ספר "אלון"') || "report"}-2026-08-23.pdf`;
+      expect(name, prefix).toMatch(SAFE);
+      expect(name, prefix).not.toMatch(/[֐-׏׳״]/); // no niqqud or Hebrew punctuation
+    }
+  });
+
+  it("leaves every type's own prefix untouched", () => {
+    for (const prefix of PREFIXES) {
+      expect(sanitizeFileNamePart(prefix)).toBe(prefix);
+    }
+  });
+});
