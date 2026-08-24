@@ -20,7 +20,7 @@ import {
   markDeletedLocally,
   putCachedReport,
 } from "./offline-db";
-import { remoteGetReport, remoteListReports, remoteListReportAuthors } from "./reports-remote";
+import { remoteGetReport, remoteListReports, remoteListReportAuthors, remoteListReportSummaries } from "./reports-remote";
 import { startSyncEngine, syncPendingReports } from "./sync-engine";
 
 const K_TEMPLATES = "ans.templates.v1";
@@ -66,6 +66,7 @@ const LIST_TIMEOUT_MS = 30_000;
 export async function listReports(): Promise<SurveyReport[]> {
   startSyncEngine();
   lastRefreshError = null;
+  let otherSummaries: SurveyReport[] = [];
   try {
     const TIMED_OUT = Symbol("timeout");
     const remote = await withTimeout<SurveyReport[] | typeof TIMED_OUT>(
@@ -82,6 +83,18 @@ export async function listReports(): Promise<SurveyReport[]> {
         if (!dirtyIds.has(r.id)) await putCachedReport(r, false);
       }
     }
+
+    // Other people's reports, as summaries. Kept out of the cache on purpose:
+    // they are incomplete, and caching them would let the editor save a
+    // stripped summary over a real report.
+    try {
+      const summaries = await withTimeout(remoteListReportSummaries(), LIST_TIMEOUT_MS, [] as SurveyReport[]);
+      otherSummaries = summaries;
+    } catch (err) {
+      // The list still works without them — an employee has none to show, and
+      // an admin simply sees their own until report-summaries.sql is applied.
+      console.warn("[listReports] summary fetch failed:", err);
+    }
   } catch (err) {
     // Still serve the cache — but do not pretend the refresh succeeded.
     const detail = err instanceof Error ? err.message : String((err as { message?: string })?.message ?? err);
@@ -89,7 +102,11 @@ export async function listReports(): Promise<SurveyReport[]> {
     console.error("[listReports] remote refresh failed:", err);
   }
   const cached = await getAllCachedReports();
-  return cached.sort((a, b) => (b.updatedAt ?? 0) - (a.updatedAt ?? 0));
+  // The cache wins for any report it holds in full; summaries only fill in
+  // rows the device has never had (i.e. other users').
+  const byId = new Set(cached.map((r) => r.id));
+  const merged = [...cached, ...otherSummaries.filter((r) => !byId.has(r.id))];
+  return merged.sort((a, b) => (b.updatedAt ?? 0) - (a.updatedAt ?? 0));
 }
 
 /**

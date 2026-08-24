@@ -40,7 +40,7 @@ import { isDirty } from "@/lib/offline-db";
 import { subscribeSyncStatus } from "@/lib/sync-engine";
 import { importWithReload } from "@/lib/dynamic-import";
 import { useAuth } from "@/contexts/AuthContext";
-import { buildPdfFileName } from "@/lib/pdf";
+import { buildPdfFileName, sanitizeFileNamePart } from "@/lib/pdf";
 import { cropImageDataUrl, fileToCompressedDataUrl, formatCurrency, rotateImageDataUrl } from "@/lib/image";
 import { RISK_SURVEY_DEFAULT_FENCING_NOTE } from "@/lib/risk-survey";
 import { cn } from "@/lib/utils";
@@ -377,7 +377,10 @@ export default function ReportEditor() {
       });
 
       const blob = await zip.generateAsync({ type: "blob" });
-      const safe = (report.placeName || "report").replace(/[^\w֐-׿\s-]/g, "").trim() || "report";
+      // Same sanitizing as the PDF name — this used to keep the whole Hebrew
+      // Unicode block plus \s, so niqqud, gershayim, tabs and non-breaking
+      // spaces all reached the file name and came out as "??".
+      const safe = sanitizeFileNamePart(report.placeName || "") || "report";
       const date = report.surveyDate || new Date().toISOString().slice(0, 10);
       const fileName = `תמונות-${safe}-${date}.zip`;
 
