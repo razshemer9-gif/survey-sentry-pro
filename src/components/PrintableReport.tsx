@@ -449,11 +449,11 @@ export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, sett
     return (
       <div ref={ref} dir="rtl" lang="he"
         style={{ width: "794px", background: "#ffffff", color: "#0f172a", fontFamily: "Heebo, Assistant, sans-serif" }}>
-        <section style={{ padding: "32px 56px 28px", background: "#fff" }}>
-          {/* 1. Header banner — dedicated to this report type only */}
-          <div style={{ marginBottom: isElementApproval ? 12 : 22 }}>
-            <HeaderBanner src={ELEMENT_STABILITY_HEADER_BANNER} alt="דו״ח יציבות קונסטרוקציה" />
-          </div>
+        {/* 1. Header banner — full-bleed, exactly as on every other report type.
+            It used to sit inside the padded section below, which made it 682px
+            wide against the 794px used everywhere else. */}
+        <HeaderBanner src={ELEMENT_STABILITY_HEADER_BANNER} alt="דו״ח יציבות קונסטרוקציה" />
+        <section style={{ padding: `${isElementApproval ? 12 : 22}px 56px 28px`, background: "#fff" }}>
           {/* Title only shown when it differs from the banner's baked-in "דו״ח
               יציבות קונסטרוקציה" — i.e. only in approval mode. */}
           {isElementApproval && (
