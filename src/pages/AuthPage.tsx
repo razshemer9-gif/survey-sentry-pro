@@ -1,6 +1,6 @@
 import { useState, FormEvent } from "react";
 import { useNavigate } from "react-router-dom";
-import { signIn, signUp } from "@/lib/auth";
+import { signIn } from "@/lib/auth";
 import authLogo from "@/assets/auth-logo.png";
 import "./AuthPage.css";
 
@@ -12,15 +12,6 @@ export default function AuthPage() {
   const [loginLoading,  setLoginLoading]  = useState(false);
   const [loginError,    setLoginError]    = useState("");
   const [showLoginPwd,  setShowLoginPwd]  = useState(false);
-
-  const [regEmail,    setRegEmail]    = useState("");
-  const [regPassword, setRegPassword] = useState("");
-  const [regLoading,  setRegLoading]  = useState(false);
-  const [regError,    setRegError]    = useState("");
-  const [regSuccess,  setRegSuccess]  = useState(false);
-  const [showRegPwd,  setShowRegPwd]  = useState(false);
-
-  const [activeTab, setActiveTab] = useState<"login" | "register">("login");
 
   async function handleLogin(e: FormEvent) {
     e.preventDefault();
@@ -36,20 +27,6 @@ export default function AuthPage() {
       setLoginError(translateError(err instanceof Error ? err.message : "שגיאה בהתחברות"));
     } finally {
       setLoginLoading(false);
-    }
-  }
-
-  async function handleRegister(e: FormEvent) {
-    e.preventDefault();
-    setRegError("");
-    setRegLoading(true);
-    try {
-      await signUp(regEmail, regPassword);
-      setRegSuccess(true);
-    } catch (err: unknown) {
-      setRegError(translateError(err instanceof Error ? err.message : "שגיאה בהרשמה"));
-    } finally {
-      setRegLoading(false);
     }
   }
 
@@ -171,30 +148,9 @@ export default function AuthPage() {
         {/* ── Glass form card ── */}
         <div className="ap-card">
 
-          {/* Tabs */}
-          <div className="ap-tabs" role="tablist">
-            <button
-              type="button"
-              role="tab"
-              aria-selected={activeTab === "login"}
-              className={`ap-tab${activeTab === "login" ? " ap-tab-active" : ""}`}
-              onClick={() => setActiveTab("login")}
-            >
-              התחברות
-            </button>
-            <button
-              type="button"
-              role="tab"
-              aria-selected={activeTab === "register"}
-              className={`ap-tab${activeTab === "register" ? " ap-tab-active" : ""}`}
-              onClick={() => setActiveTab("register")}
-            >
-              הרשמה
-            </button>
-          </div>
-
-          {/* Login form */}
-          {activeTab === "login" && (
+          {/* Login form — the only way in. Accounts are created by an
+              administrator in the Supabase dashboard; there is deliberately
+              no self-service sign-up. */}
             <form onSubmit={handleLogin} className="ap-form">
               <div className="ap-field">
                 <label htmlFor="login-email" className="ap-label">דואר אלקטרוני</label>
@@ -243,67 +199,7 @@ export default function AuthPage() {
                 {loginLoading ? "מתחבר..." : "התחבר"}
               </button>
             </form>
-          )}
 
-          {/* Register form */}
-          {activeTab === "register" && (
-            regSuccess ? (
-              <div className="ap-success">
-                <p className="ap-success-title">ההרשמה הושלמה!</p>
-                <p className="ap-success-sub">בדוק את תיבת הדואר שלך לאישור ואז התחבר.</p>
-              </div>
-            ) : (
-              <form onSubmit={handleRegister} className="ap-form">
-                <div className="ap-field">
-                  <label htmlFor="reg-email" className="ap-label">דואר אלקטרוני</label>
-                  <input
-                    id="reg-email"
-                    type="email"
-                    inputMode="email"
-                    autoComplete="email"
-                    dir="ltr"
-                    value={regEmail}
-                    onChange={(e) => setRegEmail(e.target.value)}
-                    required
-                    disabled={regLoading}
-                    className="ap-input"
-                    placeholder="your@email.com"
-                  />
-                </div>
-
-                <div className="ap-field">
-                  <label htmlFor="reg-password" className="ap-label">סיסמה (לפחות 6 תווים)</label>
-                  <input
-                    id="reg-password"
-                    type={showRegPwd ? "text" : "password"}
-                    autoComplete="new-password"
-                    dir="ltr"
-                    value={regPassword}
-                    onChange={(e) => setRegPassword(e.target.value)}
-                    required
-                    minLength={6}
-                    disabled={regLoading}
-                    className="ap-input"
-                    placeholder="••••••••"
-                  />
-                  <label className="ap-show-pwd">
-                    <input
-                      type="checkbox"
-                      checked={showRegPwd}
-                      onChange={(e) => setShowRegPwd(e.target.checked)}
-                    />
-                    הצג סיסמה
-                  </label>
-                </div>
-
-                {regError && <p className="ap-error">{regError}</p>}
-
-                <button type="submit" className="ap-btn" disabled={regLoading}>
-                  {regLoading ? "נרשם..." : "הירשם"}
-                </button>
-              </form>
-            )
-          )}
         </div>
 
         {/* ── Footer ── */}
@@ -313,11 +209,11 @@ export default function AuthPage() {
   );
 }
 
+// Sign-in only — the sign-up cases ("User already registered", the password
+// length rule) were dropped along with the registration form.
 function translateError(msg: string): string {
   if (msg.includes("Invalid login credentials")) return "כתובת דואר אלקטרוני או סיסמה שגויים";
   if (msg.includes("Email not confirmed"))        return "יש לאשר את כתובת הדואר האלקטרוני תחילה";
-  if (msg.includes("User already registered"))    return "כתובת דואר אלקטרוני זו כבר רשומה";
-  if (msg.includes("Password should be at least"))return "הסיסמה חייבת להכיל לפחות 6 תווים";
   if (msg.includes("Unable to validate email"))   return "כתובת דואר אלקטרוני לא תקינה";
   return msg;
 }
