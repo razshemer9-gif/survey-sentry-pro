@@ -1337,22 +1337,25 @@ export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, sett
           <div style={{ height: 40, background: `linear-gradient(to bottom, #ffffff 0%, ${surveyConfig.color}dd 100%)` }} />
         )}
 
-        <div style={{ padding: hasHeaderBanner ? "16px 48px" : "10px 48px 24px" }}>
-          {!hasHeaderBanner && (
+        {/* The banner-carrying types already state the report's title in the
+            banner, and the place name is the first field of the details block
+            right below — so a colored band repeating it only pushed the details
+            down the page. Types without a banner still need their title here. */}
+        {!hasHeaderBanner && (
+          <div style={{ padding: "10px 48px 24px" }}>
             <h1 style={{ fontSize: 46, fontWeight: 800, lineHeight: 1.05, margin: 0 }}>
               {(() => {
                 const base = fmt.reportTitle || surveyConfig.pdfTitle;
                 return isApproval ? base.replace(/^סקר/, "אישור") : base;
               })()}
             </h1>
-          )}
-          <div style={{ fontSize: 22, marginTop: hasHeaderBanner ? 0 : 14, opacity: 0.95 }}>{report.placeName || "ללא שם"}</div>
-        </div>
+          </div>
+        )}
 
         <div
           data-pdf-no-break=""
           style={{
-            margin: "24px 0 0",
+            margin: hasHeaderBanner ? 0 : "24px 0 0",
             background: "#ffffff",
             color: "#0f172a",
           }}
