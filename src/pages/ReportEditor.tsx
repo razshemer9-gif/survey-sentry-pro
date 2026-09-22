@@ -1054,25 +1054,23 @@ export default function ReportEditor() {
               : Array.from({ length: 14 }, (_, i) => ({ id: i + 1, response: "" }));
             // Rows 6 and 7 are one per viewing position, so they follow the
             // count the consultant writes in row 4 — the row they fill in
-            // anyway, rather than a second field beside it. A row they wrote
-            // themselves is left exactly as it is: only an empty row, or one
-            // still holding the text generated from the previous count, is
-            // rewritten.
+            // anyway, rather than a second field beside it. Changing that
+            // count rewrites both rows, by request: they are the same number
+            // in nearly every report, and the consultant edits the exception
+            // by hand afterwards. An edit therefore holds until the count in
+            // row 4 changes again.
             const setRequirement = (id: number, response: string) => {
               const rows = requirements.map((r) => (r.id === id ? { ...r, response } : r));
               if (id !== 4) return update({ form8Requirements: rows });
 
               const prev = viewingPositionsFromText(requirements.find((r) => r.id === 4)?.response ?? "");
               const next = viewingPositionsFromText(response);
-              if (next === prev) return update({ form8Requirements: rows });
+              if (next === null || next === prev) return update({ form8Requirements: rows });
 
               update({
                 form8Requirements: rows.map((r) => {
-                  const nextText = next ? derivedRowText(r.id, next) : null;
-                  if (nextText === null) return r;
-                  const prevText = prev ? derivedRowText(r.id, prev) : null;
-                  if (r.response.trim() !== "" && r.response !== prevText) return r;
-                  return { ...r, response: nextText };
+                  const nextText = derivedRowText(r.id, next);
+                  return nextText === null ? r : { ...r, response: nextText };
                 }),
               });
             };
@@ -1151,7 +1149,7 @@ export default function ReportEditor() {
                       />
                       {req.id === 4 && (
                         <p className="text-[10px] text-muted-foreground">
-                          מספר העמדות שתכתוב כאן ממלא אוטומטית את סעיף 6 (מושבים מותאמים) וסעיף 7 (חניות נגישות). טקסט שכתבת בעצמך שם לא יידרס.
+                          מספר העמדות שתכתוב כאן ממלא את סעיף 6 (מושבים מותאמים) וסעיף 7 (חניות נגישות). שינוי המספר כאן מעדכן אותם מחדש — עריכה ידנית שלהם נשמרת עד לשינוי הבא.
                         </p>
                       )}
                     </div>
