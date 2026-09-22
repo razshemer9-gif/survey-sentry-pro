@@ -223,9 +223,6 @@ export interface SurveyReport {
   form8OpinionDate?: string;         // תאריך חוות הדעת (ליד חתימת המורשה)
   // חלק ד' — טבלת 14 הדרישות הקבועות; רק response משתנה בין דוחות
   form8Requirements?: { id: number; response: string }[];
-  // מספר עמדות הצפייה המיוחדות שקבע המורשה מתוך טבלת התקן בשורה 4.
-  // ממלא אוטומטית את שורות 6 (מושבים מותאמים) ו-7 (חניות נגישות).
-  form8ViewingPositions?: number;
   // אישור בעל העסק לעניין העברת הרשימה לחייב
   form8OwnerDeclarationName?: string; // ברירת מחדל מ-form8BusinessOwnerName, ניתן לעריכה
   form8OwnerSignature?: string;       // dataURL, אופציונלי

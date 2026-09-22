@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { derivedRowText } from "./form8-derived";
+import { derivedRowText, viewingPositionsFromText } from "./form8-derived";
 
 // These two rows go into a חוות דעת filed with a licensing authority, so the
 // wording and the count are pinned rather than assumed.
@@ -23,5 +23,25 @@ describe("derivedRowText", () => {
     expect(derivedRowText(6, 0)).toBeNull();
     expect(derivedRowText(6, -3)).toBeNull();
     expect(derivedRowText(7, Number.NaN)).toBeNull();
+  });
+});
+
+// The count is read back from row 4's own text, so what the consultant
+// actually types there has to come out right.
+describe("viewingPositionsFromText", () => {
+  it("reads a bare count", () => {
+    expect(viewingPositionsFromText("6")).toBe(6);
+    expect(viewingPositionsFromText(" 13 ")).toBe(13);
+  });
+
+  it("reads the count out of a written answer", () => {
+    expect(viewingPositionsFromText("נדרשות 6 עמדות צפייה מיוחדות")).toBe(6);
+    expect(viewingPositionsFromText("נדרשות 13 עמדות צפייה מיוחדות (לפי 700 מקומות ישיבה).")).toBe(13);
+  });
+
+  it("returns null when the row holds no count yet", () => {
+    expect(viewingPositionsFromText("")).toBeNull();
+    expect(viewingPositionsFromText("טרם נקבע")).toBeNull();
+    expect(viewingPositionsFromText("0")).toBeNull();
   });
 });
