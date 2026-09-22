@@ -55,10 +55,12 @@ export async function generateReportPdf(
 
   const PX_TO_MM = 25.4 / 96;
 
-  // ── Repeating per-page footer (opt-in) ───────────────────────────────────
+  // ── Closing footer (opt-in) ──────────────────────────────────────────────
   // A report may mark one element with [data-pdf-page-footer]. When present we
   // capture it once, remove it from the sliced content flow, and stamp it at
-  // the bottom of every page. Reports without such an element are unaffected.
+  // the foot of the LAST page — it closes the report rather than running along
+  // the bottom of every page, which is how it read when a long report spilled
+  // onto another page. Reports without such an element are unaffected.
   // This is a single small strip of text (a header row or two), captured
   // once regardless of how many pages the report has — nowhere near iOS
   // Safari's canvas-size limits even at a high scale — so unlike the main
@@ -189,8 +191,12 @@ export async function generateReportPdf(
     for (let i = 0; i < slices.length; i++) {
       const { top: pageTop, height: pageH } = slices[i];
       const contentHmm = pageH * PX_TO_MM;
-      // When a repeating footer is used, each page is taller by the footer + gap.
-      const pageHmm = contentHmm + (footerData ? gapMm + footerHmm : 0);
+      // Only the closing page carries the footer, so only it is taller by the
+      // footer + gap. Pages are sized to their own slice, so the others simply
+      // end where their content does — no band is held open for a footer that
+      // is not drawn on them.
+      const drawFooterHere = !!footerData && i === slices.length - 1;
+      const pageHmm = contentHmm + (drawFooterHere ? gapMm + footerHmm : 0);
 
       container.style.overflow = "hidden";
       container.style.height   = pageH + "px";
@@ -235,9 +241,9 @@ export async function generateReportPdf(
 
       pdf.addImage(imgData, "JPEG", 0, 0, pageWmm, contentHmm, undefined, "FAST");
 
-      // Stamp the repeating footer at the bottom of every page.
-      if (footerData) {
-        pdf.addImage(footerData, "JPEG", 0, contentHmm + gapMm, pageWmm, footerHmm, undefined, "FAST");
+      // Stamp the closing footer, on the last page only.
+      if (drawFooterHere) {
+        pdf.addImage(footerData!, "JPEG", 0, contentHmm + gapMm, pageWmm, footerHmm, undefined, "FAST");
       }
 
       // Digits-only page indicator (see comment above showPageNumbers).

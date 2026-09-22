@@ -408,7 +408,9 @@ export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, sett
     // Always the company's own identity — not personalized per consultant
     // account (see ELEMENT_STABILITY_FOOTER).
     const footer = ELEMENT_STABILITY_FOOTER;
-    // Marked with data-pdf-page-footer so pdf.ts stamps it on EVERY page.
+    // Marked with data-pdf-page-footer, which pdf-generate stamps at the foot
+    // of the last page — a long report that runs onto another page no longer
+    // repeats these contact lines partway through.
     // A custom footer image (from settings) takes precedence when provided.
     const footerImg = fmt.footerImage;
     // Explicit top/bottom padding (not margin) so the captured box fully
