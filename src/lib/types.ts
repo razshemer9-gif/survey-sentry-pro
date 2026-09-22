@@ -151,6 +151,9 @@ export interface SurveyReport {
   ownerId?: string;
   // Opinion summary
   accessibilityComplianceStatus?: "yes" | "no" | "safe";
+  // סקר נגישות בלבד: באילו הסמכות הדוח עוסק — מתו״ס, שירות או שתיהן.
+  // ריק בדוחות ישנים, ומשמעותו "שתיהן" (ראה accessibility-scope.ts).
+  accessibilityScope?: "both" | "matos" | "service";
   // Document mode
   reportMode?: "survey" | "approval";
   // Required approvals (general_safety only)
