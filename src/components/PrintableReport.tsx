@@ -1242,17 +1242,20 @@ export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, sett
           </div>
         )}
 
-        {/* Signature — bottom of the report, after all findings/tables */}
-        <div data-pdf-no-break="" style={{ padding: "0 56px", marginTop: 32 }}>
+        {/* Signature — bottom of the report, after all findings/tables.
+            The caption carries its own rule and the block keeps a margin below
+            it: without them the name sat directly on the page footer's border,
+            which read as a line struck through the consultant's name. */}
+        <div data-pdf-no-break="" style={{ padding: "0 56px", marginTop: 32, marginBottom: 28 }}>
           <div style={{ display: "flex", gap: 48, alignItems: "flex-end" }}>
-            <div>
+            <div style={{ textAlign: "center" }}>
               {(fmt.signatureImage || report.signatureDataUrl) ? (
                 <img src={fmt.signatureImage || report.signatureDataUrl} alt="חתימה" crossOrigin="anonymous"
-                  style={{ maxHeight: 64, maxWidth: 200, display: "block" }} />
+                  style={{ maxHeight: 78, maxWidth: 240, height: "auto", display: "block", margin: "0 auto" }} />
               ) : (
-                <div style={{ height: 56, width: 200, borderBottom: "1px solid #94a3b8" }} />
+                <div style={{ height: 68, width: 240 }} />
               )}
-              <div style={{ fontSize: 12, color: "#64748b", marginTop: 4 }}>
+              <div style={{ borderTop: "1px solid #0f172a", marginTop: 4, paddingTop: 4, fontSize: 12, color: "#64748b" }}>
                 {sigName || "חתימת הבודק"}
                 {report.signatureDate ? ` • ${report.signatureDate}` : ""}
               </div>
@@ -1261,7 +1264,7 @@ export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, sett
         </div>
 
         {/* Footer */}
-        <div style={{ padding: "12px 48px", borderTop: "1px solid #e2e8f0", display: "flex", justifyContent: "space-between", fontSize: 12, color: "#64748b" }}>
+        <div style={{ marginTop: 36, padding: "16px 48px 12px", borderTop: "1px solid #e2e8f0", display: "flex", justifyContent: "space-between", fontSize: 12, color: "#64748b" }}>
           <span>{settings.companyName}</span>
           <span>הופק בתאריך {formatHebrewDate(new Date().toISOString().slice(0, 10))}</span>
         </div>
