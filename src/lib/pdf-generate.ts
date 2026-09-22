@@ -3,11 +3,18 @@
 // generates a PDF, keeping the libraries out of the initial bundle.
 import jsPDF from "jspdf";
 import html2canvas from "html2canvas";
+import { isMobileDevice } from "./pdf";
+
+/**
+ * How the finished PDF reached the user: straight into the share sheet
+ * (mobile) or as a download (desktop, or a share the browser refused).
+ */
+export type PdfDelivery = "shared" | "downloaded";
 
 export async function generateReportPdf(
   element: HTMLElement | null,
   fileName: string,
-): Promise<void> {
+): Promise<PdfDelivery> {
   if (!element) {
     console.error("[PDF] printRef is null — portal not mounted yet");
     throw new Error("PDF element not found");
@@ -94,7 +101,7 @@ export async function generateReportPdf(
   // same hard physical-pixel ceiling per captured canvas (PAGE_H below is
   // computed to respect them regardless of scale), so this only means
   // slightly shorter page slices on mobile, never a canvas-size violation.
-  const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+  const isMobile = isMobileDevice();
   const scale    = isMobile ? 1.5 : 2;
   const MAX_PX   = isMobile ? 3_500_000 : 14_000_000;
   const MAX_H    = isMobile ? 3_500     : 7_000;
@@ -248,9 +255,32 @@ export async function generateReportPdf(
     if (footerEl) footerEl.style.display = "";
   }
 
-  // ── Download ─────────────────────────────────────────────────────────────
+  // ── Deliver ──────────────────────────────────────────────────────────────
   const blob = pdf.output("blob");
-  const url  = URL.createObjectURL(blob);
+
+  // On a phone, hand the file straight to the OS share sheet. Two reasons:
+  //
+  // 1. Without it, iOS Safari opens the blob: URL in its own PDF viewer, and
+  //    sharing from there attaches the page URL — so WhatsApp received the
+  //    file plus a stray "blob:https://…/fbbc8f0a-…" line. We pass `files`
+  //    ONLY: no title, no text, no url, so nothing but the PDF is sent.
+  // 2. "Save to Files" from that same sheet writes the File object's own
+  //    UTF-8 name, instead of a name iOS re-derives from the blob URL and
+  //    mangles into replacement characters ("�סקר-…�.pdf").
+  const file = new File([blob], fileName, { type: "application/pdf" });
+  if (isMobile && navigator.canShare?.({ files: [file] })) {
+    try {
+      await navigator.share({ files: [file] });
+      return "shared";
+    } catch (err) {
+      // Dismissing the sheet is a choice, not a failure — don't then push a
+      // download the user didn't ask for.
+      if ((err as DOMException)?.name === "AbortError") return "shared";
+      console.warn("[PDF] share failed, falling back to download", err);
+    }
+  }
+
+  const url = URL.createObjectURL(blob);
   try {
     const a = document.createElement("a");
     a.href          = url;
@@ -263,4 +293,5 @@ export async function generateReportPdf(
   } finally {
     setTimeout(() => URL.revokeObjectURL(url), 4_000);
   }
+  return "downloaded";
 }

@@ -1,5 +1,5 @@
-import { describe, expect, it } from "vitest";
-import { sanitizeFileNamePart } from "./pdf";
+import { afterEach, describe, expect, it, vi } from "vitest";
+import { isMobileDevice, sanitizeFileNamePart } from "./pdf";
 
 // Guards against the mojibake reported in saved reports: file names came out as
 // "��סקר-בטיחות…" and sometimes failed to save, because the old filter kept the
@@ -73,5 +73,34 @@ describe("buildPdfFileName across all report types", () => {
     for (const prefix of PREFIXES) {
       expect(sanitizeFileNamePart(prefix)).toBe(prefix);
     }
+  });
+});
+
+// The PDF is handed to the share sheet on a phone and downloaded on a desktop,
+// so a missed device means either a stray blob: link in WhatsApp or a share
+// sheet on a machine that has no use for one.
+describe("isMobileDevice", () => {
+  const stub = (userAgent: string, maxTouchPoints = 0) => {
+    vi.stubGlobal("navigator", { userAgent, maxTouchPoints });
+  };
+  afterEach(() => vi.unstubAllGlobals());
+
+  it("detects phones and tablets that say so in the user agent", () => {
+    stub("Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) AppleWebKit/605.1.15");
+    expect(isMobileDevice()).toBe(true);
+    stub("Mozilla/5.0 (Linux; Android 14; Pixel 8) AppleWebKit/537.36");
+    expect(isMobileDevice()).toBe(true);
+  });
+
+  it("detects an iPad, which reports itself as a Mac since iPadOS 13", () => {
+    stub("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15", 5);
+    expect(isMobileDevice()).toBe(true);
+  });
+
+  it("leaves a real desktop alone", () => {
+    stub("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36", 0);
+    expect(isMobileDevice()).toBe(false);
+    stub("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36");
+    expect(isMobileDevice()).toBe(false);
   });
 });

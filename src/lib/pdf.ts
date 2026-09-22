@@ -5,6 +5,19 @@ import { getSurveyType, SurveyReport } from "./types";
 import { formatCurrency, formatHebrewDate } from "./image";
 
 /**
+ * Phone/tablet detection, used both for the canvas limits in ./pdf-generate
+ * and for choosing the share sheet over a download.
+ *
+ * iPadOS 13+ reports itself as "Macintosh", so the user-agent test alone
+ * misses every iPad — the touch-point check is what catches them.
+ */
+export function isMobileDevice(): boolean {
+  if (typeof navigator === "undefined") return false;
+  if (/iPhone|iPad|iPod|Android/i.test(navigator.userAgent)) return true;
+  return /Mac/i.test(navigator.userAgent) && navigator.maxTouchPoints > 1;
+}
+
+/**
  * Reduce arbitrary user text to characters that survive a file name intact.
  *
  * The previous filter kept the whole Hebrew Unicode block (U+0590–U+05FF),
