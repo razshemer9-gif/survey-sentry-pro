@@ -33,17 +33,19 @@ function getFormat(settings: ConsultantSettings, report: SurveyReport): SurveyRe
 /**
  * Page-wide header banner, drawn at one fixed height for every report type.
  *
- * The banner artworks were produced at different times and have different
- * aspect ratios (6.45 for accessibility, 5.65 for general_safety and
- * risk_survey), so rendering them at width:100% alone made the same brand
- * banner 246px tall on one report and 281px on another. Pinning the height
- * and letting the excess crop keeps them identical without re-encoding any
- * image — no quality is lost, and the change is reversible.
+ * The artworks were produced at different times and had different aspect
+ * ratios (6.45 accessibility, 5.94 general_safety, 5.65 risk_survey, 6.60
+ * element_stability), so this band cropped whatever did not fit — which took
+ * the rounded corners off the taller ones and left a white sliver under the
+ * shorter one. Every banner but the accessibility one (the reference, left
+ * untouched) is now stored at its geometry: 1600x248, 3px white margin, 18px
+ * corner radius. They render here at 794x123 with nothing cropped and no
+ * upscaling, since 1600px is 2x the width these pages rasterize at.
  *
- * Height matches the accessibility banner's natural proportions, the tightest
- * of the set, so no artwork has to be stretched. Implemented with a clipping
- * wrapper rather than object-fit because html2canvas — which rasterizes these
- * pages — renders overflow:hidden reliably and object-fit inconsistently.
+ * The fixed height stays as the guard that made them uniform in the first
+ * place. Implemented with a clipping wrapper rather than object-fit because
+ * html2canvas — which rasterizes these pages — renders overflow:hidden
+ * reliably and object-fit inconsistently.
  */
 const BANNER_H = 123; // 794px page / 6.455
 
@@ -210,6 +212,10 @@ export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, sett
       </div>
     );
 
+    // Page footer: who wrote the opinion, on every page. It carries no
+    // signature — this footer repeats on each page, and the מורשה signs the
+    // opinion once, in חלק ג'. Stamping the signature here as well put it on
+    // the page three or four times over.
     const Footer = () => (
       <div data-pdf-page-footer="" style={{ direction: "rtl", padding: "10px 0 8px", boxSizing: "border-box", textAlign: "center", borderTop: "1px solid #e2e8f0" }}>
         <div style={{ fontSize: 12, fontWeight: 700, color: "#0f172a" }}>שם המורשה: {report.form8ExpertName || ""}</div>
@@ -217,10 +223,6 @@ export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, sett
           {'מורשה נגישות מתו"ס מ.ר. '}{report.form8ExpertRegistrationNumber || ""}
           {"   ·   מורשה נגישות שירות מ.ר. "}{report.form8ServiceRegistrationNumber || ""}
         </div>
-        {report.form8ExpertSignature && (
-          <img src={report.form8ExpertSignature} alt="חתימת המורשה" crossOrigin="anonymous"
-            style={{ maxHeight: 32, maxWidth: 140, height: "auto", display: "block", margin: "4px auto 0" }} />
-        )}
       </div>
     );
 
@@ -1337,22 +1339,25 @@ export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, sett
           <div style={{ height: 40, background: `linear-gradient(to bottom, #ffffff 0%, ${surveyConfig.color}dd 100%)` }} />
         )}
 
-        <div style={{ padding: hasHeaderBanner ? "16px 48px" : "10px 48px 24px" }}>
-          {!hasHeaderBanner && (
+        {/* The banner-carrying types already state the report's title in the
+            banner, and the place name is the first field of the details block
+            right below — so a colored band repeating it only pushed the details
+            down the page. Types without a banner still need their title here. */}
+        {!hasHeaderBanner && (
+          <div style={{ padding: "10px 48px 24px" }}>
             <h1 style={{ fontSize: 46, fontWeight: 800, lineHeight: 1.05, margin: 0 }}>
               {(() => {
                 const base = fmt.reportTitle || surveyConfig.pdfTitle;
                 return isApproval ? base.replace(/^סקר/, "אישור") : base;
               })()}
             </h1>
-          )}
-          <div style={{ fontSize: 22, marginTop: hasHeaderBanner ? 0 : 14, opacity: 0.95 }}>{report.placeName || "ללא שם"}</div>
-        </div>
+          </div>
+        )}
 
         <div
           data-pdf-no-break=""
           style={{
-            margin: "24px 0 0",
+            margin: hasHeaderBanner ? 0 : "24px 0 0",
             background: "#ffffff",
             color: "#0f172a",
           }}
