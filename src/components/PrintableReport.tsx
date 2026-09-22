@@ -212,12 +212,16 @@ export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, sett
       </div>
     );
 
-    // Page footer: who wrote the opinion, on every page. It carries no
-    // signature — this footer repeats on each page, and the מורשה signs the
-    // opinion once, in חלק ג'. Stamping the signature here as well put it on
-    // the page three or four times over.
+    // Who wrote the opinion — once, at the end of the form.
+    //
+    // This block used to carry [data-pdf-page-footer], which stamps an element
+    // at the bottom of every page and reserves its height on each one. So the
+    // same three lines (and, until now, the מורשה's signature with them)
+    // repeated throughout the form, each behind a rule of its own, and every
+    // page lost a band of content height to make room. The מורשה signs once,
+    // in חלק ג'; this is only the identification line that closes the form.
     const Footer = () => (
-      <div data-pdf-page-footer="" style={{ direction: "rtl", padding: "10px 0 8px", boxSizing: "border-box", textAlign: "center", borderTop: "1px solid #e2e8f0" }}>
+      <div style={{ direction: "rtl", padding: "20px 48px 28px", boxSizing: "border-box", textAlign: "center" }}>
         <div style={{ fontSize: 12, fontWeight: 700, color: "#0f172a" }}>שם המורשה: {report.form8ExpertName || ""}</div>
         <div style={{ fontSize: 11, color: "#334155", marginTop: 2 }}>
           {'מורשה נגישות מתו"ס מ.ר. '}{report.form8ExpertRegistrationNumber || ""}
