@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle,
 } from "@/components/ui/dialog";
+import { accessibilityScopeLabel, scopeFromChecks } from "@/lib/accessibility-scope";
 import { deleteReport, getLastRefreshError, listReportAuthors, listReports, listTemplates, loadUserSettings, newReport, saveReport } from "@/lib/storage";
 import { isDirty } from "@/lib/offline-db";
 import { subscribeSyncStatus } from "@/lib/sync-engine";
@@ -24,6 +25,10 @@ const Index = () => {
   const [typeDialogOpen, setTypeDialogOpen] = useState(false);
   const [selectedType, setSelectedType] = useState<SurveyType | null>(null);
   const [creating, setCreating] = useState(false);
+  // Which certification(s) an accessibility report covers. Both are ticked by
+  // default — the consultant unticks the one they are not certified for.
+  const [scopeMatos, setScopeMatos] = useState(true);
+  const [scopeService, setScopeService] = useState(true);
   const [dirtyIds, setDirtyIds] = useState<Set<string>>(new Set());
   // Account id -> display name, used to label reports written by someone else.
   // Only populated with other people's names for owners/admins; RLS returns
@@ -73,6 +78,8 @@ const Index = () => {
 
   function openNewDialog() {
     setSelectedType(null);
+    setScopeMatos(true);
+    setScopeService(true);
     setTypeDialogOpen(true);
   }
 
@@ -134,7 +141,11 @@ const Index = () => {
         toast.error("לא הוגדרה תבנית עבור סוג סקר זה. יש ליצור תבנית מתאימה בדף התבניות.");
         return;
       }
-      const r = await saveReport(newReport(selectedType, matched.items));
+      const draft = newReport(selectedType, matched.items);
+      // Only the accessibility survey carries a certification scope; the other
+      // templated types have nothing to record here.
+      const scope = selectedType === "accessibility" ? scopeFromChecks(scopeMatos, scopeService) : null;
+      const r = await saveReport(scope ? { ...draft, accessibilityScope: scope } : draft);
       setTypeDialogOpen(false);
       navigate(`/report/${r.id}`);
     } catch {
@@ -323,9 +334,46 @@ const Index = () => {
               </button>
             ))}
           </div>
+          {selectedType === "accessibility" && (
+            <div className="rounded-2xl border-2 border-primary/25 bg-primary-soft/30 p-3">
+              <div className="text-sm font-bold text-primary">במה אתה מוסמך?</div>
+              <p className="mt-1 text-xs text-muted-foreground">
+                שתי ההסמכות מסומנות כברירת מחדל. הורד את הסימון מזו שאינך מוסמך לה — כותרת הדוח תשתנה בהתאם.
+              </p>
+              <div className="mt-3 space-y-2">
+                {([
+                  ["matos", 'מורשה נגישות מתו״ס', scopeMatos, setScopeMatos] as const,
+                  ["service", "מורשה נגישות שירות", scopeService, setScopeService] as const,
+                ]).map(([key, label, checked, setChecked]) => (
+                  <label
+                    key={key}
+                    className={cn(
+                      "flex cursor-pointer select-none items-center gap-3 rounded-xl border-2 px-3 py-3 transition-colors",
+                      checked ? "border-primary bg-primary/10" : "border-border bg-background",
+                    )}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={checked}
+                      onChange={(e) => setChecked(e.target.checked)}
+                      className="h-5 w-5 flex-shrink-0 accent-primary"
+                    />
+                    <span className={cn("text-sm font-semibold", checked && "text-primary")}>{label}</span>
+                  </label>
+                ))}
+              </div>
+              {!scopeMatos && !scopeService ? (
+                <p className="mt-2 text-xs font-semibold text-destructive">יש לסמן לפחות הסמכה אחת.</p>
+              ) : (
+                <p className="mt-2 text-xs text-muted-foreground">
+                  כותרת הדוח: <strong>{`סקר ${accessibilityScopeLabel(scopeFromChecks(scopeMatos, scopeService)!)}`}</strong>
+                </p>
+              )}
+            </div>
+          )}
           <Button
             onClick={createNew}
-            disabled={!selectedType || creating}
+            disabled={!selectedType || creating || (selectedType === "accessibility" && !scopeMatos && !scopeService)}
             className="mt-1 w-full gap-2"
           >
             {creating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}

@@ -34,6 +34,7 @@ import { EDU_INSPECTION_TABLE } from "@/lib/edu-inspection-table";
 import { ELEMENT_STABILITY_DEFAULT_TERMS, ELEMENT_STABILITY_STABLE_ONLY_INDICES } from "@/lib/element-stability";
 import { FORM8_REQUIREMENTS } from "@/lib/form8-data";
 import { derivedRowText, viewingPositionsFromText } from "@/lib/form8-derived";
+import { accessibilityScopeOf, accessibilityScopeLabel, scopeChecks, scopeFromChecks } from "@/lib/accessibility-scope";
 import { STANDARDS_DATA } from "@/lib/standards-data";
 import { getReport, loadUserSettings, saveReport, saveUserSettings } from "@/lib/storage";
 import { isDirty } from "@/lib/offline-db";
@@ -714,6 +715,45 @@ export default function ReportEditor() {
                         ))}
                       </div>
                     </Field>
+                    {(!report.surveyType || report.surveyType === "accessibility") && (() => {
+                      // The two certifications the report covers. Chosen when
+                      // the report is created; changeable here, since which
+                      // consultant goes out can change after the fact.
+                      const checks = scopeChecks(accessibilityScopeOf(report));
+                      const setScope = (matos: boolean, service: boolean) => {
+                        const next = scopeFromChecks(matos, service);
+                        if (next) update({ accessibilityScope: next });
+                      };
+                      return (
+                        <Field label="הסמכות הדוח">
+                          <div className="space-y-2">
+                            {([
+                              ["matos", 'מורשה נגישות מתו״ס', checks.matos, (v: boolean) => setScope(v, checks.service)] as const,
+                              ["service", "מורשה נגישות שירות", checks.service, (v: boolean) => setScope(checks.matos, v)] as const,
+                            ]).map(([key, label, checked, set]) => (
+                              <label
+                                key={key}
+                                className={cn(
+                                  "flex cursor-pointer select-none items-center gap-3 rounded-xl border-2 px-3 py-3 transition-colors",
+                                  checked ? "border-primary bg-primary/10" : "border-border bg-background",
+                                )}
+                              >
+                                <input
+                                  type="checkbox"
+                                  checked={checked}
+                                  onChange={(e) => set(e.target.checked)}
+                                  className="h-5 w-5 flex-shrink-0 accent-primary"
+                                />
+                                <span className={cn("text-sm font-semibold", checked && "text-primary")}>{label}</span>
+                              </label>
+                            ))}
+                          </div>
+                          <p className="mt-2 text-xs text-muted-foreground">
+                            כותרת הדוח: <strong>{`${(report.reportMode ?? "survey") === "approval" ? "אישור" : "סקר"} ${accessibilityScopeLabel(accessibilityScopeOf(report))}`}</strong>
+                          </p>
+                        </Field>
+                      );
+                    })()}
                     {report.surveyType !== "general_safety" && (
                     <Field label="סוג הבניין">
                       <Select value={report.buildingType || ""} onValueChange={(v) => update({ buildingType: v as "existing_public" | "new_public" | "other" })}>

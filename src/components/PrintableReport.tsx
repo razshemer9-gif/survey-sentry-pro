@@ -1,5 +1,6 @@
 import { ConsultantSettings, getSurveyType, SurveyReport, SurveyReportFormat } from "@/lib/types";
 import { formatCurrency, formatHebrewDate } from "@/lib/pdf";
+import { accessibilityScopeLabel, accessibilityScopeOf, accessibilityTitle } from "@/lib/accessibility-scope";
 import { EDU_INSPECTION_TABLE } from "@/lib/edu-inspection-table";
 import { FORM8_REQUIREMENTS } from "@/lib/form8-data";
 import { ISRAEL_STATE_EMBLEM, MOLSA_HEADER_LOGO } from "@/lib/welfare-logos";
@@ -1366,6 +1367,11 @@ export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, sett
           <div style={{ padding: "10px 48px 24px" }}>
             <h1 style={{ fontSize: 46, fontWeight: 800, lineHeight: 1.05, margin: 0 }}>
               {(() => {
+                // An accessibility report is named for the certifications it
+                // covers, which is not always both.
+                if (isAccessibilityType && !fmt.reportTitle) {
+                  return accessibilityTitle(accessibilityScopeOf(report), isApproval);
+                }
                 const base = fmt.reportTitle || surveyConfig.pdfTitle;
                 return isApproval ? base.replace(/^סקר/, "אישור") : base;
               })()}
@@ -1401,6 +1407,9 @@ export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, sett
           }}>
             <Field label="שם המקום / העסק" value={report.placeName} />
             <Field label="שם הלקוח" value={report.clientName} />
+            {isAccessibilityType && (
+              <Field label="הסמכות הדוח" value={accessibilityScopeLabel(accessibilityScopeOf(report))} />
+            )}
             <Field label="כתובת" value={report.address} />
             <Field label="תאריך הסקר" value={formatHebrewDate(report.surveyDate)} />
             {report.surveyType !== "general_safety" && report.buildingType && (
