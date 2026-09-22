@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { isMobileDevice, sanitizeFileNamePart } from "./pdf";
+import { buildPdfFileName, isMobileDevice, sanitizeFileNamePart } from "./pdf";
+import type { SurveyReport } from "./types";
 
 // Guards against the mojibake reported in saved reports: file names came out as
 // "��סקר-בטיחות…" and sometimes failed to save, because the old filter kept the
@@ -102,5 +103,43 @@ describe("isMobileDevice", () => {
     expect(isMobileDevice()).toBe(false);
     stub("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36");
     expect(isMobileDevice()).toBe(false);
+  });
+});
+
+// The file name travels through iOS Files and WhatsApp, which wrap a name
+// that switches writing direction in bidi control characters — drawn as "�"
+// on WhatsApp Web. Keeping the name in one direction is what avoids that, so
+// these pin down that no Latin filler sneaks back in.
+describe("buildPdfFileName", () => {
+  const report = (patch: Partial<SurveyReport>) =>
+    ({ surveyDate: "2026-09-22", placeName: "", items: [], ...patch }) as SurveyReport;
+
+  it("uses the business name for a Form 8 report, which keeps it in its own field", () => {
+    expect(buildPdfFileName(report({ surveyType: "accessibility_form_8", form8BusinessName: "מסעדת הגליל" })))
+      .toBe("טופס-8-חוות-דעת-נגישות-מסעדת הגליל-2026-09-22.pdf");
+  });
+
+  it("leaves the name segment out entirely when there is no name", () => {
+    expect(buildPdfFileName(report({ surveyType: "accessibility_form_8" })))
+      .toBe("טופס-8-חוות-דעת-נגישות-2026-09-22.pdf");
+    expect(buildPdfFileName(report({ surveyType: "accessibility" })))
+      .toBe("סקר-נגישות-2026-09-22.pdf");
+  });
+
+  it("never falls back to a Latin word, whatever is left after sanitizing", () => {
+    for (const placeName of ["", "   ", "״׳־", "🏗️"]) {
+      const base = buildPdfFileName(report({ surveyType: "accessibility", placeName })).replace(/\.pdf$/, "");
+      expect(base, placeName).not.toMatch(/[a-zA-Z]/);
+    }
+  });
+
+  it("still uses placeName for every other report type", () => {
+    expect(buildPdfFileName(report({ surveyType: "risk_survey", placeName: "גן הפעמון" })))
+      .toBe("סקר-סיכונים-גן הפעמון-2026-09-22.pdf");
+  });
+
+  it("swaps the prefix for an approval report", () => {
+    expect(buildPdfFileName(report({ surveyType: "accessibility", placeName: "בית ספר אלון", reportMode: "approval" })))
+      .toBe("אישור-נגישות-בית ספר אלון-2026-09-22.pdf");
   });
 });

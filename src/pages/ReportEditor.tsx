@@ -33,7 +33,7 @@ import { ChecklistItem, ConsultantSettings, DEFAULT_CHECKLIST, DEFAULT_SETTINGS,
 import { EDU_INSPECTION_TABLE } from "@/lib/edu-inspection-table";
 import { ELEMENT_STABILITY_DEFAULT_TERMS, ELEMENT_STABILITY_STABLE_ONLY_INDICES } from "@/lib/element-stability";
 import { FORM8_REQUIREMENTS } from "@/lib/form8-data";
-import { derivedRowText } from "@/lib/form8-derived";
+import { derivedRowText, viewingPositionsFromText } from "@/lib/form8-derived";
 import { STANDARDS_DATA } from "@/lib/standards-data";
 import { getReport, loadUserSettings, saveReport, saveUserSettings } from "@/lib/storage";
 import { isDirty } from "@/lib/offline-db";
@@ -1052,25 +1052,25 @@ export default function ReportEditor() {
             const requirements = report.form8Requirements?.length
               ? report.form8Requirements
               : Array.from({ length: 14 }, (_, i) => ({ id: i + 1, response: "" }));
-            const setRequirement = (id: number, response: string) =>
-              update({ form8Requirements: requirements.map((r) => (r.id === id ? { ...r, response } : r)) });
-
             // Rows 6 and 7 are one per viewing position, so they follow the
-            // number the consultant took from row 4's table. A row the
-            // consultant wrote themselves is left exactly as they wrote it —
-            // only an empty row, or one still holding the text generated from
-            // the previous number, is rewritten.
-            const setViewingPositions = (raw: string) => {
-              const next = raw ? Number(raw) : undefined;
-              const prev = report.form8ViewingPositions;
+            // count the consultant writes in row 4 — the row they fill in
+            // anyway, rather than a second field beside it. Changing that
+            // count rewrites both rows, by request: they are the same number
+            // in nearly every report, and the consultant edits the exception
+            // by hand afterwards. An edit therefore holds until the count in
+            // row 4 changes again.
+            const setRequirement = (id: number, response: string) => {
+              const rows = requirements.map((r) => (r.id === id ? { ...r, response } : r));
+              if (id !== 4) return update({ form8Requirements: rows });
+
+              const prev = viewingPositionsFromText(requirements.find((r) => r.id === 4)?.response ?? "");
+              const next = viewingPositionsFromText(response);
+              if (next === null || next === prev) return update({ form8Requirements: rows });
+
               update({
-                form8ViewingPositions: next,
-                form8Requirements: requirements.map((r) => {
-                  const nextText = next ? derivedRowText(r.id, next) : null;
-                  if (nextText === null) return r;
-                  const prevText = prev ? derivedRowText(r.id, prev) : null;
-                  if (r.response.trim() !== "" && r.response !== prevText) return r;
-                  return { ...r, response: nextText };
+                form8Requirements: rows.map((r) => {
+                  const nextText = derivedRowText(r.id, next);
+                  return nextText === null ? r : { ...r, response: nextText };
                 }),
               });
             };
@@ -1139,24 +1139,6 @@ export default function ReportEditor() {
                         </button>
                       )}
 
-                      {req.id === 4 && (
-                        <div className="rounded-lg border border-primary/20 bg-primary-soft/40 p-2.5 space-y-1.5" dir="rtl">
-                          <div className="flex items-center gap-2">
-                            <Label className="text-xs shrink-0 text-foreground">מספר עמדות צפייה מיוחדות</Label>
-                            <Input
-                              type="number"
-                              inputMode="numeric"
-                              className="h-8 text-sm"
-                              value={report.form8ViewingPositions ?? ""}
-                              onChange={(e) => setViewingPositions(e.target.value)}
-                              placeholder="לפי הטבלה"
-                            />
-                          </div>
-                          <p className="text-[10px] text-muted-foreground">
-                            ממלא אוטומטית את סעיף 6 (מושבים מותאמים) וסעיף 7 (חניות נגישות). טקסט שכתבת בעצמך בסעיפים האלה לא יידרס.
-                          </p>
-                        </div>
-                      )}
 
                       <Textarea
                         value={req.response}
@@ -1165,6 +1147,11 @@ export default function ReportEditor() {
                         placeholder="הדרישה עבור עסק זה..."
                         className="text-sm"
                       />
+                      {req.id === 4 && (
+                        <p className="text-[10px] text-muted-foreground">
+                          מספר העמדות שתכתוב כאן ממלא את סעיף 6 (מושבים מותאמים) וסעיף 7 (חניות נגישות). שינוי המספר כאן מעדכן אותם מחדש — עריכה ידנית שלהם נשמרת עד לשינוי הבא.
+                        </p>
+                      )}
                     </div>
                     );
                   })}
