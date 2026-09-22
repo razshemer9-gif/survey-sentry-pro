@@ -40,7 +40,7 @@ import { isDirty } from "@/lib/offline-db";
 import { subscribeSyncStatus } from "@/lib/sync-engine";
 import { importWithReload } from "@/lib/dynamic-import";
 import { useAuth } from "@/contexts/AuthContext";
-import { buildPdfFileName, sanitizeFileNamePart } from "@/lib/pdf";
+import { buildPdfFileName, isMobileDevice, sanitizeFileNamePart } from "@/lib/pdf";
 import { cropImageDataUrl, fileToCompressedDataUrl, formatCurrency, rotateImageDataUrl } from "@/lib/image";
 import { RISK_SURVEY_DEFAULT_FENCING_NOTE } from "@/lib/risk-survey";
 import { cn } from "@/lib/utils";
@@ -328,8 +328,8 @@ export default function ReportEditor() {
       ]);
       // Two rAF ticks let React commit any pending renders to the print portal DOM
       await new Promise<void>((r) => requestAnimationFrame(() => requestAnimationFrame(() => r())));
-      await generateReportPdf(printRef.current, buildPdfFileName(latest));
-      toast.success("ה-PDF הופק והורד");
+      const delivery = await generateReportPdf(printRef.current, buildPdfFileName(latest));
+      toast.success(delivery === "shared" ? "ה-PDF הופק" : "ה-PDF הופק והורד");
     } catch (err) {
       console.error("[PDF]", err);
       toast.error("שגיאה ביצירת ה-PDF");
@@ -384,9 +384,11 @@ export default function ReportEditor() {
       const date = report.surveyDate || new Date().toISOString().slice(0, 10);
       const fileName = `תמונות-${safe}-${date}.zip`;
 
-      const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
-      if (isMobile && navigator.canShare?.({ files: [new File([blob], fileName, { type: "application/zip" })] })) {
-        await navigator.share({ files: [new File([blob], fileName, { type: "application/zip" })], title: fileName });
+      const zipFile = new File([blob], fileName, { type: "application/zip" });
+      // Files only — a title or text rides along into WhatsApp as a separate
+      // message, which is not what "share the photos" means.
+      if (isMobileDevice() && navigator.canShare?.({ files: [zipFile] })) {
+        await navigator.share({ files: [zipFile] });
       } else {
         const url = URL.createObjectURL(blob);
         const a = document.createElement("a");
