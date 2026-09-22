@@ -33,7 +33,6 @@ import { ChecklistItem, ConsultantSettings, DEFAULT_CHECKLIST, DEFAULT_SETTINGS,
 import { EDU_INSPECTION_TABLE } from "@/lib/edu-inspection-table";
 import { ELEMENT_STABILITY_DEFAULT_TERMS, ELEMENT_STABILITY_STABLE_ONLY_INDICES } from "@/lib/element-stability";
 import { FORM8_REQUIREMENTS } from "@/lib/form8-data";
-import { SEATING_BRACKETS, UNITS_BRACKETS, computeAccessibleUnits, computeSeatingPositions, seatingBracketIndex, unitsBracketIndex } from "@/lib/form8-calc";
 import { STANDARDS_DATA } from "@/lib/standards-data";
 import { getReport, loadUserSettings, saveReport, saveUserSettings } from "@/lib/storage";
 import { isDirty } from "@/lib/offline-db";
@@ -61,6 +60,8 @@ export default function ReportEditor() {
   const [croppedCoverPhoto, setCroppedCoverPhoto] = useState<string | null>(null);
   const [customApprovalInput, setCustomApprovalInput] = useState("");
   const [addingPhotos, setAddingPhotos] = useState(false);
+  // Which of חלק ד's reference tables (rows 4/5) is open full-screen, if any.
+  const [tableZoom, setTableZoom] = useState<{ src: string; label: string } | null>(null);
   // idle=nothing to save · pending=edited, waiting for the 3s debounce (NOT
   // yet safe to exit) · saving=in flight · saved=persisted, safe to exit · error=failed
   const [saveStatus, setSaveStatus] = useState<"idle" | "pending" | "saving" | "saved" | "error">("idle");
@@ -1092,100 +1093,29 @@ export default function ReportEditor() {
                     יש למלא רק עבור עסק בבניין ציבורי קיים שהיתר הקמתו הוגש לפני 1.8.2009. יש להזין את התייחסותך לכל סעיף.
                   </p>
                   {requirements.map((req, i) => {
-                    // Row 4: עמדות צפייה מיוחדות — suggested count from כמות קהל/תפוסה.
-                    const seatingInput = req.id === 4
-                      ? (report.form8SeatingCalcInput ?? (Number(report.form8Attendance) || undefined))
-                      : undefined;
-                    const seatingBracket = seatingInput ? seatingBracketIndex(seatingInput) : -1;
-                    const seatingResult = seatingInput ? computeSeatingPositions(seatingInput) : null;
-
-                    // Row 5: תאים נגישים — defaults its input from row 4's own suggestion.
-                    const seatingForUnits = report.form8SeatingCalcInput ?? (Number(report.form8Attendance) || undefined);
-                    const unitsInput = req.id === 5
-                      ? (report.form8UnitsCalcInput ?? (seatingForUnits ? computeSeatingPositions(seatingForUnits) ?? undefined : undefined))
-                      : undefined;
-                    const unitsBracket = unitsInput ? unitsBracketIndex(unitsInput) : -1;
-                    const unitsResult = unitsInput ? computeAccessibleUnits(unitsInput) : null;
-
+                    // Rows 4 and 5 carry the reference table from the source
+                    // DOCX. The consultant reads the row that applies and
+                    // writes the requirement themselves — the app does not
+                    // pick a row or compute a number, because the regulations
+                    // round in ways that need professional judgment.
+                    const def = FORM8_REQUIREMENTS[i];
                     return (
                     <div key={req.id} className="rounded-xl border border-border bg-background p-3 space-y-2">
                       <div className="flex items-start gap-2 text-xs font-semibold text-foreground">
                         <span className="shrink-0 text-muted-foreground">{i + 1}.</span>
-                        <span>{FORM8_REQUIREMENTS[i]?.label}</span>
+                        <span>{def?.label}</span>
                       </div>
 
-                      {req.id === 4 && (
-                        <div className="rounded-lg bg-primary-soft/40 border border-primary/20 p-2.5 space-y-2" dir="rtl">
-                          <div className="flex items-center gap-2">
-                            <Label className="text-xs shrink-0 text-foreground">כמות קהל/תפוסה לחישוב</Label>
-                            <Input
-                              type="number"
-                              inputMode="numeric"
-                              className="h-8 text-sm"
-                              value={seatingInput ?? ""}
-                              onChange={(e) => update({ form8SeatingCalcInput: e.target.value ? Number(e.target.value) : undefined })}
-                              placeholder="לדוגמה: 800"
-                            />
-                          </div>
-                          <div className="space-y-0.5">
-                            {SEATING_BRACKETS.map((b, bi) => (
-                              <div key={bi} className={cn("text-xs rounded px-1.5 py-0.5", bi === seatingBracket ? "bg-primary text-primary-foreground font-bold" : "text-muted-foreground")} style={{ unicodeBidi: "plaintext" }}>
-                                {b.label}
-                              </div>
-                            ))}
-                          </div>
-                          {seatingResult !== null && (
-                            <div className="flex items-center justify-between gap-2 text-xs">
-                              <span className="text-foreground">הצעה: נדרשות <strong>{seatingResult}</strong> עמדות צפייה מיוחדות</span>
-                              <Button
-                                type="button" size="sm" variant="secondary" className="h-7 text-xs shrink-0"
-                                onClick={() => setRequirement(4, `נדרשות ${seatingResult} עמדות צפייה מיוחדות (לפי ${seatingInput} משתתפים).`)}
-                              >
-                                השתמש בהצעה
-                              </Button>
-                            </div>
-                          )}
-                        </div>
-                      )}
-
-                      {req.id === 5 && (
-                        <div className="rounded-lg bg-primary-soft/40 border border-primary/20 p-2.5 space-y-2" dir="rtl">
-                          <div className="flex items-center gap-2">
-                            <Label className="text-xs shrink-0 text-foreground">מספר מקומות ישיבה מיוחדים לחישוב</Label>
-                            <Input
-                              type="number"
-                              inputMode="numeric"
-                              className="h-8 text-sm"
-                              value={unitsInput ?? ""}
-                              onChange={(e) => update({ form8UnitsCalcInput: e.target.value ? Number(e.target.value) : undefined })}
-                              placeholder="לדוגמה: 20"
-                            />
-                          </div>
-                          <div className="space-y-0.5">
-                            {UNITS_BRACKETS.map((b, bi) => (
-                              <div key={bi} className={cn("text-xs rounded px-1.5 py-0.5", bi === unitsBracket ? "bg-primary text-primary-foreground font-bold" : "text-muted-foreground")} style={{ unicodeBidi: "plaintext" }}>
-                                {b.label}
-                              </div>
-                            ))}
-                          </div>
-                          {unitsResult && (
-                            <div className="flex items-center justify-between gap-2 text-xs">
-                              <span className="text-foreground">
-                                {unitsResult.referToOther
-                                  ? "הצעה: לפי האמור בפרט 8.146"
-                                  : <>הצעה: נדרשים <strong>{unitsResult.count}</strong> תאים נגישים{unitsResult.sharedNote ? ` (${unitsResult.sharedNote})` : ""}</>}
-                              </span>
-                              <Button
-                                type="button" size="sm" variant="secondary" className="h-7 text-xs shrink-0"
-                                onClick={() => setRequirement(5, unitsResult.referToOther
-                                  ? "לפי האמור בפרט 8.146."
-                                  : `נדרשים ${unitsResult.count} תאים נגישים${unitsResult.sharedNote ? `, ${unitsResult.sharedNote}` : ""} (לפי ${unitsInput} מקומות ישיבה מיוחדים).`)}
-                              >
-                                השתמש בהצעה
-                              </Button>
-                            </div>
-                          )}
-                        </div>
+                      {def?.image && (
+                        <button
+                          type="button"
+                          onClick={() => setTableZoom({ src: def.image!, label: def.label })}
+                          className="block w-full rounded-lg border border-primary/20 bg-primary-soft/40 p-2 text-right"
+                          aria-label={`הגדל את טבלת ${def.label}`}
+                        >
+                          <img src={def.image} alt={`טבלת ${def.label} מתוך התקן`} className="w-full rounded bg-white" />
+                          <span className="mt-1 block text-[10px] text-muted-foreground">טבלת התקן — הקש להגדלה</span>
+                        </button>
                       )}
 
                       <Textarea
@@ -1836,6 +1766,18 @@ export default function ReportEditor() {
               הורד PDF
             </Button>
           </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Reference-table zoom (חלק ד' rows 4/5) */}
+      <Dialog open={!!tableZoom} onOpenChange={(open) => !open && setTableZoom(null)}>
+        <DialogContent className="max-h-[92vh] max-w-[95vw] overflow-auto p-3 sm:max-w-2xl" dir="rtl">
+          <DialogHeader>
+            <DialogTitle className="text-sm">{tableZoom?.label}</DialogTitle>
+          </DialogHeader>
+          {tableZoom && (
+            <img src={tableZoom.src} alt={`טבלת ${tableZoom.label} מתוך התקן`} className="w-full rounded bg-white" />
+          )}
         </DialogContent>
       </Dialog>
 
