@@ -221,12 +221,25 @@ export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, sett
     // page lost a band of content height to make room. The מורשה signs once,
     // in חלק ג'; this is only the identification line that closes the form.
     const Footer = () => (
-      <div style={{ direction: "rtl", padding: "20px 48px 28px", boxSizing: "border-box", textAlign: "center" }}>
-        <div style={{ fontSize: 12, fontWeight: 700, color: "#0f172a" }}>שם המורשה: {report.form8ExpertName || ""}</div>
-        <div style={{ fontSize: 11, color: "#334155", marginTop: 2 }}>
-          {'מורשה נגישות מתו"ס מ.ר. '}{report.form8ExpertRegistrationNumber || ""}
-          {"   ·   מורשה נגישות שירות מ.ר. "}{report.form8ServiceRegistrationNumber || ""}
+      <div data-pdf-no-break="" style={{
+        direction: "rtl", padding: "20px 48px 28px", boxSizing: "border-box",
+        display: "flex", alignItems: "center", justifyContent: "center", gap: 28,
+      }}>
+        <div style={{ textAlign: "right" }}>
+          <div style={{ fontSize: 13, fontWeight: 700, color: "#0f172a" }}>שם המורשה: {report.form8ExpertName || ""}</div>
+          <div style={{ fontSize: 12, color: "#334155", marginTop: 3 }}>
+            {'מורשה נגישות מתו"ס מ.ר. '}{report.form8ExpertRegistrationNumber || ""}
+          </div>
+          <div style={{ fontSize: 12, color: "#334155", marginTop: 1 }}>
+            {"מורשה נגישות שירות מ.ר. "}{report.form8ServiceRegistrationNumber || ""}
+          </div>
         </div>
+        {/* Beside the text rather than under it: stacked, the stamp only had the
+            leftover strip at the foot of the page and came out unreadably small. */}
+        {report.form8ExpertSignature && (
+          <img src={report.form8ExpertSignature} alt="חותמת המורשה" crossOrigin="anonymous"
+            style={{ maxHeight: 86, maxWidth: 260, height: "auto", display: "block", flexShrink: 0 }} />
+        )}
       </div>
     );
 
