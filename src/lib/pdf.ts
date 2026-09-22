@@ -55,13 +55,22 @@ export function sanitizeFileNamePart(input: string): string {
 }
 
 export function buildPdfFileName(report: SurveyReport): string {
-  const safe = sanitizeFileNamePart(report.placeName || "") || "report";
-  const date  = report.surveyDate || new Date().toISOString().slice(0, 10);
+  // Form 8 keeps the business name in its own field, so reading placeName
+  // alone left that name out of the file name entirely.
+  const nameSource = report.surveyType === "accessibility_form_8"
+    ? report.form8BusinessName || report.placeName
+    : report.placeName;
+  // A missing name used to fall back to the Latin word "report", which put a
+  // left-to-right run in the middle of an otherwise Hebrew name. WhatsApp then
+  // wrapped the name in bidi control characters it draws as "�". Leave the
+  // segment out instead — the prefix and date already identify the file.
+  const safe = sanitizeFileNamePart(nameSource || "");
+  const date = report.surveyDate || new Date().toISOString().slice(0, 10);
   const basePrefix = getSurveyType(report.surveyType).filePrefix;
   const prefix = report.reportMode === "approval" ? basePrefix.replace(/^(סקר|דוח)/, "אישור") : basePrefix;
   // The prefix is ours, but sanitize it too so a future label cannot
   // reintroduce the problem.
-  return `${sanitizeFileNamePart(prefix)}-${safe}-${date}.pdf`;
+  return `${[sanitizeFileNamePart(prefix), safe, date].filter(Boolean).join("-")}.pdf`;
 }
 
 export function statusLabel(s: string): string {
