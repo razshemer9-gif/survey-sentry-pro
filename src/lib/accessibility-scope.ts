@@ -7,6 +7,13 @@
 // covering both, which is what every such report was.
 
 import { SurveyReport } from "./types";
+import { ACCESSIBILITY_HEADER_BANNER_APPROVAL, ACCESSIBILITY_HEADER_BANNER_SURVEY } from "./accessibility-header-banner";
+import {
+  ACCESSIBILITY_BANNER_MATOS_APPROVAL,
+  ACCESSIBILITY_BANNER_MATOS_SURVEY,
+  ACCESSIBILITY_BANNER_SERVICE_APPROVAL,
+  ACCESSIBILITY_BANNER_SERVICE_SURVEY,
+} from "./accessibility-header-banner-scope";
 
 export type AccessibilityScope = "both" | "matos" | "service";
 
@@ -41,4 +48,11 @@ export function accessibilityScopeLabel(scope: AccessibilityScope): string {
  */
 export function accessibilityTitle(scope: AccessibilityScope, isApproval: boolean): string {
   return `${isApproval ? "אישור" : "סקר"} ${accessibilityScopeLabel(scope)}`;
+}
+
+/** The cover banner whose baked-in title matches this scope. */
+export function accessibilityBanner(scope: AccessibilityScope, isApproval: boolean): string {
+  if (scope === "matos") return isApproval ? ACCESSIBILITY_BANNER_MATOS_APPROVAL : ACCESSIBILITY_BANNER_MATOS_SURVEY;
+  if (scope === "service") return isApproval ? ACCESSIBILITY_BANNER_SERVICE_APPROVAL : ACCESSIBILITY_BANNER_SERVICE_SURVEY;
+  return isApproval ? ACCESSIBILITY_HEADER_BANNER_APPROVAL : ACCESSIBILITY_HEADER_BANNER_SURVEY;
 }

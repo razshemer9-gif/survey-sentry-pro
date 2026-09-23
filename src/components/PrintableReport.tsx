@@ -1,6 +1,6 @@
 import { ConsultantSettings, getSurveyType, SurveyReport, SurveyReportFormat } from "@/lib/types";
 import { formatCurrency, formatHebrewDate } from "@/lib/pdf";
-import { accessibilityScopeLabel, accessibilityScopeOf, accessibilityTitle } from "@/lib/accessibility-scope";
+import { accessibilityBanner, accessibilityScopeLabel, accessibilityScopeOf, accessibilityTitle } from "@/lib/accessibility-scope";
 import { EDU_INSPECTION_TABLE } from "@/lib/edu-inspection-table";
 import { FORM8_REQUIREMENTS } from "@/lib/form8-data";
 import { ISRAEL_STATE_EMBLEM, MOLSA_HEADER_LOGO } from "@/lib/welfare-logos";
@@ -12,7 +12,6 @@ import {
   resolveStabilityTerms,
 } from "@/lib/element-stability";
 import { ELEMENT_STABILITY_HEADER_BANNER } from "@/lib/element-stability-banner";
-import { ACCESSIBILITY_HEADER_BANNER_APPROVAL, ACCESSIBILITY_HEADER_BANNER_SURVEY } from "@/lib/accessibility-header-banner";
 import { GENERAL_SAFETY_HEADER_BANNER_APPROVAL, GENERAL_SAFETY_HEADER_BANNER_SURVEY } from "@/lib/general-safety-banner";
 import { RISK_SURVEY_DEFAULT_FENCING_NOTE, RISK_SURVEY_SUBTITLE } from "@/lib/risk-survey";
 import { RISK_SURVEY_HEADER_BANNER } from "@/lib/risk-survey-banner";
@@ -1322,9 +1321,11 @@ export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, sett
         }}
       >
         {isAccessibilityType ? (
+          // The banner's title is part of the artwork, so it is picked to match
+          // the certifications this report covers.
           <HeaderBanner
-            src={isApproval ? ACCESSIBILITY_HEADER_BANNER_APPROVAL : ACCESSIBILITY_HEADER_BANNER_SURVEY}
-            alt={isApproval ? "אישור נגישות מתו״ס ושירות" : "סקר נגישות מתו״ס ושירות"}
+            src={accessibilityBanner(accessibilityScopeOf(report), isApproval)}
+            alt={accessibilityTitle(accessibilityScopeOf(report), isApproval)}
           />
         ) : isGeneralSafetyType ? (
           <HeaderBanner
