@@ -11,6 +11,34 @@ import { isMobileDevice } from "./pdf";
  */
 export type PdfDelivery = "shared" | "downloaded";
 
+/**
+ * Whether this browser can actually rasterize a canvas of this size.
+ *
+ * iOS Safari caps canvas area, silently: over the cap the canvas allocates but
+ * draws nothing, so a PDF comes out blank rather than failing. The cap differs
+ * by device and iOS version, so instead of assuming the smallest one, draw a
+ * known pixel in the far corner and read it back.
+ */
+function canvasRenders(width: number, height: number): boolean {
+  let c: HTMLCanvasElement | null = null;
+  try {
+    c = document.createElement("canvas");
+    c.width = width;
+    c.height = height;
+    const ctx = c.getContext("2d");
+    if (!ctx) return false;
+    ctx.fillStyle = "rgb(18,52,86)";
+    ctx.fillRect(width - 2, height - 2, 2, 2);
+    const [r, g, b] = ctx.getImageData(width - 1, height - 1, 1, 1).data;
+    return r === 18 && g === 52 && b === 86;
+  } catch {
+    return false;
+  } finally {
+    // Let the memory go immediately rather than at the next GC.
+    if (c) { c.width = 0; c.height = 0; }
+  }
+}
+
 export async function generateReportPdf(
   element: HTMLElement | null,
   fileName: string,
@@ -97,18 +125,28 @@ export async function generateReportPdf(
   const showPageNumbers = element.hasAttribute("data-pdf-page-numbers");
 
   // ── Page sizing and smart break calculation ──────────────────────────────
-  // iOS Safari limits canvas height to ~4096px and total area to ~16 MP.
-  // scale=1 produced visibly soft/pixelated text and images when a mobile-
-  // generated PDF was zoomed in, so we bump it to 1.5 — MAX_PX/MAX_H stay the
-  // same hard physical-pixel ceiling per captured canvas (PAGE_H below is
-  // computed to respect them regardless of scale), so this only means
-  // slightly shorter page slices on mobile, never a canvas-size violation.
+  // The whole report is rasterized, so the capture scale is what a reader sees
+  // when they zoom in on the PDF. Take the sharpest scale this browser will
+  // actually render — each candidate is probed at the exact canvas size it
+  // would need, so a device that cannot take it falls back instead of
+  // producing blank pages. The slice heights are chosen to stay at least as
+  // long as the old ones, so a sharper report is not also a longer one.
   const isMobile = isMobileDevice();
-  const scale    = isMobile ? 1.5 : 2;
-  const MAX_PX   = isMobile ? 3_500_000 : 14_000_000;
-  const MAX_H    = isMobile ? 3_500     : 7_000;
-  // Reserve room for the footer so content + footer stays within the canvas cap.
-  const PAGE_H   = Math.max(200, Math.min(MAX_H, Math.floor(MAX_PX / (elWidth * scale))) - footerHpx - GAP_PX);
+  const candidates = isMobile
+    ? [{ scale: 2,   maxPx:  5_200_000, maxH: 3_500 },
+       { scale: 1.5, maxPx:  3_500_000, maxH: 3_500 }]
+    : [{ scale: 3,   maxPx: 17_000_000, maxH: 7_000 },
+       { scale: 2,   maxPx: 14_000_000, maxH: 7_000 }];
+
+  const pageHeightFor = (c: { scale: number; maxPx: number; maxH: number }) =>
+    Math.max(200, Math.min(c.maxH, Math.floor(c.maxPx / (elWidth * c.scale))) - footerHpx - GAP_PX);
+
+  const chosen = candidates.find((c) =>
+    canvasRenders(Math.ceil(elWidth * c.scale), Math.ceil(pageHeightFor(c) * c.scale)),
+  ) ?? candidates[candidates.length - 1];
+
+  const scale  = chosen.scale;
+  const PAGE_H = pageHeightFor(chosen);
 
   // Content height without the (now hidden) footer.
   const contentHeight = footerEl ? element.scrollHeight : elHeight;
