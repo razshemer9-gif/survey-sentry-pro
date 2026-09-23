@@ -164,30 +164,6 @@ export default function Settings() {
                   </>
                 )}
 
-                {/* Latin file names: iOS wraps a Hebrew file name in invisible
-                    direction marks when the report is saved to Files and sent
-                    on from there, and WhatsApp draws those as "�". Sending
-                    straight from the app is unaffected, so this is a choice
-                    rather than a fix applied to everyone. */}
-                <label className="flex cursor-pointer select-none items-start gap-3 rounded-2xl border-2 border-border bg-card p-3">
-                  <input
-                    type="checkbox"
-                    checked={!!s.latinFileNames}
-                    onChange={(e) =>
-                      setS((prev) => (prev ? { ...prev, latinFileNames: e.target.checked || undefined } : prev))
-                    }
-                    className="mt-0.5 h-5 w-5 flex-shrink-0 accent-primary"
-                  />
-                  <span>
-                    <span className="block text-sm font-semibold text-foreground">שמות קבצים באותיות לטיניות</span>
-                    <span className="mt-1 block text-xs text-muted-foreground">
-                      למשל <span dir="ltr">accessibility-survey-padl-rnnym-2026-09-23.pdf</span> במקום שם בעברית.
-                      כדאי לסמן אם אתה שומר את הדוח ל״קבצים״ באייפון ורק אחר כך שולח אותו — במסלול הזה שם עברי
-                      מגיע לוואטסאפ עם סימני שאלה. בשליחה ישירה מהאפליקציה אין צורך.
-                    </span>
-                  </span>
-                </label>
-
                 {/* ── Personal details / PDF text overrides / media — not used by
                     Form 8, which has its own dedicated מורשה נגישות identity
                     below instead of the generic professional fields. ── */}

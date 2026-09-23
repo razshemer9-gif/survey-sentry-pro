@@ -1,7 +1,7 @@
 // Pure PDF-related helpers — NO heavy imports here.
 // The actual generator (jsPDF + html2canvas) lives in ./pdf-generate and is
 // loaded on demand via dynamic import, so it stays out of the initial bundle.
-import { ConsultantSettings, getSurveyType, SurveyReport } from "./types";
+import { getSurveyType, SurveyReport } from "./types";
 import { formatCurrency, formatHebrewDate } from "./image";
 
 /**
@@ -55,36 +55,7 @@ export function sanitizeFileNamePart(input: string): string {
 }
 
 
-/**
- * Hebrew letters written in Latin ones, for the file names of consultants who
- * save a report to iOS Files before sending it: iOS wraps a right-to-left file
- * name in invisible direction marks on that path, and WhatsApp draws those as
- * "�" — a name in Latin letters alone never gets wrapped.
- *
- * A straight letter-for-letter mapping, not a pronunciation guide: "רננים"
- * comes out "rnnym". The point is that the client can tell two reports apart
- * and trace one back, not that the name reads well aloud.
- */
-const HEBREW_TO_LATIN: Record<string, string> = {
-  "א": "a", "ב": "b", "ג": "g", "ד": "d", "ה": "h", "ו": "v", "ז": "z",
-  "ח": "ch", "ט": "t", "י": "y", "כ": "k", "ך": "k", "ל": "l", "מ": "m",
-  "ם": "m", "נ": "n", "ן": "n", "ס": "s", "ע": "a", "פ": "p", "ף": "p",
-  "צ": "tz", "ץ": "tz", "ק": "k", "ר": "r", "ש": "sh", "ת": "t",
-};
-
-export function transliterateHebrew(input: string): string {
-  // Sanitize first, so gershayim and the rest are handled exactly as they are
-  // in the Hebrew name — בי״ס becomes ביס, not בי ס — and only then map.
-  return Array.from(sanitizeFileNamePart(input))
-    .map((ch) => HEBREW_TO_LATIN[ch] ?? ch)
-    .join("")
-    .replace(/[^a-zA-Z0-9 _-]/g, " ")
-    .replace(/\s+/g, " ")
-    .replace(/-{2,}/g, "-")
-    .replace(/^[\s-]+|[\s-]+$/g, "");
-}
-
-export function buildPdfFileName(report: SurveyReport, settings?: ConsultantSettings): string {
+export function buildPdfFileName(report: SurveyReport): string {
   // Form 8 keeps the business name in its own field, so reading placeName
   // alone left that name out of the file name entirely.
   const nameSource = report.surveyType === "accessibility_form_8"
@@ -97,14 +68,6 @@ export function buildPdfFileName(report: SurveyReport, settings?: ConsultantSett
   const date = report.surveyDate || new Date().toISOString().slice(0, 10);
   const config = getSurveyType(report.surveyType);
   const isApproval = report.reportMode === "approval";
-
-  if (settings?.latinFileNames) {
-    const prefix = isApproval
-      ? config.filePrefixLatin.replace(/-(survey|report)$/, "") + "-approval"
-      : config.filePrefixLatin;
-    const name = transliterateHebrew(nameSource || "");
-    return `${[prefix, name, date].filter(Boolean).join("-").replace(/ /g, "-")}.pdf`;
-  }
 
   const safe = sanitizeFileNamePart(nameSource || "");
   const prefix = isApproval ? config.filePrefix.replace(/^(סקר|דוח)/, "אישור") : config.filePrefix;
