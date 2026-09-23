@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { useNavigate, useParams } from "react-router-dom";
-import { AlertTriangle, ArrowRight, Check, Download, Eye, FileDown, Images, Loader2, PenLine, Plus, RotateCw, Save, Share2, Trash2, X } from "lucide-react";
+import { AlertTriangle, ArrowRight, Check, Download, Eye, FileDown, Images, Loader2, PenLine, Plus, RotateCw, Save, Trash2, X } from "lucide-react";
 import { v4 as uuid } from "uuid";
 import { toast } from "sonner";
 
@@ -47,12 +47,6 @@ import { RISK_SURVEY_DEFAULT_FENCING_NOTE } from "@/lib/risk-survey";
 import { cn } from "@/lib/utils";
 import { SignaturePad } from "@/components/SignaturePad";
 
-
-// A phone that can hand a file to the OS share sheet gets its own send button;
-// probed once rather than on every render, since the answer cannot change
-// mid-session.
-const CAN_SHARE_FILES = isMobileDevice()
-  && !!navigator.canShare?.({ files: [new File([new Blob([])], "x.pdf", { type: "application/pdf" })] });
 
 export default function ReportEditor() {
   const { id } = useParams();
@@ -319,11 +313,7 @@ export default function ReportEditor() {
     }
   };
 
-  // "open" hands the PDF to the browser — on a phone that means the viewer
-  // opens and the consultant can read the report. "share" goes straight to the
-  // share sheet with the file alone. They are separate buttons: a share sheet
-  // that opens by itself leaves no way to look at what is being sent.
-  const handleGenerate = async (delivery: "open" | "share" = "open") => {
+  const handleGenerate = async () => {
     const latest = reportRef.current;
     if (!latest) return;
     if (latest.surveyType === "risk_survey") {
@@ -341,8 +331,8 @@ export default function ReportEditor() {
       ]);
       // Two rAF ticks let React commit any pending renders to the print portal DOM
       await new Promise<void>((r) => requestAnimationFrame(() => requestAnimationFrame(() => r())));
-      const result = await generateReportPdf(printRef.current, buildPdfFileName(latest), delivery);
-      toast.success(result === "shared" ? "ה-PDF הופק" : "ה-PDF הופק והורד");
+      await generateReportPdf(printRef.current, buildPdfFileName(latest));
+      toast.success("ה-PDF הופק");
     } catch (err) {
       console.error("[PDF]", err);
       toast.error("שגיאה ביצירת ה-PDF");
@@ -1815,23 +1805,14 @@ export default function ReportEditor() {
 
       {/* Bottom action bar */}
       <div className="fixed inset-x-0 z-30 mx-auto max-w-lg px-4" style={{ bottom: 'calc(3.5rem + env(safe-area-inset-bottom, 0px))' }}>
-        <div className={cn(
-          "grid gap-2 rounded-2xl bg-card/95 p-2 shadow-pop backdrop-blur-md border border-border",
-          CAN_SHARE_FILES ? "grid-cols-3" : "grid-cols-2",
-        )}>
+        <div className="grid grid-cols-2 gap-2 rounded-2xl bg-card/95 p-2 shadow-pop backdrop-blur-md border border-border">
           <Button variant="outline" onClick={() => setPreviewOpen(true)} className="gap-1.5 rounded-xl text-xs">
             <Eye className="h-4 w-4" /> תצוגה
           </Button>
-          <Button onClick={() => handleGenerate("open")} disabled={generating} className="gap-1.5 rounded-xl text-xs">
+          <Button onClick={handleGenerate} disabled={generating} className="gap-1.5 rounded-xl text-xs">
             {generating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
             הפק PDF
           </Button>
-          {CAN_SHARE_FILES && (
-            <Button onClick={() => handleGenerate("share")} disabled={generating} className="gap-1.5 rounded-xl text-xs">
-              {generating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Share2 className="h-4 w-4" />}
-              שלח
-            </Button>
-          )}
         </div>
       </div>
 
@@ -1847,7 +1828,7 @@ export default function ReportEditor() {
             </div>
           </div>
           <DialogFooter className="px-2">
-            <Button onClick={() => handleGenerate("open")} disabled={generating} className="w-full gap-2">
+            <Button onClick={handleGenerate} disabled={generating} className="w-full gap-2">
               {generating ? <Loader2 className="h-4 w-4 animate-spin" /> : <FileDown className="h-4 w-4" />}
               הורד PDF
             </Button>
