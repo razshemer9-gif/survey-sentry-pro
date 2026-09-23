@@ -14,13 +14,6 @@ export type PdfDelivery = "shared" | "downloaded";
 export async function generateReportPdf(
   element: HTMLElement | null,
   fileName: string,
-  /**
-   * "open" hands the file to the browser, which on a phone opens it in the
-   * PDF viewer — the consultant reads it before sending it anywhere. "share"
-   * goes straight to the OS share sheet. Two separate buttons, because a
-   * share sheet that opens by itself leaves no way to look at the report.
-   */
-  delivery: "open" | "share" = "open",
 ): Promise<PdfDelivery> {
   if (!element) {
     console.error("[PDF] printRef is null — portal not mounted yet");
@@ -271,28 +264,16 @@ export async function generateReportPdf(
   // ── Deliver ──────────────────────────────────────────────────────────────
   const blob = pdf.output("blob");
 
-  // On a phone, hand the file straight to the OS share sheet. Two reasons:
+  // The report is handed over twice: first to the browser, which on a phone
+  // opens it in the PDF viewer so the consultant can read what they are about
+  // to send, and then — on a phone that can take a file — to the OS share
+  // sheet, so sending it is one tap away.
   //
-  // 1. Without it, iOS Safari opens the blob: URL in its own PDF viewer, and
-  //    sharing from there attaches the page URL — so WhatsApp received the
-  //    file plus a stray "blob:https://…/fbbc8f0a-…" line. We pass `files`
-  //    ONLY: no title, no text, no url, so nothing but the PDF is sent.
-  // 2. "Save to Files" from that same sheet writes the File object's own
-  //    UTF-8 name, instead of a name iOS re-derives from the blob URL and
-  //    mangles into replacement characters ("�סקר-…�.pdf").
-  const file = new File([blob], fileName, { type: "application/pdf" });
-  if (delivery === "share" && isMobile && navigator.canShare?.({ files: [file] })) {
-    try {
-      await navigator.share({ files: [file] });
-      return "shared";
-    } catch (err) {
-      // Dismissing the sheet is a choice, not a failure — don't then push a
-      // download the user didn't ask for.
-      if ((err as DOMException)?.name === "AbortError") return "shared";
-      console.warn("[PDF] share failed, falling back to download", err);
-    }
-  }
-
+  // The share carries `files` ONLY: no title, no text, no url. Sharing from
+  // Safari's own viewer instead attaches the page address, which is how
+  // WhatsApp ended up with a stray "blob:https://…" line beside the file, and
+  // "Save to Files" from this sheet writes the File object's own UTF-8 name
+  // rather than one iOS re-derives from that blob URL and mangles.
   const url = URL.createObjectURL(blob);
   try {
     const a = document.createElement("a");
@@ -304,7 +285,21 @@ export async function generateReportPdf(
     a.click();
     document.body.removeChild(a);
   } finally {
-    setTimeout(() => URL.revokeObjectURL(url), 4_000);
+    setTimeout(() => URL.revokeObjectURL(url), 10_000);
+  }
+
+  const file = new File([blob], fileName, { type: "application/pdf" });
+  if (isMobile && navigator.canShare?.({ files: [file] })) {
+    try {
+      await navigator.share({ files: [file] });
+      return "shared";
+    } catch (err) {
+      // Dismissing the sheet is a choice, not a failure, and the file has
+      // already been handed over either way — so nothing is reported.
+      if ((err as DOMException)?.name !== "AbortError") {
+        console.warn("[PDF] share sheet unavailable", err);
+      }
+    }
   }
   return "downloaded";
 }
