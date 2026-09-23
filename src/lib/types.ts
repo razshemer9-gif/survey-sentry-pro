@@ -9,6 +9,7 @@ export interface SurveyTypeConfig {
   shortLabel: string;  // Badge label on report cards
   pdfTitle: string;    // Cover page H1
   filePrefix: string;  // PDF filename prefix
+  filePrefixLatin: string; // the same prefix for Latin file names (see ConsultantSettings.latinFileNames)
   color: string;       // Accent hex for badges / cover
 }
 
@@ -19,6 +20,7 @@ export const SURVEY_TYPES: SurveyTypeConfig[] = [
     shortLabel: "נגישות",
     pdfTitle: 'סקר נגישות מתו״ס ושירות',
     filePrefix: "סקר-נגישות",
+    filePrefixLatin: "accessibility-survey",
     color: "#2563eb",
   },
   {
@@ -27,6 +29,7 @@ export const SURVEY_TYPES: SurveyTypeConfig[] = [
     shortLabel: "בטיחות חינוך",
     pdfTitle: "סקר בטיחות מוסדות חינוך",
     filePrefix: "סקר-בטיחות-חינוך",
+    filePrefixLatin: "education-safety-survey",
     color: "#16a34a",
   },
   {
@@ -35,6 +38,7 @@ export const SURVEY_TYPES: SurveyTypeConfig[] = [
     shortLabel: "בטיחות כללית",
     pdfTitle: "סקר בטיחות",
     filePrefix: "סקר-בטיחות",
+    filePrefixLatin: "safety-survey",
     color: "#1e3a8a",
   },
   {
@@ -43,6 +47,7 @@ export const SURVEY_TYPES: SurveyTypeConfig[] = [
     shortLabel: "רווחה",
     pdfTitle: "נספח בדיקת עמידה בדרישות בטיחות",
     filePrefix: "מבדק-רווחה",
+    filePrefixLatin: "welfare-inspection",
     color: "#0891b2",
   },
   {
@@ -51,6 +56,7 @@ export const SURVEY_TYPES: SurveyTypeConfig[] = [
     shortLabel: "יציבות אלמנטים",
     pdfTitle: "דוח בדיקת יציבות אלמנטים",
     filePrefix: "דוח-יציבות-אלמנטים",
+    filePrefixLatin: "element-stability-report",
     color: "#0f766e",
   },
   {
@@ -59,6 +65,7 @@ export const SURVEY_TYPES: SurveyTypeConfig[] = [
     shortLabel: "סיכונים",
     pdfTitle: "סקר סיכונים",
     filePrefix: "סקר-סיכונים",
+    filePrefixLatin: "risk-survey",
     color: "#c2410c",
   },
   {
@@ -67,6 +74,7 @@ export const SURVEY_TYPES: SurveyTypeConfig[] = [
     shortLabel: "טופס 8",
     pdfTitle: "חוות דעת מורשה נגישות",
     filePrefix: "טופס-8-חוות-דעת-נגישות",
+    filePrefixLatin: "form-8-accessibility-opinion",
     color: "#7c3aed",
   },
 ];
@@ -305,6 +313,10 @@ export interface ConsultantSettings {
   logo?: string; // dataURL
   referencePhotos?: ReferencePhotoEntry[]; // personal photo library
   reportFormats?: Partial<Record<SurveyType, SurveyReportFormat>>;
+  // שמות קבצים באותיות לטיניות. ברירת המחדל היא עברית; מי ששומר את הדוח
+  // ל"קבצים" באייפון ורק אחר כך שולח אותו יעדיף לטינית, כי iOS עוטף שם עברי
+  // בסימני כיוון בלתי-נראים שוואטסאפ מצייר כ-"�" (ראה pdf.ts).
+  latinFileNames?: boolean;
 }
 
 export const DEFAULT_SETTINGS: ConsultantSettings = {

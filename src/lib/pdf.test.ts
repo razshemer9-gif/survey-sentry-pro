@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { buildPdfFileName, isMobileDevice, sanitizeFileNamePart } from "./pdf";
-import type { SurveyReport } from "./types";
+import { buildPdfFileName, isMobileDevice, sanitizeFileNamePart, transliterateHebrew } from "./pdf";
+import type { ConsultantSettings, SurveyReport } from "./types";
 
 // Guards against the mojibake reported in saved reports: file names came out as
 // "��סקר-בטיחות…" and sometimes failed to save, because the old filter kept the
@@ -141,5 +141,59 @@ describe("buildPdfFileName", () => {
   it("swaps the prefix for an approval report", () => {
     expect(buildPdfFileName(report({ surveyType: "accessibility", placeName: "בית ספר אלון", reportMode: "approval" })))
       .toBe("אישור-נגישות-בית ספר אלון-2026-09-22.pdf");
+  });
+});
+
+// Saving a report to iOS Files and sending it on from there wraps a Hebrew
+// name in direction marks that WhatsApp draws as "�". A name written in Latin
+// letters never gets wrapped, so consultants who work that way can switch.
+describe("Latin file names", () => {
+  const latin = { latinFileNames: true } as ConsultantSettings;
+  const report = (patch: Partial<SurveyReport>) =>
+    ({ surveyDate: "2026-09-23", placeName: "", items: [], ...patch }) as SurveyReport;
+
+  it("writes the whole name in Latin letters", () => {
+    const name = buildPdfFileName(report({ surveyType: "accessibility", placeName: "פאדל רננים" }), latin);
+    expect(name).toBe("accessibility-survey-padl-rnnym-2026-09-23.pdf");
+    expect(name).toMatch(/^[a-zA-Z0-9.-]+$/);
+  });
+
+  it("uses the business name for Form 8, as the Hebrew name does", () => {
+    expect(buildPdfFileName(report({ surveyType: "accessibility_form_8", form8BusinessName: "מסעדה" }), latin))
+      .toBe("form-8-accessibility-opinion-msadh-2026-09-23.pdf");
+  });
+
+  it("marks an approval as one", () => {
+    expect(buildPdfFileName(report({ surveyType: "accessibility", reportMode: "approval" }), latin))
+      .toBe("accessibility-approval-2026-09-23.pdf");
+  });
+
+  it("leaves the name out when nothing transliterates", () => {
+    expect(buildPdfFileName(report({ surveyType: "risk_survey", placeName: "!!!" }), latin))
+      .toBe("risk-survey-2026-09-23.pdf");
+  });
+
+  it("keeps Hebrew names when the setting is off", () => {
+    expect(buildPdfFileName(report({ surveyType: "accessibility", placeName: "פאדל רננים" })))
+      .toBe("סקר-נגישות-פאדל רננים-2026-09-23.pdf");
+    expect(buildPdfFileName(report({ surveyType: "accessibility", placeName: "פאדל רננים" }), {} as ConsultantSettings))
+      .toBe("סקר-נגישות-פאדל רננים-2026-09-23.pdf");
+  });
+});
+
+describe("transliterateHebrew", () => {
+  it("maps each Hebrew letter to Latin, final forms included", () => {
+    expect(transliterateHebrew("שמר")).toBe("shmr");
+    expect(transliterateHebrew("רננים")).toBe("rnnym");
+    expect(transliterateHebrew("חץ")).toBe("chtz");
+  });
+
+  it("keeps Latin and digits that are already in the name", () => {
+    expect(transliterateHebrew("Padel 12")).toBe("Padel 12");
+  });
+
+  it("drops anything that is neither", () => {
+    expect(transliterateHebrew('בי"ס «אלון»')).toBe("bys alvn");
+    expect(transliterateHebrew("🏗️")).toBe("");
   });
 });
