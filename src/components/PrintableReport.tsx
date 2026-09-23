@@ -318,13 +318,12 @@ export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, sett
               {" "}ולאחר שווידאתי את התקיימותן של הוראות הנגישות שסומנו לעיל.
             </p>
           </div>
+          {/* The stamp itself is set down once, where the form closes. Here the
+              field stays a ruled line: the same stamp printed twice on one form
+              read as a mistake. */}
           <div data-pdf-no-break="" style={{ marginTop: 28, display: "flex", alignItems: "flex-end", gap: 24 }}>
             <div style={{ flex: 1 }}>
-              {report.form8ExpertSignature ? (
-                <img src={report.form8ExpertSignature} alt="חתימה" crossOrigin="anonymous" style={{ maxHeight: 112, maxWidth: 360, display: "block" }} />
-              ) : (
-                <div style={{ height: 40, borderBottom: "1px solid #94a3b8" }} />
-              )}
+              <div style={{ height: 40, borderBottom: "1px solid #94a3b8" }} />
               <div style={{ fontSize: 12, color: "#64748b", marginTop: 4 }}>{"שם + חתימת המורשה — "}{report.form8ExpertName || ""}</div>
             </div>
             <div style={{ textAlign: "center" }}>

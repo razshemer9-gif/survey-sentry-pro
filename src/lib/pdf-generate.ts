@@ -189,12 +189,14 @@ export async function generateReportPdf(
       }
     }
 
-    // Pull break earlier if it lands inside a no-break card.
-    for (const nb of noBreaks) {
-      if (nb.top < end && nb.bottom > end) {
-        end = nb.top;
-        break;
-      }
+    // Pull the break earlier while it lands inside a no-break card. It has to
+    // repeat: moving the break up to one card's top can drop it into the middle
+    // of the card above, and a single pass left that second card split — which
+    // is how Form 8's signature block ended up cut in half by a page break.
+    for (let guard = 0; guard <= noBreaks.length; guard++) {
+      const straddled = noBreaks.find((nb) => nb.top < end && nb.bottom > end);
+      if (!straddled) break;
+      end = straddled.top;
     }
 
     // If a single card is taller than PAGE_H, let it overflow its page
@@ -302,16 +304,30 @@ export async function generateReportPdf(
   // ── Deliver ──────────────────────────────────────────────────────────────
   const blob = pdf.output("blob");
 
-  // The report is handed over twice: first to the browser, which on a phone
-  // opens it in the PDF viewer so the consultant can read what they are about
-  // to send, and then — on a phone that can take a file — to the OS share
-  // sheet, so sending it is one tap away.
+  // On a phone the file goes to the OS share sheet and nowhere else.
   //
-  // The share carries `files` ONLY: no title, no text, no url. Sharing from
-  // Safari's own viewer instead attaches the page address, which is how
-  // WhatsApp ended up with a stray "blob:https://…" line beside the file, and
-  // "Save to Files" from this sheet writes the File object's own UTF-8 name
-  // rather than one iOS re-derives from that blob URL and mangles.
+  // Handing it to the browser first, so that the PDF would open for reading,
+  // was tried and reverted: on iOS that switches to Safari's own PDF viewer,
+  // our share never runs, and sharing from that viewer attaches the page
+  // address — which is how a "blob:https://…" line reappeared in WhatsApp
+  // beside the file.
+  //
+  // The share carries `files` ONLY: no title, no text, no url. "Save to
+  // Files" from this sheet also writes the File object's own UTF-8 name,
+  // rather than one iOS re-derives from the blob URL and mangles.
+  const file = new File([blob], fileName, { type: "application/pdf" });
+  if (isMobile && navigator.canShare?.({ files: [file] })) {
+    try {
+      await navigator.share({ files: [file] });
+      return "shared";
+    } catch (err) {
+      // Dismissing the sheet is a choice, not a failure — don't then push a
+      // download the user didn't ask for.
+      if ((err as DOMException)?.name === "AbortError") return "shared";
+      console.warn("[PDF] share failed, falling back to download", err);
+    }
+  }
+
   const url = URL.createObjectURL(blob);
   try {
     const a = document.createElement("a");
@@ -323,21 +339,7 @@ export async function generateReportPdf(
     a.click();
     document.body.removeChild(a);
   } finally {
-    setTimeout(() => URL.revokeObjectURL(url), 10_000);
-  }
-
-  const file = new File([blob], fileName, { type: "application/pdf" });
-  if (isMobile && navigator.canShare?.({ files: [file] })) {
-    try {
-      await navigator.share({ files: [file] });
-      return "shared";
-    } catch (err) {
-      // Dismissing the sheet is a choice, not a failure, and the file has
-      // already been handed over either way — so nothing is reported.
-      if ((err as DOMException)?.name !== "AbortError") {
-        console.warn("[PDF] share sheet unavailable", err);
-      }
-    }
+    setTimeout(() => URL.revokeObjectURL(url), 4_000);
   }
   return "downloaded";
 }
