@@ -14,6 +14,13 @@ export type PdfDelivery = "shared" | "downloaded";
 export async function generateReportPdf(
   element: HTMLElement | null,
   fileName: string,
+  /**
+   * "open" hands the file to the browser, which on a phone opens it in the
+   * PDF viewer — the consultant reads it before sending it anywhere. "share"
+   * goes straight to the OS share sheet. Two separate buttons, because a
+   * share sheet that opens by itself leaves no way to look at the report.
+   */
+  delivery: "open" | "share" = "open",
 ): Promise<PdfDelivery> {
   if (!element) {
     console.error("[PDF] printRef is null — portal not mounted yet");
@@ -274,7 +281,7 @@ export async function generateReportPdf(
   //    UTF-8 name, instead of a name iOS re-derives from the blob URL and
   //    mangles into replacement characters ("�סקר-…�.pdf").
   const file = new File([blob], fileName, { type: "application/pdf" });
-  if (isMobile && navigator.canShare?.({ files: [file] })) {
+  if (delivery === "share" && isMobile && navigator.canShare?.({ files: [file] })) {
     try {
       await navigator.share({ files: [file] });
       return "shared";
