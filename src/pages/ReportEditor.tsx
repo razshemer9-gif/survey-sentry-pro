@@ -41,7 +41,7 @@ import { isDirty } from "@/lib/offline-db";
 import { subscribeSyncStatus } from "@/lib/sync-engine";
 import { importWithReload } from "@/lib/dynamic-import";
 import { useAuth } from "@/contexts/AuthContext";
-import { buildPdfFileName, isMobileDevice, sanitizeFileNamePart, transliterateHebrew } from "@/lib/pdf";
+import { buildPdfFileName, isMobileDevice, sanitizeFileNamePart } from "@/lib/pdf";
 import { cropImageDataUrl, fileToCompressedDataUrl, formatCurrency, rotateImageDataUrl } from "@/lib/image";
 import { RISK_SURVEY_DEFAULT_FENCING_NOTE } from "@/lib/risk-survey";
 import { cn } from "@/lib/utils";
@@ -331,7 +331,7 @@ export default function ReportEditor() {
       ]);
       // Two rAF ticks let React commit any pending renders to the print portal DOM
       await new Promise<void>((r) => requestAnimationFrame(() => requestAnimationFrame(() => r())));
-      await generateReportPdf(printRef.current, buildPdfFileName(latest, settings));
+      await generateReportPdf(printRef.current, buildPdfFileName(latest));
       toast.success("ה-PDF הופק");
     } catch (err) {
       console.error("[PDF]", err);
@@ -384,9 +384,7 @@ export default function ReportEditor() {
       // Unicode block plus \s, so niqqud, gershayim, tabs and non-breaking
       // spaces all reached the file name and came out as "??".
       const date = report.surveyDate || new Date().toISOString().slice(0, 10);
-      const fileName = settings.latinFileNames
-        ? [`photos`, transliterateHebrew(report.placeName || ""), date].filter(Boolean).join("-").replace(/ /g, "-") + ".zip"
-        : [`תמונות`, sanitizeFileNamePart(report.placeName || ""), date].filter(Boolean).join("-") + ".zip";
+      const fileName = ["תמונות", sanitizeFileNamePart(report.placeName || ""), date].filter(Boolean).join("-") + ".zip";
 
       const zipFile = new File([blob], fileName, { type: "application/zip" });
       // Files only — a title or text rides along into WhatsApp as a separate
@@ -1167,6 +1165,22 @@ export default function ReportEditor() {
                         <span className="shrink-0 text-muted-foreground">{i + 1}.</span>
                         <span>{def?.label}</span>
                       </div>
+
+                      {/* Row 3's scale is the one the consultant has to work
+                          from to fix a quantity, and it lives in the row's own
+                          standard text — printed in the report but, until now,
+                          invisible while filling the report in. Shown here for
+                          reading only; the report itself is unchanged. */}
+                      {req.id === 3 && def?.staticText?.length ? (
+                        <div className="rounded-lg border border-primary/20 bg-primary-soft/40 p-2.5" dir="rtl">
+                          <div className="text-[11px] font-bold text-primary">נוסח הסעיף בתקן — לקביעת הכמות</div>
+                          <div className="mt-1.5 space-y-0.5 text-xs leading-relaxed text-foreground">
+                            {def.staticText.map((line, li) => (
+                              <div key={li} style={{ unicodeBidi: "plaintext" }}>{line}</div>
+                            ))}
+                          </div>
+                        </div>
+                      ) : null}
 
                       {def?.image && (
                         <button
