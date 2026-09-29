@@ -11,34 +11,6 @@ import { isMobileDevice } from "./pdf";
  */
 export type PdfDelivery = "shared" | "downloaded";
 
-/**
- * Whether this browser can actually rasterize a canvas of this size.
- *
- * iOS Safari caps canvas area, silently: over the cap the canvas allocates but
- * draws nothing, so a PDF comes out blank rather than failing. The cap differs
- * by device and iOS version, so instead of assuming the smallest one, draw a
- * known pixel in the far corner and read it back.
- */
-function canvasRenders(width: number, height: number): boolean {
-  let c: HTMLCanvasElement | null = null;
-  try {
-    c = document.createElement("canvas");
-    c.width = width;
-    c.height = height;
-    const ctx = c.getContext("2d");
-    if (!ctx) return false;
-    ctx.fillStyle = "rgb(18,52,86)";
-    ctx.fillRect(width - 2, height - 2, 2, 2);
-    const [r, g, b] = ctx.getImageData(width - 1, height - 1, 1, 1).data;
-    return r === 18 && g === 52 && b === 86;
-  } catch {
-    return false;
-  } finally {
-    // Let the memory go immediately rather than at the next GC.
-    if (c) { c.width = 0; c.height = 0; }
-  }
-}
-
 export async function generateReportPdf(
   element: HTMLElement | null,
   fileName: string,
@@ -126,27 +98,23 @@ export async function generateReportPdf(
 
   // ── Page sizing and smart break calculation ──────────────────────────────
   // The whole report is rasterized, so the capture scale is what a reader sees
-  // when they zoom in on the PDF. Take the sharpest scale this browser will
-  // actually render — each candidate is probed at the exact canvas size it
-  // would need, so a device that cannot take it falls back instead of
-  // producing blank pages. The slice heights are chosen to stay at least as
-  // long as the old ones, so a sharper report is not also a longer one.
+  // when they zoom in on the PDF — at scale 1.5 a phone-made report was
+  // visibly pixelated on a desktop screen. A phone captures at 2 now.
+  //
+  // The budget is the captured canvas in DEVICE pixels, width × height after
+  // the scale, because that is what the browser allocates and what it runs
+  // out of memory on. Raising the scale squares into that area, so each
+  // budget here is set to keep the slices as long as they have always been
+  // rather than to chase the largest canvas a device might survive: a phone
+  // capture is ~9.3 MP against the 3.5 MP it was, and a desktop one is
+  // unchanged. Probing for a bigger ceiling was tried and abandoned — the
+  // probe has to allocate the canvas it is asking about, and that allocation
+  // alone crashed the page.
   const isMobile = isMobileDevice();
-  const candidates = isMobile
-    ? [{ scale: 2,   maxPx:  5_200_000, maxH: 3_500 },
-       { scale: 1.5, maxPx:  3_500_000, maxH: 3_500 }]
-    : [{ scale: 3,   maxPx: 17_000_000, maxH: 7_000 },
-       { scale: 2,   maxPx: 14_000_000, maxH: 7_000 }];
-
-  const pageHeightFor = (c: { scale: number; maxPx: number; maxH: number }) =>
-    Math.max(200, Math.min(c.maxH, Math.floor(c.maxPx / (elWidth * c.scale))) - footerHpx - GAP_PX);
-
-  const chosen = candidates.find((c) =>
-    canvasRenders(Math.ceil(elWidth * c.scale), Math.ceil(pageHeightFor(c) * c.scale)),
-  ) ?? candidates[candidates.length - 1];
-
-  const scale  = chosen.scale;
-  const PAGE_H = pageHeightFor(chosen);
+  const scale  = isMobile ? 2 : 2;
+  const budget = isMobile ? 9_500_000 : 28_000_000;
+  const maxH   = isMobile ? 3_500 : 7_000;
+  const PAGE_H = Math.max(200, Math.min(maxH, Math.floor(budget / (elWidth * scale * scale))) - footerHpx - GAP_PX);
 
   // Content height without the (now hidden) footer.
   const contentHeight = footerEl ? element.scrollHeight : elHeight;
@@ -168,7 +136,7 @@ export async function generateReportPdf(
 
   // Build slice list — never break inside a no-break card; force break at page-break markers.
   const slices: { top: number; height: number }[] = [];
-  let cursor = 0;
+  let cursor = 0;   // whole pixels, see the rounding at the end of the loop
 
   while (cursor < contentHeight) {
     // Cap at content end up front (rather than only checking this after page-break
@@ -180,6 +148,7 @@ export async function generateReportPdf(
     // fit under PAGE_H (e.g. welfare_inspection's officially-multi-page government
     // form collapsing onto one or two continuous slices instead of five).
     let end = Math.min(cursor + PAGE_H, contentHeight);
+    // cursor is already whole; end is rounded once the break point is settled.
 
     // Force break at the nearest page-break marker that falls between cursor+1 and end.
     for (const pb of pageBreaks) {
@@ -206,6 +175,11 @@ export async function generateReportPdf(
       end = tall ? tall.bottom : Math.min(cursor + PAGE_H, contentHeight);
     }
 
+    // Whole pixels only. The element positions these come from are
+    // fractional, and html2canvas rounds the capture height and the slide-up
+    // margin separately — a sub-pixel disagreement between them leaves the
+    // last row of glyphs sliced between two pages.
+    end = Math.round(end);
     slices.push({ top: cursor, height: end - cursor });
     cursor = end;
   }
