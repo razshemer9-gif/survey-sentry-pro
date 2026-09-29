@@ -296,7 +296,10 @@ export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, sett
           </div>
 
           {/* חלק ג' */}
-          <div data-pdf-page-break="" />
+          {/* marginTop is where the break lands, so it becomes white space at
+              the foot of the page before it — without it the page ends on the
+              previous block's last pixel and its bottom line reads as cut. */}
+          <div data-pdf-page-break="" style={{ marginTop: 18 }} />
           <SectionTitle>{"חלק ג' - חוות הדעת של מורשה הנגישות"}</SectionTitle>
           <div data-pdf-no-break="" style={{ fontSize: 13, lineHeight: 1.8 }}>
             <p style={{ margin: "0 0 10px" }}>בחוות דעת זו אני מאשר/ת כי מתקיימות בעסק (נא לסמן את המשבצות הרלבנטיות):</p>
@@ -342,7 +345,7 @@ export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, sett
           </div>
 
           {/* חלק ד' */}
-          <div data-pdf-page-break="" />
+          <div data-pdf-page-break="" style={{ marginTop: 18 }} />
           <SectionTitle>{"חלק ד' - התאמות נגישות בבניין קיים שאינן באחריות בעל העסק"}</SectionTitle>
           <div data-pdf-no-break="" style={{ fontSize: 12, lineHeight: 1.8, color: "#334155", marginBottom: 12 }}>
             <div style={{ fontWeight: 700 }}>{"הנחיות למילוי חלק ד':"}</div>
