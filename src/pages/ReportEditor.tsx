@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { useNavigate, useParams } from "react-router-dom";
-import { AlertTriangle, ArrowRight, Check, Download, Eye, FileDown, Images, Loader2, PenLine, Plus, RotateCw, Save, Trash2, X } from "lucide-react";
+import { AlertTriangle, ArrowRight, Check, Download, Eye, FileDown, Images, Loader2, PenLine, Plus, RotateCw, Save, Share2, Trash2, X } from "lucide-react";
 import { v4 as uuid } from "uuid";
 import { toast } from "sonner";
 
@@ -48,6 +48,11 @@ import { cn } from "@/lib/utils";
 import { SignaturePad } from "@/components/SignaturePad";
 
 
+// A phone that can hand a file to the OS share sheet gets the send step;
+// probed once, since the answer cannot change mid-session.
+const CAN_SHARE_FILES = isMobileDevice()
+  && !!navigator.canShare?.({ files: [new File([new Blob([])], "x.pdf", { type: "application/pdf" })] });
+
 export default function ReportEditor() {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -62,6 +67,11 @@ export default function ReportEditor() {
   const [croppedCoverPhoto, setCroppedCoverPhoto] = useState<string | null>(null);
   const [customApprovalInput, setCustomApprovalInput] = useState("");
   const [addingPhotos, setAddingPhotos] = useState(false);
+  // The PDF the consultant last produced, kept so it can be sent without
+  // rendering it again. Cleared on any edit — once the report changes, the
+  // file on hand is not the report any more.
+  const [madePdf, setMadePdf] = useState<File | null>(null);
+  const [sharing, setSharing] = useState(false);
   // Which of חלק ד's reference tables (rows 4/5) is open full-screen, if any.
   const [tableZoom, setTableZoom] = useState<{ src: string; label: string } | null>(null);
   // idle=nothing to save · pending=edited, waiting for the 3s debounce (NOT
@@ -204,7 +214,10 @@ export default function ReportEditor() {
     );
   }
 
-  const update = (patch: Partial<SurveyReport>) => setReport((r) => (r ? { ...r, ...patch } : r));
+  const update = (patch: Partial<SurveyReport>) => {
+    setMadePdf(null);
+    setReport((r) => (r ? { ...r, ...patch } : r));
+  };
 
   const updateItem = (itemId: string, patch: Partial<ChecklistItem>) => {
     setReport((r) => {
@@ -331,13 +344,32 @@ export default function ReportEditor() {
       ]);
       // Two rAF ticks let React commit any pending renders to the print portal DOM
       await new Promise<void>((r) => requestAnimationFrame(() => requestAnimationFrame(() => r())));
-      await generateReportPdf(printRef.current, buildPdfFileName(latest));
-      toast.success("ה-PDF הופק");
+      const file = await generateReportPdf(printRef.current, buildPdfFileName(latest));
+      setMadePdf(file);
+      toast.success(CAN_SHARE_FILES ? "ה-PDF הופק — אפשר לשלוח אותו מהכפתור" : "ה-PDF הופק");
     } catch (err) {
       console.error("[PDF]", err);
       toast.error("שגיאה ביצירת ה-PDF");
     } finally {
       setGenerating(false);
+    }
+  };
+
+  // Sending is its own step, started by its own tap: the consultant opens the
+  // report, reads it, and only then sends. navigator.share also needs a fresh
+  // gesture, which this gives it.
+  const handleShare = async () => {
+    if (!madePdf) return;
+    setSharing(true);
+    try {
+      await navigator.share({ files: [madePdf] });
+    } catch (err) {
+      if ((err as DOMException)?.name !== "AbortError") {
+        console.error("[PDF] share", err);
+        toast.error("שגיאה בשיתוף הקובץ");
+      }
+    } finally {
+      setSharing(false);
     }
   };
 
@@ -1820,14 +1852,30 @@ export default function ReportEditor() {
 
       {/* Bottom action bar */}
       <div className="fixed inset-x-0 z-30 mx-auto max-w-lg px-4" style={{ bottom: 'calc(3.5rem + env(safe-area-inset-bottom, 0px))' }}>
-        <div className="grid grid-cols-2 gap-2 rounded-2xl bg-card/95 p-2 shadow-pop backdrop-blur-md border border-border">
+        <div className={cn(
+          "grid gap-2 rounded-2xl bg-card/95 p-2 shadow-pop backdrop-blur-md border border-border",
+          CAN_SHARE_FILES && madePdf ? "grid-cols-3" : "grid-cols-2",
+        )}>
           <Button variant="outline" onClick={() => setPreviewOpen(true)} className="gap-1.5 rounded-xl text-xs">
             <Eye className="h-4 w-4" /> תצוגה
           </Button>
-          <Button onClick={handleGenerate} disabled={generating} className="gap-1.5 rounded-xl text-xs">
+          <Button
+            onClick={handleGenerate}
+            disabled={generating}
+            variant={CAN_SHARE_FILES && madePdf ? "outline" : "default"}
+            className="gap-1.5 rounded-xl text-xs"
+          >
             {generating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
-            הפק PDF
+            {madePdf ? "הפק מחדש" : "הפק PDF"}
           </Button>
+          {/* Appears only once a PDF exists: the report is read first, then
+              sent — and the send is its own tap, which navigator.share needs. */}
+          {CAN_SHARE_FILES && madePdf && (
+            <Button onClick={handleShare} disabled={sharing} className="gap-1.5 rounded-xl text-xs">
+              {sharing ? <Loader2 className="h-4 w-4 animate-spin" /> : <Share2 className="h-4 w-4" />}
+              שלח
+            </Button>
+          )}
         </div>
       </div>
 
