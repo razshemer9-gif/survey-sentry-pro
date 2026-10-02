@@ -116,4 +116,56 @@ describe("computeSlices", () => {
       covers(slices, 1100);
     });
   });
+
+  // Measured on a filled Form 8 (iPhone, pageH 2932): the two faults below
+  // both produced a page ONE PIXEL tall, and the second of them was what kept
+  // the stub page alive — the orphan fix looks at the page before the closing
+  // one for a card to pull down, and a one-pixel page has none.
+  describe("the pixel grid", () => {
+    it("honours a fractional forced marker once, not twice", () => {
+      // The marker at 932.03 ended its page at 932, then still read as ahead
+      // of the cursor and opened a second page one pixel tall.
+      const slices = run({ contentHeight: 3446, pageH: 2932, pageBreaks: [610.6875, 932.03125] });
+      expect(slices.map((s) => s.top)).toEqual([0, 611, 932]);
+      covers(slices, 3446);
+    });
+
+    it("does not page off a closing card that ends past the reported height", () => {
+      // scrollHeight is rounded down, so the closing block ended 0.34px below
+      // it: the end of the document read as a break inside the block, and the
+      // block was pushed onto a page of its own.
+      const closing = { top: 3676.359, bottom: 3810.344 };
+      const slices = run({
+        contentHeight: 3810,
+        pageH: 2932,
+        pageBreaks: [610.6875, 932.03125],
+        noBreaks: [{ top: 3613.359, bottom: 3672.359 }, closing],
+      });
+      expect(slices.map((s) => s.top)).toEqual([0, 611, 932]);
+      expect(slices[slices.length - 1].height).toBeGreaterThan(2932 * 0.25);
+    });
+
+    it("never emits a page too short to hold anything", () => {
+      // A sweep over the real card list at every length the responses grow to.
+      const cards = (n: number) => Array.from({ length: n }, (_, i) => ({
+        top: 1139 + i * 55.375,
+        bottom: 1139 + i * 55.375 + 55.375,
+      }));
+      for (let n = 1; n <= 40; n++) {
+        const noBreaks = cards(n);
+        const height = noBreaks[n - 1].bottom;
+        const slices = computeSlices({
+          contentHeight: Math.floor(height),
+          pageH: 2932,
+          noBreaks,
+          pageBreaks: [610.6875, 932.03125],
+        });
+        for (const s of slices) {
+          const forced = s.top === 0 || s.top === 611 || s.top === 932;
+          expect(forced || s.height > 1, `page ${s.top}+${s.height} with n=${n}`).toBe(true);
+        }
+        covers(slices, Math.floor(height));
+      }
+    });
+  });
 });
