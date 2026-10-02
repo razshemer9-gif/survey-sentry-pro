@@ -4,6 +4,7 @@
 import jsPDF from "jspdf";
 import html2canvas from "html2canvas";
 import { isMobileDevice } from "./pdf";
+import { computeSlices } from "./pdf-slices";
 
 /**
  * How the finished PDF reached the user: straight into the share sheet
@@ -131,55 +132,7 @@ export async function generateReportPdf(
     element.querySelectorAll<HTMLElement>("[data-pdf-page-break]"),
   ).map((el) => el.getBoundingClientRect().top - elTop);
 
-  // Build slice list — never break inside a no-break card; force break at page-break markers.
-  const slices: { top: number; height: number }[] = [];
-  let cursor = 0;   // whole pixels, see the rounding at the end of the loop
-
-  while (cursor < contentHeight) {
-    // Cap at content end up front (rather than only checking this after page-break
-    // handling) so a forced break is still honored even when the remaining content
-    // would otherwise all fit in one slice — previously, whenever cursor + PAGE_H
-    // already reached the end of the document, the loop took a shortcut that pushed
-    // the *entire* remainder as a single slice without ever consulting `pageBreaks`,
-    // silently ignoring every data-pdf-page-break marker in reports short enough to
-    // fit under PAGE_H (e.g. welfare_inspection's officially-multi-page government
-    // form collapsing onto one or two continuous slices instead of five).
-    let end = Math.min(cursor + PAGE_H, contentHeight);
-    // cursor is already whole; end is rounded once the break point is settled.
-
-    // Force break at the nearest page-break marker that falls between cursor+1 and end.
-    for (const pb of pageBreaks) {
-      if (pb > cursor && pb < end) {
-        end = pb;
-        break;
-      }
-    }
-
-    // Pull the break earlier while it lands inside a no-break card. It has to
-    // repeat: moving the break up to one card's top can drop it into the middle
-    // of the card above, and a single pass left that second card split — which
-    // is how Form 8's signature block ended up cut in half by a page break.
-    for (let guard = 0; guard <= noBreaks.length; guard++) {
-      const straddled = noBreaks.find((nb) => nb.top < end && nb.bottom > end);
-      if (!straddled) break;
-      end = straddled.top;
-    }
-
-    // If a single card is taller than PAGE_H, let it overflow its page
-    // rather than cutting it — push end to the card's bottom edge.
-    if (end <= cursor) {
-      const tall = noBreaks.find((nb) => nb.top <= cursor && nb.bottom > cursor);
-      end = tall ? tall.bottom : Math.min(cursor + PAGE_H, contentHeight);
-    }
-
-    // Whole pixels only. The element positions these come from are
-    // fractional, and html2canvas rounds the capture height and the slide-up
-    // margin separately — a sub-pixel disagreement between them leaves the
-    // last row of glyphs sliced between two pages.
-    end = Math.round(end);
-    slices.push({ top: cursor, height: end - cursor });
-    cursor = end;
-  }
+  const slices = computeSlices({ contentHeight, pageH: PAGE_H, noBreaks, pageBreaks });
 
   console.log(`[PDF] scale=${scale}, PAGE_H=${PAGE_H}px, slices=${slices.length}, total=${contentHeight}px, footer=${footerHpx}px`);
 
