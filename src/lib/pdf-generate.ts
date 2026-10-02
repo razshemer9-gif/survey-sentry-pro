@@ -7,15 +7,15 @@ import { isMobileDevice } from "./pdf";
 import { computeSlices } from "./pdf-slices";
 
 /**
- * How the finished PDF reached the user: straight into the share sheet
- * (mobile) or as a download (desktop, or a share the browser refused).
+ * The finished report, so the caller can open it now and share the very same
+ * file later without rendering it twice.
  */
-export type PdfDelivery = "shared" | "downloaded";
+export type PdfResult = File;
 
 export async function generateReportPdf(
   element: HTMLElement | null,
   fileName: string,
-): Promise<PdfDelivery> {
+): Promise<PdfResult> {
   if (!element) {
     console.error("[PDF] printRef is null — portal not mounted yet");
     throw new Error("PDF element not found");
@@ -228,30 +228,16 @@ export async function generateReportPdf(
   // ── Deliver ──────────────────────────────────────────────────────────────
   const blob = pdf.output("blob");
 
-  // Order matters. The share sheet goes up first, carrying `files` ONLY — no
-  // title, no text, no url — and the file is handed to the browser after it
-  // closes, so the report opens too.
+  // Hand the file to the browser, which on a phone opens it in the PDF
+  // viewer: the consultant reads the report before deciding to send it. The
+  // same File is returned so that sending it, from the editor's own button, is
+  // a share of this exact file rather than a second render.
   //
-  // Opening first was tried and reverted: on iOS that switches to Safari's own
-  // PDF viewer, our share never runs, and sharing from that viewer attaches
-  // the page address — which is how a "blob:https://…" line appeared in
-  // WhatsApp beside the file. "Save to Files" from our own sheet also writes
-  // the File object's UTF-8 name rather than one iOS re-derives from the blob
-  // URL and mangles.
+  // Sharing is never started from here. On iOS opening switches to Safari's
+  // own viewer, and a share called around that either does not run or ends up
+  // being made from the viewer — which attaches the page address, the
+  // "blob:https://…" line that turned up in WhatsApp beside the file.
   const file = new File([blob], fileName, { type: "application/pdf" });
-  let shared = false;
-  if (isMobile && navigator.canShare?.({ files: [file] })) {
-    try {
-      await navigator.share({ files: [file] });
-      shared = true;
-    } catch (err) {
-      // Dismissing the sheet is a choice, not a failure; the report still
-      // opens below either way.
-      shared = (err as DOMException)?.name === "AbortError";
-      if (!shared) console.warn("[PDF] share failed", err);
-    }
-  }
-
   const url = URL.createObjectURL(blob);
   try {
     const a = document.createElement("a");
@@ -265,5 +251,5 @@ export async function generateReportPdf(
   } finally {
     setTimeout(() => URL.revokeObjectURL(url), 10_000);
   }
-  return shared ? "shared" : "downloaded";
+  return file;
 }
