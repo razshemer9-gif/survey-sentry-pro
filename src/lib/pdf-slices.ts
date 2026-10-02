@@ -74,5 +74,47 @@ export function computeSlices({ contentHeight, pageH, noBreaks, pageBreaks }: Sl
     cursor = end;
   }
 
+  return avoidOrphanTail(slices, { contentHeight, pageH, noBreaks, pageBreaks });
+}
+
+/**
+ * A page holding nothing but the block that closes the report reads as a
+ * mistake — Form 8 ended on a stub page carrying only the מורשה's name,
+ * registration numbers and stamp. It happens because that block must not be
+ * split, so a break landing inside it pushes the whole thing to a page of its
+ * own with nothing after it.
+ *
+ * The fix moves the boundary EARLIER, taking the card before it down to the
+ * closing page as well, so the report ends on a page that holds the signature
+ * section rather than a stub. Pages here are cut to their own content, so a
+ * shorter page leaves no gap — and nothing grows, which matters because the
+ * page height is bounded by what the device can rasterize.
+ */
+function avoidOrphanTail(slices: Slice[], { pageH, noBreaks, pageBreaks }: SliceInput): Slice[] {
+  if (slices.length < 2) return slices;
+
+  const last = slices[slices.length - 1];
+  const prev = slices[slices.length - 2];
+  if (last.height >= pageH * 0.25) return slices;
+
+  const lastTop = last.top;
+  const lastEnd = last.top + last.height;
+
+  // The card that currently ends the page before, pulled down whole.
+  const card = [...noBreaks]
+    .filter((c) => c.top > prev.top && c.bottom <= lastTop)
+    .sort((a, b) => b.top - a.top)[0];
+  if (!card) return slices;
+
+  const boundary = Math.round(card.top);
+  // Don't cross a forced break, don't empty the page before, and don't make
+  // the closing page taller than a page.
+  if (boundary <= prev.top) return slices;
+  if (pageBreaks.some((pb) => pb > boundary && pb <= lastTop)) return slices;
+  if (lastEnd - boundary > pageH) return slices;
+
+  prev.height = boundary - prev.top;
+  last.top = boundary;
+  last.height = lastEnd - boundary;
   return slices;
 }

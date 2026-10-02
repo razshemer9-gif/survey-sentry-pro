@@ -77,4 +77,43 @@ describe("computeSlices", () => {
       expect(Number.isInteger(s.height)).toBe(true);
     }
   });
+
+  // Form 8 ended on a page carrying nothing but the closing identification
+  // block: it must not be split, so a break landing inside it pushed the whole
+  // thing onto a page of its own with nothing after it.
+  describe("a page with nothing but the closing block", () => {
+    // A document of 1100 over pages of 500 breaks at 500 and 1000, and the
+    // block at 1000..1100 is left alone on the third page.
+    const base = { contentHeight: 1100, pageH: 500, pageBreaks: [] as number[] };
+    const closing = { top: 1000, bottom: 1100 };
+    const before = { top: 900, bottom: 1000 };
+
+    it("pulls the card before it down, so the closing page is not a stub", () => {
+      const slices = computeSlices({ ...base, noBreaks: [before, closing] });
+      expect(slices.map((x) => x.top)).toEqual([0, 500, 900]);
+      expect(slices[slices.length - 1].height).toBe(200);
+      covers(slices, 1100);
+    });
+
+    it("leaves it alone when the closing page already carries content", () => {
+      const slices = computeSlices({ ...base, contentHeight: 1400, noBreaks: [before] });
+      expect(slices[slices.length - 1].height).toBeGreaterThanOrEqual(500 * 0.25);
+      covers(slices, 1400);
+    });
+
+    it("never crosses a forced break to do it", () => {
+      const slices = computeSlices({ ...base, pageBreaks: [1000], noBreaks: [before, closing] });
+      expect(slices[slices.length - 1].top).toBe(1000);
+      covers(slices, 1100);
+    });
+
+    it("never makes the closing page taller than a page", () => {
+      // The card before the closing block is itself nearly a page tall, so
+      // pulling it down would overflow — leave the pages as they are.
+      const tall = { top: 520, bottom: 1000 };
+      const slices = computeSlices({ ...base, noBreaks: [tall, closing] });
+      expect(slices[slices.length - 1].top).toBe(1000);
+      covers(slices, 1100);
+    });
+  });
 });
