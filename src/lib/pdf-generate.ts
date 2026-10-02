@@ -228,27 +228,27 @@ export async function generateReportPdf(
   // ── Deliver ──────────────────────────────────────────────────────────────
   const blob = pdf.output("blob");
 
-  // On a phone the file goes to the OS share sheet and nowhere else.
+  // Order matters. The share sheet goes up first, carrying `files` ONLY — no
+  // title, no text, no url — and the file is handed to the browser after it
+  // closes, so the report opens too.
   //
-  // Handing it to the browser first, so that the PDF would open for reading,
-  // was tried and reverted: on iOS that switches to Safari's own PDF viewer,
-  // our share never runs, and sharing from that viewer attaches the page
-  // address — which is how a "blob:https://…" line reappeared in WhatsApp
-  // beside the file.
-  //
-  // The share carries `files` ONLY: no title, no text, no url. "Save to
-  // Files" from this sheet also writes the File object's own UTF-8 name,
-  // rather than one iOS re-derives from the blob URL and mangles.
+  // Opening first was tried and reverted: on iOS that switches to Safari's own
+  // PDF viewer, our share never runs, and sharing from that viewer attaches
+  // the page address — which is how a "blob:https://…" line appeared in
+  // WhatsApp beside the file. "Save to Files" from our own sheet also writes
+  // the File object's UTF-8 name rather than one iOS re-derives from the blob
+  // URL and mangles.
   const file = new File([blob], fileName, { type: "application/pdf" });
+  let shared = false;
   if (isMobile && navigator.canShare?.({ files: [file] })) {
     try {
       await navigator.share({ files: [file] });
-      return "shared";
+      shared = true;
     } catch (err) {
-      // Dismissing the sheet is a choice, not a failure — don't then push a
-      // download the user didn't ask for.
-      if ((err as DOMException)?.name === "AbortError") return "shared";
-      console.warn("[PDF] share failed, falling back to download", err);
+      // Dismissing the sheet is a choice, not a failure; the report still
+      // opens below either way.
+      shared = (err as DOMException)?.name === "AbortError";
+      if (!shared) console.warn("[PDF] share failed", err);
     }
   }
 
@@ -263,7 +263,7 @@ export async function generateReportPdf(
     a.click();
     document.body.removeChild(a);
   } finally {
-    setTimeout(() => URL.revokeObjectURL(url), 4_000);
+    setTimeout(() => URL.revokeObjectURL(url), 10_000);
   }
-  return "downloaded";
+  return shared ? "shared" : "downloaded";
 }
