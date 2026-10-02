@@ -97,24 +97,21 @@ export async function generateReportPdf(
   const showPageNumbers = element.hasAttribute("data-pdf-page-numbers");
 
   // ── Page sizing and smart break calculation ──────────────────────────────
-  // The whole report is rasterized, so the capture scale is what a reader sees
-  // when they zoom in on the PDF — at scale 1.5 a phone-made report was
-  // visibly pixelated on a desktop screen. A phone captures at 2 now.
+  // iOS Safari limits canvas height to ~4096px and total area to ~16 MP, and
+  // over the limit it allocates the canvas but draws nothing — a report comes
+  // out blank, or generating it kills the tab, rather than failing cleanly.
   //
-  // The budget is the captured canvas in DEVICE pixels, width × height after
-  // the scale, because that is what the browser allocates and what it runs
-  // out of memory on. Raising the scale squares into that area, so each
-  // budget here is set to keep the slices as long as they have always been
-  // rather than to chase the largest canvas a device might survive: a phone
-  // capture is ~9.3 MP against the 3.5 MP it was, and a desktop one is
-  // unchanged. Probing for a bigger ceiling was tried and abandoned — the
-  // probe has to allocate the canvas it is asking about, and that allocation
-  // alone crashed the page.
+  // These numbers are therefore left exactly where years of field use put
+  // them. Capturing a phone at scale 2 instead of 1.5 was tried for sharper
+  // text and reverted: it takes the capture from 3.5 MP to 9.3 MP, and "הפק
+  // PDF" stopped working on the consultant's own phone. Sharpening this has
+  // to come from shorter slices at a higher scale, not from a bigger canvas.
   const isMobile = isMobileDevice();
-  const scale  = isMobile ? 2 : 2;
-  const budget = isMobile ? 9_500_000 : 28_000_000;
-  const maxH   = isMobile ? 3_500 : 7_000;
-  const PAGE_H = Math.max(200, Math.min(maxH, Math.floor(budget / (elWidth * scale * scale))) - footerHpx - GAP_PX);
+  const scale    = isMobile ? 1.5 : 2;
+  const MAX_PX   = isMobile ? 3_500_000 : 14_000_000;
+  const MAX_H    = isMobile ? 3_500     : 7_000;
+  // Reserve room for the footer so content + footer stays within the canvas cap.
+  const PAGE_H   = Math.max(200, Math.min(MAX_H, Math.floor(MAX_PX / (elWidth * scale))) - footerHpx - GAP_PX);
 
   // Content height without the (now hidden) footer.
   const contentHeight = footerEl ? element.scrollHeight : elHeight;
