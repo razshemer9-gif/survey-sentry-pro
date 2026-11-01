@@ -43,6 +43,7 @@ import { importWithReload } from "@/lib/dynamic-import";
 import { useAuth } from "@/contexts/AuthContext";
 import { buildPdfFileName, isMobileDevice, sanitizeFileNamePart } from "@/lib/pdf";
 import { cropImageDataUrl, fileToCompressedDataUrl, formatCurrency, rotateImageDataUrl } from "@/lib/image";
+import { itemPhotos, itemPhotosPatch } from "@/lib/item-photos";
 import { RISK_SURVEY_DEFAULT_FENCING_NOTE } from "@/lib/risk-survey";
 import { cn } from "@/lib/utils";
 import { SignaturePad } from "@/components/SignaturePad";
@@ -243,6 +244,24 @@ export default function ReportEditor() {
           }
         : r,
     );
+
+  /** Replaces an element's photo list — the first photo stays in `photo`. */
+  const setItemPhotos = (itemId: string, list: string[]) =>
+    updateItem(itemId, itemPhotosPatch(list));
+
+  /**
+   * Adds photos to the ones an element already carries. It reads the list off
+   * the item inside the update rather than from the render that drew the
+   * button, so photos taken one after another each land on top of the last.
+   */
+  const addItemPhotos = (itemId: string, urls: string[]) =>
+    setReport((r) => {
+      if (!r) return r;
+      const items = r.items.map((it) =>
+        it.id === itemId ? { ...it, ...itemPhotosPatch([...itemPhotos(it), ...urls]) } : it,
+      );
+      return { ...r, items };
+    });
 
   const removeItem = (itemId: string) =>
     setReport((r) => (r ? { ...r, items: r.items.filter((it) => it.id !== itemId) } : r));
@@ -895,6 +914,7 @@ export default function ReportEditor() {
             // ── Element stability: dedicated element card ──
             if (report.surveyType === "element_stability") {
               const isOk = item.status === "compliant";
+              const elementPhotos = itemPhotos(item);
               return (
                 <div key={item.id} className="rounded-2xl border border-border border-r-4 border-r-[#0f766e] bg-card shadow-soft animate-fade-in overflow-hidden">
                   <div className="px-4 pt-3 pb-2 bg-muted/30 border-b border-border/60 flex items-center justify-between gap-2">
@@ -912,8 +932,39 @@ export default function ReportEditor() {
                       <Textarea value={item.title} onChange={(e) => updateItem(item.id, { title: e.target.value })} placeholder="תיאור האלמנט שנבדק..." rows={2} />
                     </div>
                     <div>
-                      <Label className="mb-1 block text-xs font-semibold text-foreground">תמונה (אופציונלי)</Label>
-                      <PhotoPicker value={item.photo} onChange={(u) => updateItem(item.id, { photo: u })} label="צרף תמונת האלמנט" />
+                      <Label className="mb-1 block text-xs font-semibold text-foreground">תמונות האלמנט (אופציונלי)</Label>
+                      <div className="space-y-2">
+                        {elementPhotos.length > 0 && (
+                          <div className={cn("grid gap-1.5", elementPhotos.length === 1 ? "grid-cols-1" : "grid-cols-2")}>
+                            {elementPhotos.map((p, i) => (
+                              <div key={i} className="relative">
+                                <img
+                                  src={p}
+                                  alt={`${item.title || "אלמנט"} ${i + 1}`}
+                                  className={cn(
+                                    "w-full rounded-lg border border-border bg-muted",
+                                    elementPhotos.length === 1 ? "max-h-64 object-contain" : "aspect-square object-cover",
+                                  )}
+                                />
+                                <button
+                                  type="button"
+                                  onClick={() => setItemPhotos(item.id, elementPhotos.filter((_, j) => j !== i))}
+                                  className="absolute top-2 left-2 grid h-8 w-8 place-items-center rounded-full bg-background/90 text-foreground shadow-elev"
+                                  aria-label="הסר תמונה"
+                                >
+                                  <X className="h-4 w-4" />
+                                </button>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                        {/* Append mode: every photo joins the ones already on
+                            this element instead of replacing them. */}
+                        <PhotoPicker
+                          onAdd={(urls) => addItemPhotos(item.id, urls)}
+                          label={elementPhotos.length ? "הוסף עוד תמונה לאלמנט זה" : "צרף תמונת האלמנט"}
+                        />
+                      </div>
                     </div>
                     <div>
                       <Label className="mb-1 block text-xs font-semibold text-foreground">סטטוס</Label>

@@ -6,21 +6,32 @@ import { cn } from "@/lib/utils";
 
 interface Props {
   value?: string;
-  onChange: (dataUrl: string | undefined) => void;
+  onChange?: (dataUrl: string | undefined) => void;
+  /**
+   * Append mode: the picker holds no photo of its own and hands over every
+   * file that was picked, so the consultant can take one photo after another
+   * — or choose a whole run of them out of the gallery in one go. Several
+   * files arrive as ONE call, because a call per file would each be built on
+   * the same stale list and only the last would survive.
+   */
+  onAdd?: (dataUrls: string[]) => void;
   className?: string;
   label?: string;
   aspect?: "video" | "square";
   removable?: boolean;
 }
 
-export function PhotoPicker({ value, onChange, className, label = "הוסף תמונה", aspect = "video", removable = true }: Props) {
+export function PhotoPicker({ value, onChange, onAdd, className, label = "הוסף תמונה", aspect = "video", removable = true }: Props) {
   const camRef = useRef<HTMLInputElement>(null);
   const galRef = useRef<HTMLInputElement>(null);
 
-  async function handle(file?: File | null) {
-    if (!file) return;
-    const url = await fileToCompressedDataUrl(file);
-    onChange(url);
+  async function handle(files?: FileList | null) {
+    const picked = Array.from(files ?? []);
+    if (picked.length === 0) return;
+    const urls: string[] = [];
+    for (const f of picked) urls.push(await fileToCompressedDataUrl(f));
+    if (onAdd) onAdd(urls);
+    else onChange?.(urls[0]);
   }
 
   return (
@@ -31,7 +42,7 @@ export function PhotoPicker({ value, onChange, className, label = "הוסף תמ
           {removable && (
             <button
               type="button"
-              onClick={() => onChange(undefined)}
+              onClick={() => onChange?.(undefined)}
               className="absolute top-2 left-2 grid h-9 w-9 place-items-center rounded-full bg-background/90 text-foreground shadow-elev"
               aria-label="הסר תמונה"
             >
@@ -62,14 +73,15 @@ export function PhotoPicker({ value, onChange, className, label = "הוסף תמ
         accept="image/jpeg,image/png"
         capture="environment"
         className="hidden"
-        onChange={(e) => handle(e.target.files?.[0])}
+        onChange={(e) => { handle(e.target.files); e.target.value = ""; }}
       />
       <input
         ref={galRef}
         type="file"
         accept="image/*"
+        multiple={!!onAdd}
         className="hidden"
-        onChange={(e) => handle(e.target.files?.[0])}
+        onChange={(e) => { handle(e.target.files); e.target.value = ""; }}
       />
     </div>
   );
