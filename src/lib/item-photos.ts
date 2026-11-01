@@ -19,8 +19,14 @@ export function itemPhotos(item: PhotoFields): string[] {
   return list;
 }
 
-/** The patch that stores a photo list back on an item. */
+/**
+ * The patch that stores a photo list back on an item. The same photo is never
+ * stored twice: picking one file a second time would otherwise leave a copy
+ * behind that the card never shows — and a photo is a data URL, so an unseen
+ * copy is real weight in a report that is carried around on a phone.
+ */
 export function itemPhotosPatch(list: string[]): PhotoFields {
-  const clean = list.filter(Boolean);
+  const clean: string[] = [];
+  for (const p of list) if (p && !clean.includes(p)) clean.push(p);
   return { photo: clean[0], photos: clean.length > 1 ? clean.slice(1) : undefined };
 }

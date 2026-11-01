@@ -39,6 +39,12 @@ describe("itemPhotosPatch", () => {
     expect(itemPhotosPatch([])).toEqual({ photo: undefined, photos: undefined });
   });
 
+  it("stores nothing the card would not show", () => {
+    // Picking the same file twice — the second one is not a new photo.
+    expect(itemPhotosPatch(["a", "b", "a"])).toEqual({ photo: "a", photos: ["b"] });
+    expect(itemPhotosPatch(["a", "a"])).toEqual({ photo: "a", photos: undefined });
+  });
+
   it("round-trips whatever was read", () => {
     for (const item of [{ photo: "a" }, { photo: "a", photos: ["b"] }, { photos: ["a", "b", "c"] }, {}]) {
       const list = itemPhotos(item);

@@ -400,9 +400,7 @@ export default function ReportEditor() {
 
     report.items.forEach((item, idx) => {
       const num = String(idx + 1).padStart(2, "0");
-      const photos: string[] = [];
-      if (item.photo) photos.push(item.photo);
-      if (item.photos?.length) photos.push(...item.photos);
+      const photos: string[] = [...itemPhotos(item)];
       if (item.referencePhotos?.length) photos.push(...item.referencePhotos);
       else if (item.referencePhoto) photos.push(item.referencePhoto);
 
