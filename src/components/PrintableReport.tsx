@@ -3,6 +3,7 @@ import { formatCurrency, formatHebrewDate } from "@/lib/pdf";
 import { accessibilityBanner, accessibilityScopeLabel, accessibilityScopeOf, accessibilityTitle } from "@/lib/accessibility-scope";
 import { EDU_INSPECTION_TABLE } from "@/lib/edu-inspection-table";
 import { FORM8_REQUIREMENTS } from "@/lib/form8-data";
+import { itemPhotos } from "@/lib/item-photos";
 import { ISRAEL_STATE_EMBLEM, MOLSA_HEADER_LOGO } from "@/lib/welfare-logos";
 import {
   ELEMENT_STABILITY_FOOTER,
@@ -514,16 +515,28 @@ export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, sett
             </div>
             {report.items.map((item, i) => {
               const ok = item.status === "compliant";
+              // One photo fills the column; several are laid out two to a row,
+              // which keeps a well-documented element from running down the
+              // page as a column of full-width photos.
+              const photos = itemPhotos(item);
               return (
                 <div key={item.id} data-pdf-no-break="" style={{ display: "grid", gridTemplateColumns: "60px 1.6fr 1fr", borderTop: `1px solid ${accent}` }}>
                   <div style={{ padding: "10px 6px", borderLeft: `1px solid ${accent}`, textAlign: "center", fontWeight: 700, color: accent }}>{i + 1}</div>
                   <div style={{ padding: "10px 10px", borderLeft: `1px solid ${accent}` }}>
                     {item.title && (
-                      <div style={{ fontSize: 14, lineHeight: 1.7, whiteSpace: "pre-wrap", marginBottom: item.photo ? 8 : 0 }}>{item.title}</div>
+                      <div style={{ fontSize: 14, lineHeight: 1.7, whiteSpace: "pre-wrap", marginBottom: photos.length ? 8 : 0 }}>{item.title}</div>
                     )}
-                    {item.photo && (
-                      <img src={item.photo} alt={item.title || `אלמנט ${i + 1}`} crossOrigin="anonymous"
-                        style={{ maxWidth: "100%", height: "auto", display: "block", borderRadius: 6, border: "1px solid #e2e8f0" }} />
+                    {photos.length > 0 && (
+                      <div style={{
+                        display: "grid",
+                        gridTemplateColumns: photos.length === 1 ? "1fr" : "1fr 1fr",
+                        gap: 6,
+                      }}>
+                        {photos.map((p, j) => (
+                          <img key={j} src={p} alt={item.title || `אלמנט ${i + 1}`} crossOrigin="anonymous"
+                            style={{ width: "100%", height: "auto", display: "block", borderRadius: 6, border: "1px solid #e2e8f0" }} />
+                        ))}
+                      </div>
                     )}
                   </div>
                   <div style={{ padding: "10px 10px" }}>
@@ -1010,7 +1023,6 @@ export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, sett
             neither the facility photo nor per-finding photos are inserted
             into those tables — they get their own page instead. */}
         {(() => {
-          const itemPhotos = (i: typeof report.items[0]) => [...(i.photos ?? []), ...(i.photo ? [i.photo] : [])];
           const itemsWithPhotos = report.items.filter((i) => itemPhotos(i).length > 0);
           if (!report.coverPhoto && itemsWithPhotos.length === 0) return null;
           return (
