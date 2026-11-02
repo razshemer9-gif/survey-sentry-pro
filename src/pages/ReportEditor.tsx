@@ -73,6 +73,11 @@ export default function ReportEditor() {
   // rendering it again. Cleared on any edit — once the report changes, the
   // file on hand is not the report any more.
   const [madePdf, setMadePdf] = useState<File | null>(null);
+  // The generated pages, shown in the app's own viewer. Reading the report in
+  // the phone's PDF viewer instead is what put "blob:https://…" in WhatsApp:
+  // the share reached for there is the viewer's, and it shares the page.
+  const [pdfPages, setPdfPages] = useState<string[] | null>(null);
+  const [viewerOpen, setViewerOpen] = useState(false);
   const [sharing, setSharing] = useState(false);
   // Which of חלק ד's reference tables (rows 4/5) is open full-screen, if any.
   const [tableZoom, setTableZoom] = useState<{ src: string; label: string } | null>(null);
@@ -216,13 +221,25 @@ export default function ReportEditor() {
     );
   }
 
-  const update = (patch: Partial<SurveyReport>) => {
+  /**
+   * Every change to the report. A PDF already generated was rendered from the
+   * report as it was, so it is dropped here rather than in each of the eight
+   * places that change something — one of which used to forget, leaving the
+   * send button holding a report that no longer matched the screen.
+   */
+  const editReport: typeof setReport = (...args) => {
     setMadePdf(null);
-    setReport((r) => (r ? { ...r, ...patch } : r));
+    setPdfPages(null);
+    setViewerOpen(false);
+    setReport(...args);
+  };
+
+  const update = (patch: Partial<SurveyReport>) => {
+    editReport((r) => (r ? { ...r, ...patch } : r));
   };
 
   const updateItem = (itemId: string, patch: Partial<ChecklistItem>) => {
-    setReport((r) => {
+    editReport((r) => {
       if (!r) return r;
       const items = r.items.map((it) => {
         if (it.id !== itemId) return it;
@@ -234,7 +251,7 @@ export default function ReportEditor() {
   };
 
   const addItem = () =>
-    setReport((r) =>
+    editReport((r) =>
       r
         ? {
             ...r,
@@ -256,7 +273,7 @@ export default function ReportEditor() {
    * button, so photos taken one after another each land on top of the last.
    */
   const addItemPhotos = (itemId: string, urls: string[]) =>
-    setReport((r) => {
+    editReport((r) => {
       if (!r) return r;
       const items = r.items.map((it) =>
         it.id === itemId ? { ...it, ...itemPhotosPatch([...itemPhotos(it), ...urls]) } : it,
@@ -265,10 +282,10 @@ export default function ReportEditor() {
     });
 
   const removeItem = (itemId: string) =>
-    setReport((r) => (r ? { ...r, items: r.items.filter((it) => it.id !== itemId) } : r));
+    editReport((r) => (r ? { ...r, items: r.items.filter((it) => it.id !== itemId) } : r));
 
   const duplicateItem = (itemId: string) =>
-    setReport((r) => {
+    editReport((r) => {
       if (!r) return r;
       const idx = r.items.findIndex((it) => it.id === itemId);
       if (idx === -1) return r;
@@ -278,7 +295,7 @@ export default function ReportEditor() {
     });
 
   const moveItem = (itemId: string, dir: -1 | 1) =>
-    setReport((r) => {
+    editReport((r) => {
       if (!r) return r;
       const idx = r.items.findIndex((it) => it.id === itemId);
       const to = idx + dir;
@@ -297,7 +314,7 @@ export default function ReportEditor() {
       const dataUrls = await Promise.all(
         Array.from(files).map((f) => fileToCompressedDataUrl(f)),
       );
-      setReport((r) =>
+      editReport((r) =>
         r
           ? {
               ...r,
@@ -364,9 +381,18 @@ export default function ReportEditor() {
       ]);
       // Two rAF ticks let React commit any pending renders to the print portal DOM
       await new Promise<void>((r) => requestAnimationFrame(() => requestAnimationFrame(() => r())));
-      const file = await generateReportPdf(printRef.current, buildPdfFileName(latest));
+      // On a phone the app shows the pages itself and shares the file from
+      // its own button, so the browser is not handed the file at all.
+      const { file, pages } = await generateReportPdf(printRef.current, buildPdfFileName(latest), {
+        download: !CAN_SHARE_FILES,
+      });
       setMadePdf(file);
-      toast.success(CAN_SHARE_FILES ? "ה-PDF הופק — אפשר לשלוח אותו מהכפתור" : "ה-PDF הופק");
+      if (CAN_SHARE_FILES) {
+        setPdfPages(pages);
+        setViewerOpen(true);
+      } else {
+        toast.success("ה-PDF הופק");
+      }
     } catch (err) {
       console.error("[PDF]", err);
       toast.error("שגיאה ביצירת ה-PDF");
@@ -1915,14 +1941,17 @@ export default function ReportEditor() {
           <Button variant="outline" onClick={() => setPreviewOpen(true)} className="gap-1.5 rounded-xl text-xs">
             <Eye className="h-4 w-4" /> תצוגה
           </Button>
+          {/* Once a report is generated this button brings it back up rather
+              than drawing it again: any edit drops it (see editReport), so a
+              report that is still here is still the one on screen. */}
           <Button
-            onClick={handleGenerate}
+            onClick={() => (pdfPages ? setViewerOpen(true) : handleGenerate())}
             disabled={generating}
             variant={CAN_SHARE_FILES && madePdf ? "outline" : "default"}
             className="gap-1.5 rounded-xl text-xs"
           >
-            {generating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
-            {madePdf ? "הפק מחדש" : "הפק PDF"}
+            {generating ? <Loader2 className="h-4 w-4 animate-spin" /> : pdfPages ? <Eye className="h-4 w-4" /> : <Download className="h-4 w-4" />}
+            {pdfPages ? "הצג דוח" : "הפק PDF"}
           </Button>
           {/* Appears only once a PDF exists: the report is read first, then
               sent — and the send is its own tap, which navigator.share needs. */}
@@ -1934,6 +1963,46 @@ export default function ReportEditor() {
           )}
         </div>
       </div>
+
+      {/* The report, as it was printed, inside the app.
+          It stays in the app on purpose: handing the PDF to the phone opens
+          Safari's viewer, and the share button the consultant then reaches
+          for is the viewer's — it shares the page address, which is how
+          "blob:https://…" kept arriving in WhatsApp beside the report. Here
+          the only way out is "שלח", which sends the file and nothing else. */}
+      {pdfPages && viewerOpen && (
+        <div className="fixed inset-0 z-50 flex flex-col bg-slate-900" dir="rtl">
+          <div className="flex items-center justify-between gap-2 px-3 py-2 text-white">
+            <button
+              type="button"
+              onClick={() => setViewerOpen(false)}
+              className="grid h-10 w-10 place-items-center rounded-full bg-white/15 active:bg-white/25"
+              aria-label="סגור"
+            >
+              <X className="h-5 w-5" />
+            </button>
+            <span className="text-sm font-semibold">
+              {pdfPages.length > 1 ? `הדוח — ${pdfPages.length} עמודים` : "הדוח"}
+            </span>
+            <Button onClick={handleShare} disabled={sharing} className="gap-1.5 rounded-xl text-xs">
+              {sharing ? <Loader2 className="h-4 w-4 animate-spin" /> : <Share2 className="h-4 w-4" />}
+              שלח
+            </Button>
+          </div>
+          <div className="flex-1 overflow-auto px-3 pb-3">
+            <div className="mx-auto flex max-w-2xl flex-col gap-3">
+              {pdfPages.map((p, i) => (
+                <img
+                  key={i}
+                  src={p}
+                  alt={`עמוד ${i + 1}`}
+                  className="w-full rounded-lg bg-white shadow-pop"
+                />
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Preview dialog */}
       <Dialog open={previewOpen} onOpenChange={setPreviewOpen}>
