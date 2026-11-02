@@ -7,14 +7,34 @@ import { isMobileDevice } from "./pdf";
 import { computeSlices } from "./pdf-slices";
 
 /**
- * The finished report, so the caller can open it now and share the very same
- * file later without rendering it twice.
+ * The finished report: the file to share, and every page as it was drawn.
+ *
+ * The pages come back because the consultant reads the report before sending
+ * it, and that reading has to happen inside the app. Handing the PDF to the
+ * phone instead opens Safari's own viewer, and a share made from there is a
+ * share of the PAGE — which is how "blob:https://…" kept arriving in WhatsApp
+ * beside the file. These are the very images the PDF is built from, so what
+ * is reviewed is exactly what is sent.
  */
-export type PdfResult = File;
+export interface PdfResult {
+  file: File;
+  /** One JPEG data URL per page, in order. */
+  pages: string[];
+}
+
+export interface PdfOptions {
+  /**
+   * Whether to hand the file to the browser, which downloads or opens it.
+   * Right for a desktop, where there is no file sharing and a download is
+   * what is wanted; wrong for a phone, where the app previews and shares it.
+   */
+  download?: boolean;
+}
 
 export async function generateReportPdf(
   element: HTMLElement | null,
   fileName: string,
+  options: PdfOptions = {},
 ): Promise<PdfResult> {
   if (!element) {
     console.error("[PDF] printRef is null — portal not mounted yet");
@@ -150,6 +170,7 @@ export async function generateReportPdf(
   const savedMarginTop = element.style.marginTop;
 
   let pdf!: jsPDF;
+  const pages: string[] = [];
 
   try {
     for (let i = 0; i < slices.length; i++) {
@@ -181,6 +202,7 @@ export async function generateReportPdf(
       });
 
       const imgData = canvas.toDataURL("image/jpeg", 0.95);
+      pages.push(imgData);
 
       // jsPDF's [w, h] format array must match the orientation label it's
       // given, or jsPDF "corrects" it by swapping w/h — e.g. asking for
@@ -228,28 +250,27 @@ export async function generateReportPdf(
   // ── Deliver ──────────────────────────────────────────────────────────────
   const blob = pdf.output("blob");
 
-  // Hand the file to the browser, which on a phone opens it in the PDF
-  // viewer: the consultant reads the report before deciding to send it. The
-  // same File is returned so that sending it, from the editor's own button, is
-  // a share of this exact file rather than a second render.
-  //
-  // Sharing is never started from here. On iOS opening switches to Safari's
-  // own viewer, and a share called around that either does not run or ends up
-  // being made from the viewer — which attaches the page address, the
-  // "blob:https://…" line that turned up in WhatsApp beside the file.
+  // Sharing is never started from here, and on a phone neither is opening.
+  // Handing the file to the browser there switches to Safari's own viewer,
+  // and the share the consultant then reaches for is the viewer's: it shares
+  // the PAGE, which is how the "blob:https://…" line kept arriving in
+  // WhatsApp beside the report. The caller previews the pages in the app and
+  // shares this exact file from its own button instead.
   const file = new File([blob], fileName, { type: "application/pdf" });
-  const url = URL.createObjectURL(blob);
-  try {
-    const a = document.createElement("a");
-    a.href          = url;
-    a.download      = fileName;
-    a.rel           = "noopener";
-    a.style.display = "none";
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-  } finally {
-    setTimeout(() => URL.revokeObjectURL(url), 10_000);
+  if (options.download) {
+    const url = URL.createObjectURL(blob);
+    try {
+      const a = document.createElement("a");
+      a.href          = url;
+      a.download      = fileName;
+      a.rel           = "noopener";
+      a.style.display = "none";
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+    } finally {
+      setTimeout(() => URL.revokeObjectURL(url), 10_000);
+    }
   }
-  return file;
+  return { file, pages };
 }
