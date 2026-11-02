@@ -103,6 +103,7 @@ export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, sett
       ? item.referencePhotos
       : (item.referencePhoto ? [item.referencePhoto] : []);
     const priorityMeta = item.priority !== undefined ? PRIORITY_GROUPS.find(g => g.priority === item.priority) : undefined;
+    const fieldPhotos = itemPhotos(item);
     return (
       <div
         key={item.id}
@@ -145,19 +146,31 @@ export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, sett
           )}
         </div>
 
-        {/* ── Section 2: Client / field data ── */}
-        {(item.photo || item.fieldNotes || (item.estimatedCost || 0) > 0) && (
+        {/* ── Section 2: Client / field data ──
+            One photo sits beside the field notes, the way this card has
+            always been laid out. Several are laid out two to a row across the
+            whole card instead, with the notes underneath: sharing the width
+            with the notes column would have left each one too small to show
+            what the consultant went back to photograph. */}
+        {(fieldPhotos.length > 0 || item.fieldNotes || (item.estimatedCost || 0) > 0) && (
           <div data-pdf-no-break="" style={{ padding: "14px 20px" }}>
-            {(item.photo || item.fieldNotes) && (
-              <div style={{ display: "grid", gridTemplateColumns: item.photo && item.fieldNotes ? "1fr 1fr" : "1fr", gap: 14, alignItems: "start" }}>
-                {item.photo && (
+            {(fieldPhotos.length > 0 || item.fieldNotes) && (
+              <div style={{ display: "grid", gridTemplateColumns: fieldPhotos.length === 1 && item.fieldNotes ? "1fr 1fr" : "1fr", gap: 14, alignItems: "start" }}>
+                {fieldPhotos.length > 0 && (
                   <div data-pdf-no-break="">
-                    <div style={{ fontSize: 13, color: "#64748b", marginBottom: 5, fontWeight: 600 }}>מצב קיים</div>
-                    <img
-                      src={item.photo}
-                      alt="מצב קיים"
-                      style={{ maxWidth: "100%", height: "auto", display: "block", borderRadius: 8, border: "1px solid #e2e8f0" }}
-                    />
+                    <div style={{ fontSize: 13, color: "#64748b", marginBottom: 5, fontWeight: 600 }}>
+                      {fieldPhotos.length > 1 ? "תמונות מצב קיים" : "מצב קיים"}
+                    </div>
+                    <div style={{ display: "grid", gridTemplateColumns: fieldPhotos.length > 1 ? "1fr 1fr" : "1fr", gap: 10 }}>
+                      {fieldPhotos.map((p, i) => (
+                        <img
+                          key={i}
+                          src={p}
+                          alt="מצב קיים"
+                          style={{ width: "100%", height: "auto", display: "block", borderRadius: 8, border: "1px solid #e2e8f0" }}
+                        />
+                      ))}
+                    </div>
                   </div>
                 )}
                 {item.fieldNotes && (
@@ -1092,9 +1105,13 @@ export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, sett
         <div style={TD}>{item.notes || "—"}</div>
         <div style={TD}>
           {item.fieldNotes || "—"}
-          {item.photo && (
-            <img src={item.photo} alt="מצב קיים" crossOrigin="anonymous"
-              style={{ marginTop: 6, maxWidth: "100%", height: "auto", display: "block", borderRadius: 4 }} />
+          {itemPhotos(item).length > 0 && (
+            <div style={{ marginTop: 6, display: "grid", gridTemplateColumns: itemPhotos(item).length > 1 ? "1fr 1fr" : "1fr", gap: 4 }}>
+              {itemPhotos(item).map((p, i) => (
+                <img key={i} src={p} alt="מצב קיים" crossOrigin="anonymous"
+                  style={{ width: "100%", height: "auto", display: "block", borderRadius: 4 }} />
+              ))}
+            </div>
           )}
         </div>
       </div>
