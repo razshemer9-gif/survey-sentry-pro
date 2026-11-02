@@ -138,7 +138,7 @@ export default function ReportEditor() {
         const isAccessibilityJunk = (it: ChecklistItem) => {
           if (it.matchedRequirementId || it.standardPart || it.clause || it.suggestedCorrection) return true;
           // Accessibility title with nothing the surveyor filled in.
-          const untouched = !it.fieldNotes && !it.photo && !(it.notes && it.notes.trim());
+          const untouched = !it.fieldNotes && itemPhotos(it).length === 0 && !(it.notes && it.notes.trim());
           return ACCESSIBILITY_TITLES.has(it.title) && untouched;
         };
         let cleanItems = r.items.filter((it) => !isAccessibilityJunk(it));
@@ -989,6 +989,7 @@ export default function ReportEditor() {
                 </div>
               );
             }
+            const fieldPhotos = itemPhotos(item);
             return (
               <div key={item.id} className="rounded-2xl border border-border border-r-4 border-r-destructive bg-card shadow-soft animate-fade-in overflow-hidden">
 
@@ -1036,44 +1037,41 @@ export default function ReportEditor() {
 
                 {/* ── Client-specific (editable) ── */}
                 <div className="px-4 py-3 space-y-3">
-                  {report.surveyType === "welfare_inspection" ? (
-                    <div>
-                      <Label className="mb-1 block text-xs font-semibold text-foreground">תמונות מצב קיים</Label>
-                      <div className="space-y-2">
-                        {(item.photos?.length ?? 0) > 0 && (
-                          <div className="grid grid-cols-2 gap-1.5">
-                            {item.photos!.map((p, i) => (
-                              <div key={i} className="relative">
-                                <img src={p} alt="" className="w-full aspect-square object-cover rounded-lg border border-border bg-muted" />
-                                <button
-                                  type="button"
-                                  onClick={() => updateItem(item.id, { photos: item.photos!.filter((_, j) => j !== i) })}
-                                  className="absolute top-1 left-1 grid h-6 w-6 place-items-center rounded-full bg-background/90 text-foreground shadow-elev"
-                                  aria-label="הסר תמונה"
-                                >
-                                  <X className="h-3.5 w-3.5" />
-                                </button>
-                              </div>
-                            ))}
-                          </div>
-                        )}
-                        <PhotoPicker
-                          value={undefined}
-                          onChange={(u) => { if (u) updateItem(item.id, { photos: [...(item.photos ?? []), u] }); }}
-                          label="הוסף תמונה מהשטח"
-                        />
-                      </div>
-                    </div>
-                  ) : (
-                    <div>
-                      <Label className="mb-1 block text-xs font-semibold text-foreground">תמונת מצב קיים</Label>
+                  {/* A finding can carry as many photos as the consultant
+                      took of it. Append mode: each one joins the others. */}
+                  <div>
+                    <Label className="mb-1 block text-xs font-semibold text-foreground">תמונות מצב קיים</Label>
+                    <div className="space-y-2">
+                      {fieldPhotos.length > 0 && (
+                        <div className={cn("grid gap-1.5", fieldPhotos.length === 1 ? "grid-cols-1" : "grid-cols-2")}>
+                          {fieldPhotos.map((p, i) => (
+                            <div key={i} className="relative">
+                              <img
+                                src={p}
+                                alt=""
+                                className={cn(
+                                  "w-full rounded-lg border border-border bg-muted",
+                                  fieldPhotos.length === 1 ? "max-h-64 object-contain" : "aspect-square object-cover",
+                                )}
+                              />
+                              <button
+                                type="button"
+                                onClick={() => setItemPhotos(item.id, fieldPhotos.filter((_, j) => j !== i))}
+                                className="absolute top-2 left-2 grid h-8 w-8 place-items-center rounded-full bg-background/90 text-foreground shadow-elev"
+                                aria-label="הסר תמונה"
+                              >
+                                <X className="h-4 w-4" />
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+                      )}
                       <PhotoPicker
-                        value={item.photo}
-                        onChange={(u) => updateItem(item.id, { photo: u })}
-                        label="צרף תמונה מהשטח"
+                        onAdd={(urls) => addItemPhotos(item.id, urls)}
+                        label={fieldPhotos.length ? "הוסף עוד תמונה לממצא זה" : "צרף תמונה מהשטח"}
                       />
                     </div>
-                  )}
+                  </div>
 
                   <div>
                     <Label className="mb-1 block text-xs font-semibold text-foreground">פירוט מצב קיים</Label>
