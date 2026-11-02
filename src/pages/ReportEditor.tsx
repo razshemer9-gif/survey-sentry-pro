@@ -44,6 +44,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { buildPdfFileName, isMobileDevice, sanitizeFileNamePart } from "@/lib/pdf";
 import { cropImageDataUrl, fileToCompressedDataUrl, formatCurrency, rotateImageDataUrl } from "@/lib/image";
 import { itemPhotos, itemPhotosPatch } from "@/lib/item-photos";
+import { AutoTextarea } from "@/components/AutoTextarea";
 import { RISK_SURVEY_DEFAULT_FENCING_NOTE } from "@/lib/risk-survey";
 import { cn } from "@/lib/utils";
 import { SignaturePad } from "@/components/SignaturePad";
@@ -993,7 +994,7 @@ export default function ReportEditor() {
             return (
               <div key={item.id} className="rounded-2xl border border-border border-r-4 border-r-destructive bg-card shadow-soft animate-fade-in overflow-hidden">
 
-                {/* ── Template data (read-only) ── */}
+                {/* ── Template data: the finding as the template words it ── */}
                 <div className="px-4 pt-3 pb-3 bg-muted/30 border-b border-border/60">
                   <div className="flex items-start justify-between gap-2 mb-1">
                     <span className="text-xs font-semibold text-muted-foreground">ממצא {idx + 1}</span>
@@ -1016,11 +1017,19 @@ export default function ReportEditor() {
                       <span className="font-semibold text-foreground">ממצא: </span>{item.notes}
                     </div>
                   )}
-                  {item.suggestedCorrection && (
-                    <div className="mt-1.5 rounded-lg bg-primary/5 border border-primary/15 px-2.5 py-1.5 text-xs text-foreground/80 leading-relaxed">
-                      <span className="font-semibold text-primary">פתרון: </span>{item.suggestedCorrection}
-                    </div>
-                  )}
+                  {/* The solution arrives from the template, but it is what
+                      the client reads and acts on, so it is edited here —
+                      in place, in the box it is printed in. */}
+                  <div className="mt-1.5 rounded-lg bg-primary/5 border border-primary/15 px-2.5 py-1.5">
+                    <Label className="mb-0.5 block text-xs font-semibold text-primary">פתרון</Label>
+                    <AutoTextarea
+                      value={item.suggestedCorrection || ""}
+                      onChange={(e) => updateItem(item.id, { suggestedCorrection: e.target.value || undefined })}
+                      placeholder="הצעה לתיקון — אפשר לערוך או להוסיף..."
+                      rows={2}
+                      className="min-h-0 border-0 bg-transparent p-0 text-xs leading-relaxed text-foreground/80 shadow-none focus-visible:ring-0 focus-visible:ring-offset-0"
+                    />
+                  </div>
                   {refPhotos.length > 0 && (
                     <div className={cn("mt-2", refPhotos.length > 1 ? "grid grid-cols-2 gap-1.5" : "")}>
                       {refPhotos.map((p, i) => (
