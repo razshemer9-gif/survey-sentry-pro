@@ -185,26 +185,6 @@ const Index = () => {
           <Plus className="h-5 w-5" />
           סקר חדש
         </Button>
-
-        {/* The static calculations app is a separate app of ours, linked
-            rather than copied in, so its updates arrive on their own.
-            It opens in a tab of its own on purpose: inside an iframe iOS
-            files its saved calculations under a different site — so a
-            calculation made there would be missing from the app itself —
-            and it restricts the microphone and sharing, which that app's
-            dictation and PDF sending need. */}
-        <Button
-          asChild
-          size="lg"
-          variant="outline"
-          className="mt-3 w-full gap-2 rounded-2xl border-primary-foreground/40 bg-transparent text-primary-foreground hover:bg-primary-foreground/10 hover:text-primary-foreground"
-        >
-          <a href={STATIC_CALC_URL} target="_blank" rel="noopener noreferrer">
-            <Calculator className="h-5 w-5" />
-            חישובים סטטיים
-            <ExternalLink className="h-3.5 w-3.5 opacity-70" />
-          </a>
-        </Button>
       </header>
 
       <section className="px-5 pt-6">
@@ -318,7 +298,7 @@ const Index = () => {
 
       {/* Survey type selection dialog */}
       <Dialog open={typeDialogOpen} onOpenChange={(o) => { if (!creating) setTypeDialogOpen(o); }}>
-        <DialogContent className="w-[92vw] max-w-sm" dir="rtl">
+        <DialogContent className="max-h-[85vh] w-[92vw] max-w-sm overflow-y-auto" dir="rtl">
           <DialogHeader>
             <DialogTitle>בחר סוג סקר</DialogTitle>
           </DialogHeader>
@@ -356,6 +336,24 @@ const Index = () => {
                 </div>
               </button>
             ))}
+
+            {/* Last in the list, and not one of the choices above: it starts
+                nothing here but opens our separate static-calculations app,
+                in a tab of its own. Linked rather than copied in, so its
+                updates arrive on their own — and kept out of an iframe,
+                where iOS files its saved calculations under a different site
+                and restricts the microphone and sharing that its dictation
+                and PDF sending need. */}
+            <a
+              href={STATIC_CALC_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="mt-1 flex w-full items-center gap-3 rounded-2xl border-2 border-dashed border-border bg-background px-4 py-4 text-right transition-colors hover:bg-muted"
+            >
+              <Calculator className="h-4 w-4 flex-shrink-0 text-muted-foreground" />
+              <span className="text-sm font-semibold">חישובים סטטיים</span>
+              <ExternalLink className="ms-auto h-3.5 w-3.5 flex-shrink-0 text-muted-foreground" />
+            </a>
           </div>
           {selectedType === "accessibility" && (
             <div className="rounded-2xl border-2 border-primary/25 bg-primary-soft/30 p-3">
