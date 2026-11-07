@@ -17,6 +17,9 @@ import { Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
 
+/** Our static-calculations app, which lives on its own and is linked to. */
+const STATIC_CALC_URL = "https://shemer-static-calc.web.app/";
+
 const Index = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
