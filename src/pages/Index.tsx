@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Plus, FileText, Trash2, Calendar, MapPin, User } from "lucide-react";
+import { Plus, FileText, Trash2, Calendar, MapPin, User, Calculator, ExternalLink } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
 import { Button } from "@/components/ui/button";
 import {
@@ -184,6 +184,26 @@ const Index = () => {
         >
           <Plus className="h-5 w-5" />
           סקר חדש
+        </Button>
+
+        {/* The static calculations app is a separate app of ours, linked
+            rather than copied in, so its updates arrive on their own.
+            It opens in a tab of its own on purpose: inside an iframe iOS
+            files its saved calculations under a different site — so a
+            calculation made there would be missing from the app itself —
+            and it restricts the microphone and sharing, which that app's
+            dictation and PDF sending need. */}
+        <Button
+          asChild
+          size="lg"
+          variant="outline"
+          className="mt-3 w-full gap-2 rounded-2xl border-primary-foreground/40 bg-transparent text-primary-foreground hover:bg-primary-foreground/10 hover:text-primary-foreground"
+        >
+          <a href={STATIC_CALC_URL} target="_blank" rel="noopener noreferrer">
+            <Calculator className="h-5 w-5" />
+            חישובים סטטיים
+            <ExternalLink className="h-3.5 w-3.5 opacity-70" />
+          </a>
         </Button>
       </header>
 
