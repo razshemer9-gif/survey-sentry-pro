@@ -94,7 +94,7 @@ const Index = () => {
       // account settings into the report at creation time. Missing details
       // don't block creation — just a heads-up; the consultant can fill them
       // in (in Settings) and re-enter the report's own חלק ב' fields later.
-      if (selectedType === "accessibility_form_8") {
+      if (selectedType === "accessibility_form_8" || selectedType === "accessibility_form_8_event") {
         if (!user) return;
         const settings = await loadUserSettings(user.id);
         const fmt = settings.reportFormats?.accessibility_form_8;
@@ -115,6 +115,13 @@ const Index = () => {
           form8ServiceRegistrationNumber: fmt?.accessibilityServiceRegistrationNumber,
           form8ServiceRegistryName: fmt?.accessibilityServiceRegistryName,
           form8ExpertSignature: fmt?.accessibilityExpertSignature,
+          // The event form is an approval: it is filed once both sets of
+          // provisions hold, so both boxes start ticked and the consultant
+          // unticks one only where it does not apply.
+          ...(selectedType === "accessibility_form_8_event" && {
+            form8BuildingApproved: true,
+            form8ServiceApproved: true,
+          }),
         };
         const r = await saveReport(draft);
         setTypeDialogOpen(false);

@@ -1,7 +1,7 @@
 export type ComplianceStatus = "compliant" | "non_compliant" | "not_applicable" | "pending";
 
 // ── Survey types registry ──────────────────────────────────────────────────
-export type SurveyType = "accessibility" | "education_safety" | "general_safety" | "welfare_inspection" | "element_stability" | "risk_survey" | "accessibility_form_8";
+export type SurveyType = "accessibility" | "education_safety" | "general_safety" | "welfare_inspection" | "element_stability" | "risk_survey" | "accessibility_form_8" | "accessibility_form_8_event";
 
 export interface SurveyTypeConfig {
   id: SurveyType;
@@ -68,6 +68,14 @@ export const SURVEY_TYPES: SurveyTypeConfig[] = [
     pdfTitle: "חוות דעת מורשה נגישות",
     filePrefix: "טופס-8-חוות-דעת-נגישות",
     color: "#7c3aed",
+  },
+  {
+    id: "accessibility_form_8_event",
+    label: "טופס 8 - חוות דעת מאושרת לאירוע המוני",
+    shortLabel: "טופס 8 — אירוע המוני",
+    pdfTitle: "חוות דעת מורשה נגישות — אירוע המוני",
+    filePrefix: "טופס-8-אירוע-המוני",
+    color: "#9333ea",
   },
 ];
 
@@ -217,6 +225,16 @@ export interface SurveyReport {
   form8FileNumber?: string;          // מס' תיק/בקשה לרישיון עסק
   form8BusinessName?: string;        // שם העסק (עשוי לכלול גם שם/תיאור אירוע)
   form8EventDate?: string;           // תאריך האירוע — כשרלוונטי, בנפרד משם העסק
+  // The mass-event form's חלק א' is a single row about the event rather than
+  // the business details grid, so these three stand on their own.
+  form8EventName?: string;           // אירוע
+  form8EventAddress?: string;        // כתובת האירוע
+  form8EventManagerName?: string;    // מנהל האירוע
+  // The template's row has these two cells as well. Nothing is written in
+  // them on the form we were given, so they stay optional — but a cell that
+  // can never be filled would be worse than one left blank by choice.
+  form8EventPhone?: string;          // טלפון
+  form8EventCompanyId?: string;      // ח.פ
   form8Attendance?: string;          // מספר משתתפים / תפוסה
   form8LicenseItemNumber?: string;   // מס' פריט רישוי
   form8BusinessAddress?: string;     // כתובת העסק

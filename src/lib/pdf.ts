@@ -60,6 +60,8 @@ export function buildPdfFileName(report: SurveyReport): string {
   // alone left that name out of the file name entirely.
   const nameSource = report.surveyType === "accessibility_form_8"
     ? report.form8BusinessName || report.placeName
+    : report.surveyType === "accessibility_form_8_event"
+    ? report.form8EventName || report.placeName
     : report.placeName;
   // A missing name used to fall back to the Latin word "report", which put a
   // left-to-right run in the middle of an otherwise Hebrew name. WhatsApp then

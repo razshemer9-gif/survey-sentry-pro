@@ -203,9 +203,9 @@ export function newReport(
         notes: "",
         estimatedCost: 0,
       }]
-    : surveyType === "risk_survey" || surveyType === "accessibility_form_8"
+    : surveyType === "risk_survey" || surveyType === "accessibility_form_8" || surveyType === "accessibility_form_8_event"
     // risk_survey: findings are created from uploaded photos (bulk picker).
-    // accessibility_form_8: content lives in form8Requirements, not items.
+    // the form 8 types: content lives in their own fields, not in items.
     ? []
     : DEFAULT_CHECKLIST.map((i) => ({
         id: uuid(),
