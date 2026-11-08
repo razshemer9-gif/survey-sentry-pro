@@ -324,17 +324,25 @@ export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, sett
             <div style={{ marginTop: 18 }}>סיכום: המקום עומד בדרישות הנגישות !</div>
           </div>
 
-          {/* The stamp sits above the signature line, where the template puts it. */}
-          <div data-pdf-no-break="" style={{ marginTop: 16 }}>
-            {report.form8ExpertSignature && (
-              <img src={report.form8ExpertSignature} alt="חותמת המורשה" crossOrigin="anonymous"
-                style={{ maxHeight: 92, maxWidth: 260, height: "auto", display: "block", margin: "0 auto" }} />
-            )}
-            <div style={{ marginTop: 14, display: "flex", alignItems: "flex-end", gap: 18 }}>
-              <span style={{ flexShrink: 0 }}>{"שם + חתימת המורשה"}</span>
-              <span style={{ flex: 1, borderBottom: line, minHeight: 20 }} />
-              <span style={{ flexShrink: 0 }}>{"תאריך "}{opinionDate}</span>
-            </div>
+          {/* The stamp is set down ON the signature line, as a stamp is: the
+              two share one grid so the image sits in the column the ruled
+              line occupies, directly above it, instead of floating in the
+              space between the summary and the line. */}
+          <div data-pdf-no-break="" style={{
+            marginTop: 30, display: "grid", gridTemplateColumns: "auto 1fr auto",
+            alignItems: "end", columnGap: 18,
+          }}>
+            <span />
+            <span style={{ justifySelf: "center", lineHeight: 0 }}>
+              {report.form8ExpertSignature && (
+                <img src={report.form8ExpertSignature} alt="חותמת המורשה" crossOrigin="anonymous"
+                  style={{ maxHeight: 92, maxWidth: 240, height: "auto", display: "block" }} />
+              )}
+            </span>
+            <span />
+            <span>{"שם + חתימת המורשה"}</span>
+            <span style={{ borderBottom: line, minHeight: 20 }} />
+            <span>{"תאריך "}{opinionDate}</span>
           </div>
 
           {/* ── אישור בעל העסק ── */}
