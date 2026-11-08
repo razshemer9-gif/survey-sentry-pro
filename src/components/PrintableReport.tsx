@@ -194,6 +194,181 @@ export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, sett
     );
   };
 
+  // ── Form 8, mass event: חוות דעת מאושרת לאירוע המוני ──────────────────────
+  //
+  // A replica of the state's own template (the .docx dated 24.05.2021), not a
+  // report in this app's house style: Arial on white, the template's page
+  // margins, its type sizes (17pt / 16pt / 14pt headings over 12pt text), its
+  // plain ruled tables and the pale blue it fills חלק ב' with. Its wording,
+  // the order of its parts and the proportions of its columns ARE the form —
+  // all this adds is the values in the blanks. The running header the
+  // template carries is deliberately absent: Word suppresses it on the first
+  // page, and this form is one page.
+  if (report.surveyType === "accessibility_form_8_event") {
+    const ink = "#000000";
+    const shade = "#DEEAF6";            // the template's own fill on חלק ב'
+    const line = `1px solid ${ink}`;
+    const date = (v?: string) => (v ? formatHebrewDate(v) : "");
+    // One date stands behind both the visit and the signature, as it does in
+    // the filled-in example the template was given to us as.
+    const opinionDate = date(report.form8OpinionDate || report.surveyDate);
+
+    // 14pt, centred — the template's heading style for its parts.
+    const Part = ({ children }: { children: React.ReactNode }) => (
+      <div style={{ fontSize: 19, textAlign: "center", margin: "26px 0 12px" }}>{children}</div>
+    );
+
+    // The template marks its two statements with a bullet, and the מורשה
+    // writes a V beside the ones that apply. Drawn the same way here.
+    const Mark = ({ checked }: { checked?: boolean }) => (
+      <span style={{ display: "inline-flex", alignItems: "baseline", gap: 6, flexShrink: 0, width: 34, justifyContent: "flex-end" }}>
+        <span style={{ fontWeight: 700, color: "#1f3fa8", visibility: checked ? "visible" : "hidden" }}>V</span>
+        <span>•</span>
+      </span>
+    );
+
+    // חלק א' — one row about the event, in the template's seven columns and
+    // its own column widths; the label sits above the value in each cell.
+    const EventCell = ({ label, value, last }: { label: string; value?: string; last?: boolean }) => (
+      <div style={{ padding: "6px 7px", borderLeft: last ? "none" : line, fontSize: 13, minHeight: 58, boxSizing: "border-box" }}>
+        <div>{label}</div>
+        <div style={{ fontWeight: 700, marginTop: 3, whiteSpace: "pre-wrap" }}>{value || ""}</div>
+      </div>
+    );
+
+    const ExpertCell = ({ text, full }: { text: string; full?: boolean }) => (
+      <div style={{
+        padding: "10px 9px", borderLeft: full ? "none" : line, borderTop: line, background: shade,
+        fontSize: 16, ...(full ? { gridColumn: "1 / -1" } : {}),
+      }}>{text}</div>
+    );
+
+    return (
+      <div ref={ref} dir="rtl" lang="he"
+        style={{ width: "794px", background: "#ffffff", color: ink, fontFamily: 'Arial, "Segoe UI", Heebo, sans-serif' }}>
+        {/* The template's own page margins: 2.54cm top, 3.17cm at the sides. */}
+        <section style={{ padding: "96px 120px 60px", lineHeight: 1.5, fontSize: 16 }}>
+
+          <div data-pdf-no-break="" style={{ textAlign: "center" }}>
+            <div>אל: רשות רישוי עסקים <strong>{report.form8LocalAuthority || "______________"}</strong></div>
+            <div style={{ fontSize: 23, textDecoration: "underline", textUnderlineOffset: "4px", margin: "16px 0 10px", lineHeight: 1.4 }}>
+              הנדון: חוות דעת מורשה נגישות – התקיימות הוראות הנגישות בעסק
+            </div>
+            <div style={{ fontSize: 21, lineHeight: 1.4 }}>{'לפי סעיף 8ב לחוק רישוי עסקים, התשכ"ח- 1968'}</div>
+            <div style={{ fontSize: 21, lineHeight: 1.4 }}>לצורך מתן/ חידוש רישיון עסק</div>
+          </div>
+
+          {/* ── חלק א' ── */}
+          <Part>{"חלק א' - פרטי העסק"}</Part>
+          <div data-pdf-no-break="" style={{ fontSize: 15, marginBottom: 12 }}>
+            {"מס' תיק/בקשה לרישיון עסק "}
+            <span style={{ display: "inline-block", minWidth: 150, borderBottom: line, verticalAlign: "bottom", textAlign: "center" }}>
+              {report.form8FileNumber || " "}
+            </span>
+          </div>
+          <div data-pdf-no-break="" style={{
+            display: "grid",
+            // The template's own column widths, kept in proportion.
+            gridTemplateColumns: "1210fr 1176fr 1176fr 1172fr 1310fr 1058fr 1627fr",
+            border: line,
+          }}>
+            <EventCell label="אירוע" value={report.form8EventName} />
+            <EventCell label="כתובת" value={report.form8EventAddress} />
+            <EventCell label="תאריך" value={date(report.form8EventDate)} />
+            <EventCell label="כמות אנשים" value={report.form8Attendance} />
+            <EventCell label="מנהל אירוע" value={report.form8EventManagerName} />
+            <EventCell label="טלפון" value={report.form8EventPhone} />
+            <EventCell label="ח.פ" value={report.form8EventCompanyId} last />
+          </div>
+
+          {/* ── חלק ב' ── */}
+          <Part>{"חלק ב' - פרטי מורשה נגישות"}</Part>
+          <div data-pdf-no-break="" style={{ display: "grid", gridTemplateColumns: "3833fr 4527fr", borderBottom: line, borderRight: line, borderLeft: line }}>
+            <ExpertCell text={`שם המורשה מתו"ס: ${report.form8ExpertName || ""}`} />
+            <ExpertCell text={`מספר ת"ז: ${report.form8ExpertId || ""}`} />
+            <ExpertCell text={`מס' רישום בפנקס הרשם: ${report.form8ExpertRegistrationNumber || ""}`} />
+            <ExpertCell text={`שם הפנקס: ${report.form8ExpertRegistryName || ""}`} />
+            <ExpertCell text={`כתובת: ${report.form8ExpertAddress || ""}`} full />
+            <ExpertCell text={`מספר טלפון: ${report.form8ExpertPhone || ""}`} />
+            <ExpertCell text={`כתובת דוא"ל: ${report.form8ExpertEmail || ""}`} />
+            <ExpertCell text={`שם המורשה שירות: ${report.form8ServiceExpertName || ""}`} />
+            <ExpertCell text={`מספר ת"ז: ${report.form8ServiceExpertId || ""}`} />
+            <ExpertCell text={`מס' רישום בפנקס הרשם: ${report.form8ServiceRegistrationNumber || ""}`} />
+            <ExpertCell text={`שם הפנקס: ${report.form8ServiceRegistryName || ""}`} />
+            <ExpertCell text={`כתובת: ${report.form8ExpertAddress || ""}`} full />
+            <ExpertCell text={`מספר טלפון: ${report.form8ExpertPhone || ""}`} />
+            <ExpertCell text={`כתובת דוא"ל: ${report.form8ExpertEmail || ""}`} />
+          </div>
+
+          {/* ── חלק ג' ── */}
+          <Part>{"חלק ג' - חוות הדעת של מורשה הנגישות"}</Part>
+          <div data-pdf-no-break="">
+            <div style={{ marginBottom: 12 }}>בחוות דעת זו אני מאשר/ת כי מתקיימות בעסק (נא לסמן את המשבצות הרלבנטיות):</div>
+            <div style={{ display: "flex", alignItems: "flex-start", gap: 10, marginBottom: 12 }}>
+              <Mark checked={report.form8BuildingApproved} />
+              <span>
+                הוראות הנגישות החלות על העסק מכוח תקנות הנגישות לבניין קיים/ תקנות הנגישות לבניין חדש
+                {" (לפי מועד קבלת ההיתר לבניין שבו ניתן השירות) "}
+                <strong>מקום שאינו בנין</strong>.
+              </span>
+            </div>
+            <div style={{ display: "flex", alignItems: "flex-start", gap: 10, marginBottom: 16 }}>
+              <Mark checked={report.form8ServiceApproved} />
+              <strong>הוראות הנגישות החלות על העסק מכוח תקנות הנגישות לשירות.</strong>
+            </div>
+            <div>
+              אני נותן/ת חוות דעת זו לאחר שביקרתי במקום בו ניתן השירות ביום{" "}
+              {opinionDate || "__________"}
+              {" ולאחר שווידאתי את התקיימותן של הוראות הנגישות שסומנו לעיל."}
+            </div>
+            <div style={{ marginTop: 18 }}>סיכום: המקום עומד בדרישות הנגישות !</div>
+          </div>
+
+          {/* The stamp sits above the signature line, where the template puts it. */}
+          <div data-pdf-no-break="" style={{ marginTop: 16 }}>
+            {report.form8ExpertSignature && (
+              <img src={report.form8ExpertSignature} alt="חותמת המורשה" crossOrigin="anonymous"
+                style={{ maxHeight: 92, maxWidth: 260, height: "auto", display: "block", margin: "0 auto" }} />
+            )}
+            <div style={{ marginTop: 14, display: "flex", alignItems: "flex-end", gap: 18 }}>
+              <span style={{ flexShrink: 0 }}>{"שם + חתימת המורשה"}</span>
+              <span style={{ flex: 1, borderBottom: line, minHeight: 20 }} />
+              <span style={{ flexShrink: 0 }}>{"תאריך "}{opinionDate}</span>
+            </div>
+          </div>
+
+          {/* ── אישור בעל העסק ── */}
+          <div data-pdf-no-break="" style={{ marginTop: 30 }}>
+            <div style={{ marginBottom: 8 }}>{"אישור בעל העסק לעניין העברת הרשימה לחייב:"}</div>
+            <div>
+              {'אני הח"מ, '}
+              <span style={{ display: "inline-block", minWidth: 150, borderBottom: line, verticalAlign: "bottom" }}>&nbsp;</span>
+              {", בעל העסק שפרטיו מופיעים בחלק א' לעיל, מצהיר בזאת שהעברתי לחייב בביצוע נגישות את רשימת התאמות הנגישות הנוספות, המפורטות בטבלה שבסעיף 1 בחלק ד', ודרשתי ממנו לבצען."}
+            </div>
+            <div style={{ display: "flex", gap: 40, marginTop: 36, paddingRight: 60 }}>
+              <div style={{ textAlign: "center" }}>
+                <div style={{ width: 150, borderBottom: line }} />
+                <div style={{ fontSize: 15, marginTop: 5 }}>חתימה</div>
+              </div>
+              <div style={{ textAlign: "center" }}>
+                <div style={{ width: 100, borderBottom: line }} />
+                <div style={{ fontSize: 15, marginTop: 5 }}>תאריך</div>
+              </div>
+            </div>
+          </div>
+
+          {/* The template's own page footer, and the date it was last revised. */}
+          <div data-pdf-no-break="" style={{ marginTop: 46 }}>
+            <div style={{ textAlign: "center", fontSize: 15 }}>
+              {"שם המורשה: "}<strong>{report.form8ExpertName || ""}</strong>{"          חתימת המורשה"}
+            </div>
+            <div style={{ fontSize: 13, marginTop: 18 }}>עודכן 24.05.2021</div>
+          </div>
+        </section>
+      </div>
+    );
+  }
+
   // ── Form 8: חוות דעת מורשה נגישות (טופס 8) ─────────────────────────────────
   if (report.surveyType === "accessibility_form_8") {
     const accent = "#1e3a8a"; // blue accent (matches brand)
