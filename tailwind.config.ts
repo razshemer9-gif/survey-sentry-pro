@@ -68,16 +68,16 @@ export default {
           ring: "hsl(var(--sidebar-ring))",
         },
       },
-      // Tight, engineering-tool corners. xl/2xl/3xl are pulled in too, so the
-      // pill-shaped cards and buttons across the screens square up from this
-      // one place. rounded-full (dots, avatars, badges) is untouched.
+      // Every corner size reads a CSS variable. The defaults (index.css,
+      // :root) are exactly the values these had before; the new design
+      // (html.eng-ui) squares them all up from that one place.
       borderRadius: {
-        sm: "calc(var(--radius) - 2px)",
-        md: "var(--radius)",
-        lg: "calc(var(--radius) + 1px)",
-        xl: "calc(var(--radius) + 2px)",
-        "2xl": "calc(var(--radius) + 2px)",
-        "3xl": "calc(var(--radius) + 4px)",
+        sm: "var(--r-sm)",
+        md: "var(--r-md)",
+        lg: "var(--r-lg)",
+        xl: "var(--r-xl)",
+        "2xl": "var(--r-2xl)",
+        "3xl": "var(--r-3xl)",
       },
       fontFamily: {
         sans: ['Heebo', 'Assistant', 'system-ui', 'sans-serif'],

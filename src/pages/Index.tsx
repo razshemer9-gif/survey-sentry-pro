@@ -17,6 +17,7 @@ import { Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
 import { canUseStaticCalc, STATIC_CALC_URL } from "@/lib/static-calc-access";
+import { useEngUi } from "@/hooks/use-eng-ui";
 
 const Index = () => {
   const navigate = useNavigate();
@@ -35,7 +36,9 @@ const Index = () => {
   // Only populated with other people's names for owners/admins; RLS returns
   // just the current user's profile to everyone else.
   const [authors, setAuthors] = useState<Record<string, string>>({});
-  // Free-text filter over the list — place, address, survey type or author.
+  // New design (preview users only): compact header, a search box over the
+  // list, dense rows, and survey types that open with a single tap.
+  const eng = useEngUi();
   const [query, setQuery] = useState("");
 
   // ProtectedRoute (App.tsx) already gates this page on a logged-in user —
@@ -86,9 +89,8 @@ const Index = () => {
     setTypeDialogOpen(true);
   }
 
-  // `type` is passed when a survey type is picked with a single tap (every
-  // type except the accessibility survey, which first asks for its scope);
-  // otherwise the type chosen in the dialog is used.
+  // `type` is passed when a survey type is opened with a single tap (new
+  // design); otherwise the type chosen in the dialog is used.
   async function createNew(type: SurveyType | null = selectedType) {
     const selectedType = type;
     if (!selectedType || creating) return;
@@ -181,7 +183,7 @@ const Index = () => {
   }
 
   const q = query.trim().toLowerCase();
-  const visibleReports = q
+  const visibleReports = eng && q
     ? reports.filter((r) => {
         const cfg = getSurveyType(r.surveyType);
         const author = r.ownerId ? authors[r.ownerId] ?? "" : "";
@@ -190,55 +192,151 @@ const Index = () => {
       })
     : reports;
 
+  const authorName = (r: SurveyReport) =>
+    r.ownerId ? (authors[r.ownerId] || (r.ownerId === user?.id ? "אני" : "משתמש אחר")) : "אני";
+
   return (
     <AppShell>
-      <header className="hero-gradient text-primary-foreground px-4 pb-4 pt-5 safe-top">
-        <div className="flex items-end justify-between gap-3">
+      {eng ? (
+      <header className="hero-gradient text-primary-foreground px-4 pb-3 pt-4 safe-top">
+        <div className="flex items-center justify-between gap-3">
           <div className="min-w-0">
-            <div className="font-mono text-[10px] tracking-[0.25em] opacity-60">ANS · SURVEYS</div>
-            <h1 className="mt-1 text-lg font-bold leading-tight">מערכת ניהול סקרים</h1>
+            <div className="font-mono text-[10px] tracking-[0.25em] opacity-55">ANS · SURVEYS</div>
+            <h1 className="mt-0.5 text-[17px] font-bold leading-tight">מערכת ניהול סקרים</h1>
           </div>
           <Button
             onClick={openNewDialog}
             size="sm"
-            className="shrink-0 gap-1.5 bg-primary-foreground text-foreground hover:bg-primary-foreground/90"
+            className="shrink-0 gap-1.5 bg-primary-glow text-white hover:bg-primary-glow/90"
           >
             <Plus className="h-4 w-4" />
             סקר חדש
           </Button>
         </div>
       </header>
+      ) : (
+      <header className="hero-gradient text-primary-foreground rounded-b-[2rem] px-5 pb-8 pt-10 safe-top shadow-pop">
+        <div className="text-xs tracking-[0.3em] opacity-80">ANS · SURVEYS</div>
+        <h1 className="mt-2 text-2xl font-extrabold leading-tight">מערכת ניהול סקרים מקצועית</h1>
+        <p className="mt-1 text-sm opacity-90">צור, נהל והפק דוחות מקצועיים ישירות מהטלפון</p>
 
-      <section className="px-4 pt-4">
-        <div className="mb-2 flex items-center justify-between">
-          <h2 className="text-xs font-bold uppercase tracking-wide text-muted-foreground">דוחות אחרונים</h2>
-          <span className="font-mono text-[11px] text-muted-foreground">
-            {query.trim() ? `${visibleReports.length}/${reports.length}` : reports.length}
-          </span>
-        </div>
+        <Button
+          onClick={openNewDialog}
+          size="lg"
+          variant="secondary"
+          className="mt-6 w-full gap-2 rounded-2xl bg-card text-foreground shadow-elev hover:bg-card/90"
+        >
+          <Plus className="h-5 w-5" />
+          סקר חדש
+        </Button>
+      </header>
+      )}
 
-        {reports.length > 3 && (
-          <div className="relative mb-3">
-            <Search className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+      {eng ? (
+      <section className="px-3 pt-3">
+        <div className="mb-2 flex items-center gap-2">
+          <div className="relative flex-1">
+            <Search className="pointer-events-none absolute right-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <input
               type="search"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              placeholder="חיפוש לפי שם, כתובת, סוג סקר..."
-              className="h-9 w-full rounded-md border border-input bg-card pr-9 pl-9 text-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring [&::-webkit-search-cancel-button]:hidden"
+              placeholder="חיפוש: שם, כתובת, סוג סקר, כותב"
+              className="h-9 w-full rounded-md border border-input bg-card pr-8 pl-8 text-sm placeholder:text-muted-foreground focus-visible:outline-none [&::-webkit-search-cancel-button]:hidden"
             />
             {query && (
               <button
                 type="button"
                 onClick={() => setQuery("")}
-                className="absolute left-2 top-1/2 grid h-6 w-6 -translate-y-1/2 place-items-center rounded text-muted-foreground hover:bg-muted hover:text-foreground"
+                className="absolute left-1.5 top-1/2 grid h-6 w-6 -translate-y-1/2 place-items-center rounded text-muted-foreground hover:bg-muted hover:text-foreground"
                 aria-label="נקה חיפוש"
               >
                 <X className="h-3.5 w-3.5" />
               </button>
             )}
           </div>
+          <span className="shrink-0 rounded-sm border border-border bg-card px-2 py-1.5 font-mono text-[11px] text-muted-foreground">
+            {q ? `${visibleReports.length}/${reports.length}` : reports.length}
+          </span>
+        </div>
+
+        {loading ? (
+          <div className="grid place-items-center py-14">
+            <Loader2 className="h-6 w-6 animate-spin text-primary" />
+          </div>
+        ) : reports.length === 0 ? (
+          <div className="rounded-md border border-dashed border-border bg-card px-6 py-10 text-center text-sm text-muted-foreground">
+            אין דוחות שמורים. לחץ על "סקר חדש" כדי להתחיל.
+          </div>
+        ) : visibleReports.length === 0 ? (
+          <p className="py-10 text-center text-sm text-muted-foreground">אין דוחות התואמים לחיפוש.</p>
+        ) : (
+          <ul className="divide-y divide-border overflow-hidden rounded-md border border-border bg-card">
+            {visibleReports.map((r) => {
+              const cfg = getSurveyType(r.surveyType);
+              const total = r.items.length;
+              const ok = r.items.filter((i) => i.status === "compliant").length;
+              const bad = r.items.filter((i) => i.status === "non_compliant").length;
+              return (
+                <li key={r.id}>
+                  <Link
+                    to={`/report/${r.id}`}
+                    className="relative flex items-stretch gap-3 py-2.5 pe-1.5 ps-3 transition-colors hover:bg-accent/60 active:bg-accent"
+                  >
+                    {/* Survey type: a colour rule down the leading edge. */}
+                    <span className="absolute inset-y-0 start-0 w-[3px]" style={{ background: cfg.color }} />
+                    {r.coverPhoto ? (
+                      <img src={r.coverPhoto} alt="" className="h-12 w-12 flex-shrink-0 rounded-sm border border-border object-cover" />
+                    ) : (
+                      <div className="grid h-12 w-12 flex-shrink-0 place-items-center rounded-sm border border-border bg-muted" style={{ color: cfg.color }}>
+                        <FileText className="h-5 w-5" />
+                      </div>
+                    )}
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-baseline gap-2">
+                        <span className="truncate text-sm font-bold">{r.placeName || "ללא שם"}</span>
+                        <span className="shrink-0 text-[10px] font-semibold" style={{ color: cfg.color }}>{cfg.shortLabel}</span>
+                      </div>
+                      <div className="mt-0.5 flex items-center gap-x-3 text-[11px] text-muted-foreground">
+                        <span className="tabular shrink-0 font-mono">{formatHebrewDate(r.surveyDate)}</span>
+                        {r.address && <span className="truncate">{r.address}</span>}
+                      </div>
+                      <div className="mt-1 flex items-center gap-2 font-mono text-[10px]">
+                        <span className="text-success">✓{ok}</span>
+                        {bad > 0 && <span className="text-destructive">✕{bad}</span>}
+                        {total > 0 && (
+                          <span className="flex h-1 w-16 overflow-hidden rounded-sm bg-border/60">
+                            <span className="bg-success/70" style={{ width: `${(ok / total) * 100}%` }} />
+                            <span className="bg-destructive/60" style={{ width: `${(bad / total) * 100}%` }} />
+                          </span>
+                        )}
+                        {dirtyIds.has(r.id) && <span className="text-amber-600">⏳ ממתין לסנכרון</span>}
+                        <span className="ms-auto inline-flex items-center gap-1 font-sans text-muted-foreground">
+                          <User className="h-3 w-3" />
+                          {authorName(r)}
+                        </span>
+                      </div>
+                    </div>
+                    <button
+                      onClick={(e) => { e.preventDefault(); remove(r.id); }}
+                      className="grid w-8 flex-shrink-0 place-items-center self-center rounded-sm py-2 text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive"
+                      aria-label="מחק"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </button>
+                  </Link>
+                </li>
+              );
+            })}
+          </ul>
         )}
+      </section>
+      ) : (
+      <section className="px-5 pt-6">
+        <div className="mb-3 flex items-center justify-between">
+          <h2 className="text-lg font-bold">דוחות אחרונים</h2>
+          <span className="text-xs text-muted-foreground">{reports.length} סה״כ</span>
+        </div>
 
         {loading ? (
           <div className="grid place-items-center py-14">
@@ -249,31 +347,29 @@ const Index = () => {
             <FileText className="mb-3 h-10 w-10 text-muted-foreground/70" />
             <p className="text-sm text-muted-foreground">אין דוחות שמורים. לחץ על "סקר חדש" כדי להתחיל.</p>
           </div>
-        ) : visibleReports.length === 0 ? (
-          <p className="py-10 text-center text-sm text-muted-foreground">אין דוחות התואמים לחיפוש.</p>
         ) : (
-          <ul className="space-y-2">
-            {visibleReports.map((r) => {
+          <ul className="space-y-3">
+            {reports.map((r) => {
               const cfg = getSurveyType(r.surveyType);
               return (
                 <li key={r.id} className="animate-fade-in">
                   <Link
                     to={`/report/${r.id}`}
-                    className="group block rounded-md border border-border bg-card shadow-soft transition-colors hover:border-primary/50 active:bg-muted/40 overflow-hidden"
+                    className="block rounded-2xl border border-border bg-card shadow-soft transition-all duration-200 hover:shadow-elev hover:-translate-y-0.5 active:scale-[0.99] active:shadow-soft overflow-hidden"
                   >
-                    <div className="flex items-start gap-3 p-3">
+                    <div className="flex items-start gap-3 p-4">
                       {r.coverPhoto ? (
-                        <img src={r.coverPhoto} alt="" className="h-14 w-14 flex-shrink-0 rounded border border-border object-cover" />
+                        <img src={r.coverPhoto} alt="" className="h-16 w-16 flex-shrink-0 rounded-xl object-cover" />
                       ) : (
                         <div
-                          className="grid h-14 w-14 flex-shrink-0 place-items-center rounded text-white"
+                          className="grid h-16 w-16 flex-shrink-0 place-items-center rounded-xl text-white"
                           style={{ background: cfg.color }}
                         >
-                          <FileText className="h-6 w-6" />
+                          <FileText className="h-7 w-7" />
                         </div>
                       )}
                       <div className="min-w-0 flex-1">
-                        <div className="truncate text-[15px] font-bold">{r.placeName || "ללא שם"}</div>
+                        <div className="truncate text-base font-bold">{r.placeName || "ללא שם"}</div>
                         <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
                           {r.address && (
                             <span className="inline-flex items-center gap-1">
@@ -281,28 +377,28 @@ const Index = () => {
                               {r.address}
                             </span>
                           )}
-                          <span className="inline-flex items-center gap-1 tabular">
+                          <span className="inline-flex items-center gap-1">
                             <Calendar className="h-3 w-3" />
                             {formatHebrewDate(r.surveyDate)}
                           </span>
                         </div>
                         <div className="mt-2 flex flex-wrap items-center gap-2">
                           <span
-                            className="inline-flex items-center rounded-sm px-1.5 py-0.5 text-[10px] font-semibold text-white"
+                            className="inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-semibold text-white"
                             style={{ background: cfg.color }}
                           >
                             {cfg.shortLabel}
                           </span>
                           {dirtyIds.has(r.id) && (
-                            <span className="inline-flex items-center gap-1 rounded-sm bg-amber-500/10 px-1.5 py-0.5 text-[10px] font-semibold text-amber-600">
+                            <span className="inline-flex items-center gap-1 rounded-full bg-amber-500/10 px-2 py-0.5 text-[10px] font-semibold text-amber-600">
                               ⏳ ממתין לסנכרון
                             </span>
                           )}
-                          <span className="inline-flex items-center gap-1 rounded-sm bg-success/10 px-1.5 py-0.5 text-[10px] font-semibold text-success">
+                          <span className="inline-flex items-center gap-1 rounded-full bg-success/10 px-2 py-0.5 text-[10px] font-semibold text-success">
                             ✓ {r.items.filter((i) => i.status === "compliant").length} תקין
                           </span>
                           {r.items.filter((i) => i.status === "non_compliant").length > 0 && (
-                            <span className="inline-flex items-center gap-1 rounded-sm bg-destructive/10 px-1.5 py-0.5 text-[10px] font-semibold text-destructive">
+                            <span className="inline-flex items-center gap-1 rounded-full bg-destructive/10 px-2 py-0.5 text-[10px] font-semibold text-destructive">
                               ✕ {r.items.filter((i) => i.status === "non_compliant").length} לא תקין
                             </span>
                           )}
@@ -319,7 +415,7 @@ const Index = () => {
                       </div>
                       <button
                         onClick={(e) => { e.preventDefault(); remove(r.id); }}
-                        className="grid h-8 w-8 place-items-center rounded text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive"
+                        className="grid h-8 w-8 place-items-center rounded-full text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive"
                         aria-label="מחק"
                       >
                         <Trash2 className="h-4 w-4" />
@@ -330,7 +426,7 @@ const Index = () => {
                       const ok = r.items.filter(i => i.status === "compliant").length;
                       const bad = r.items.filter(i => i.status === "non_compliant").length;
                       return (
-                        <div className="flex h-[3px] w-full overflow-hidden">
+                        <div className="flex h-1 w-full overflow-hidden">
                           <div className="bg-success/60 transition-all" style={{ width: `${(ok / total) * 100}%` }} />
                           <div className="bg-destructive/50 transition-all" style={{ width: `${(bad / total) * 100}%` }} />
                           <div className="flex-1 bg-border/40" />
@@ -344,6 +440,7 @@ const Index = () => {
           </ul>
         )}
       </section>
+      )}
 
       {/* Survey type selection dialog */}
       <Dialog open={typeDialogOpen} onOpenChange={(o) => { if (!creating) setTypeDialogOpen(o); }}>
@@ -351,20 +448,21 @@ const Index = () => {
           <DialogHeader>
             <DialogTitle>בחר סוג סקר</DialogTitle>
           </DialogHeader>
-          <p className="-mt-2 text-xs text-muted-foreground">הקשה על סוג הסקר פותחת דוח חדש מיד.</p>
-          <div className="space-y-1.5 py-1">
+          {eng && <p className="-mt-2 text-xs text-muted-foreground">הקשה על סוג הסקר פותחת דוח חדש מיד.</p>}
+          <div className="space-y-2 py-1">
             {SURVEY_TYPES.map((t) => (
               <button
                 key={t.id}
-                disabled={creating}
+                disabled={eng && creating}
                 onClick={() => {
                   setSelectedType(t.id);
-                  // The accessibility survey still asks which certification
-                  // it covers; every other type opens straight away.
-                  if (t.id !== "accessibility") createNew(t.id);
+                  // New design: every type but the accessibility survey
+                  // (which first asks for its certification) opens at once.
+                  if (eng && t.id !== "accessibility") createNew(t.id);
                 }}
                 className={cn(
-                  "w-full rounded-md border px-3 py-3 text-right transition-colors disabled:opacity-60",
+                  "w-full rounded-2xl border-2 px-4 py-4 text-right transition-all",
+                  eng && "border px-3 py-3 disabled:opacity-60",
                   selectedType === t.id
                     ? "ring-2 ring-offset-1"
                     : "border-border bg-background hover:bg-muted",
@@ -377,7 +475,7 @@ const Index = () => {
               >
                 <div className="flex items-center gap-3">
                   <span
-                    className="h-3 w-3 rounded-sm border-2 flex-shrink-0 transition-colors"
+                    className="h-4 w-4 rounded-full border-2 flex-shrink-0 transition-colors"
                     style={{
                       borderColor: t.color,
                       background: selectedType === t.id ? t.color : "transparent",
@@ -389,11 +487,11 @@ const Index = () => {
                   >
                     {t.label}
                   </span>
-                  {creating && selectedType === t.id ? (
+                  {eng && (creating && selectedType === t.id ? (
                     <Loader2 className="ms-auto h-4 w-4 flex-shrink-0 animate-spin text-muted-foreground" />
                   ) : t.id !== "accessibility" ? (
                     <ChevronLeft className="ms-auto h-4 w-4 flex-shrink-0 text-muted-foreground" />
-                  ) : null}
+                  ) : null)}
                 </div>
               </button>
             ))}
@@ -413,7 +511,7 @@ const Index = () => {
               href={STATIC_CALC_URL}
               target="_blank"
               rel="noopener noreferrer"
-              className="mt-1 flex w-full items-center gap-3 rounded-md border border-dashed border-border bg-background px-3 py-3 text-right transition-colors hover:bg-muted"
+              className="mt-1 flex w-full items-center gap-3 rounded-2xl border-2 border-dashed border-border bg-background px-4 py-4 text-right transition-colors hover:bg-muted"
             >
               <Calculator className="h-4 w-4 flex-shrink-0 text-muted-foreground" />
               <span className="text-sm font-semibold">חישובים סטטיים</span>
@@ -458,10 +556,10 @@ const Index = () => {
               )}
             </div>
           )}
-          {selectedType === "accessibility" && (
+          {(!eng || selectedType === "accessibility") && (
           <Button
             onClick={() => createNew()}
-            disabled={creating || (!scopeMatos && !scopeService)}
+            disabled={!selectedType || creating || (selectedType === "accessibility" && !scopeMatos && !scopeService)}
             className="mt-1 w-full gap-2"
           >
             {creating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}

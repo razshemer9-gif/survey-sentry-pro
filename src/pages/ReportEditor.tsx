@@ -48,6 +48,7 @@ import { AutoTextarea } from "@/components/AutoTextarea";
 import { RISK_SURVEY_DEFAULT_FENCING_NOTE } from "@/lib/risk-survey";
 import { cn } from "@/lib/utils";
 import { SignaturePad } from "@/components/SignaturePad";
+import { useEngUi } from "@/hooks/use-eng-ui";
 
 
 // A phone that can hand a file to the OS share sheet gets the send step;
@@ -59,6 +60,10 @@ export default function ReportEditor() {
   const { id } = useParams();
   const navigate = useNavigate();
   const { user } = useAuth();
+  // The new design (preview users only): a pinned toolbar, and number
+  // fields that select their value on focus.
+  const eng = useEngUi();
+  const selectOnFocus = eng ? (e: React.FocusEvent<HTMLInputElement>) => e.currentTarget.select() : undefined;
   const [report, setReport] = useState<SurveyReport | null>(null);
   const [previewOpen, setPreviewOpen] = useState(false);
   const [generating, setGenerating] = useState(false);
@@ -491,19 +496,24 @@ export default function ReportEditor() {
     <>
     <AppShell>
       {/* Header */}
-      {/* Sticky toolbar: back, save and the save state stay in reach while
-          scrolling through a long report. */}
-      <header className="brand-gradient sticky top-0 z-20 text-primary-foreground px-3 pb-2.5 pt-2.5 safe-top shadow-elev">
-        <div className="flex items-center justify-between gap-2">
+      {/* In the new design this is a pinned toolbar: back, save and the
+          save state stay in reach while scrolling a long report. */}
+      <header className={cn(
+        "brand-gradient text-primary-foreground px-4 pb-5 pt-4 safe-top shadow-elev",
+        eng && "editor-toolbar sticky top-0 z-20 px-3 pb-2.5 pt-2.5",
+      )}>
+        <div className={cn("flex items-center justify-between", eng && "gap-2")}>
           <button
             onClick={handleExit}
-            className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-white/10 hover:bg-white/20"
+            className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-white/15 hover:bg-white/25"
             aria-label="חזור"
           >
             <ArrowRight className="h-5 w-5" />
           </button>
-          <div className="flex min-w-0 flex-1 items-center gap-1.5">
-            <h1 className="truncate text-base font-bold">{report.placeName || "סקר ללא שם"}</h1>
+          <div className={cn("flex items-center gap-1.5", eng ? "min-w-0 flex-1" : "text-sm font-semibold opacity-90")}>
+            {eng
+              ? <h1 className="truncate text-base font-bold">{report.placeName || "סקר ללא שם"}</h1>
+              : "עריכת דוח"}
             {saveStatus === "pending" && <span className="h-1.5 w-1.5 rounded-full bg-white/60" aria-label="ממתין לשמירה" />}
             {saveStatus === "saving" && <Loader2 className="h-3.5 w-3.5 animate-spin" aria-label="שומר..." />}
             {saveStatus === "saved" && !pendingSync && <Check className="h-3.5 w-3.5 text-emerald-300" aria-label="נשמר בענן" />}
@@ -512,17 +522,18 @@ export default function ReportEditor() {
           </div>
           <button
             onClick={handleSave}
-            className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-white/10 hover:bg-white/20"
+            className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-white/15 hover:bg-white/25"
             aria-label="שמור"
           >
             <Save className="h-5 w-5" />
           </button>
         </div>
-        {saveStatus === "pending" && <p className="mt-1 ps-11 text-[11px] opacity-70">ממתין לשמירה...</p>}
-        {saveStatus === "saving" && <p className="mt-1 ps-11 text-[11px] opacity-80">שומר...</p>}
-        {saveStatus === "saved" && !pendingSync && <p className="mt-1 ps-11 text-[11px] opacity-80">✓ נשמר בענן — ניתן לצאת בבטחה</p>}
-        {saveStatus === "saved" && pendingSync && <p className="mt-1 ps-11 text-[11px] text-amber-200">✓ נשמר במכשיר — ממתין לסנכרון לענן, ניתן לצאת בבטחה</p>}
-        {saveStatus === "error" && <p className="mt-1 ps-11 text-[11px] text-red-200 font-semibold">⚠ שגיאה בשמירה — אל תצא עדיין</p>}
+        {!eng && <h1 className="mt-3 truncate text-xl font-bold">{report.placeName || "סקר ללא שם"}</h1>}
+        {saveStatus === "pending" && <p className={cn("mt-0.5 text-xs opacity-70", eng && "mt-1 ps-11 text-[11px]")}>ממתין לשמירה...</p>}
+        {saveStatus === "saving" && <p className={cn("mt-0.5 text-xs opacity-80", eng && "mt-1 ps-11 text-[11px]")}>שומר...</p>}
+        {saveStatus === "saved" && !pendingSync && <p className={cn("mt-0.5 text-xs opacity-80", eng && "mt-1 ps-11 text-[11px]")}>✓ נשמר בענן — ניתן לצאת בבטחה</p>}
+        {saveStatus === "saved" && pendingSync && <p className={cn("mt-0.5 text-xs text-amber-200", eng && "mt-1 ps-11 text-[11px]")}>✓ נשמר במכשיר — ממתין לסנכרון לענן, ניתן לצאת בבטחה</p>}
+        {saveStatus === "error" && <p className={cn("mt-0.5 text-xs text-red-200 font-semibold", eng && "mt-1 ps-11 text-[11px]")}>⚠ שגיאה בשמירה — אל תצא עדיין</p>}
       </header>
 
       <div className="px-4 pt-4 space-y-4">
@@ -1247,7 +1258,7 @@ export default function ReportEditor() {
                       type="number"
                       inputMode="numeric"
                       value={item.estimatedCost || ""}
-                      onFocus={(e) => e.currentTarget.select()}
+                      onFocus={selectOnFocus}
                       onChange={(e) => updateItem(item.id, { estimatedCost: Number(e.target.value) || 0 })}
                       className="h-9 w-24 min-w-0"
                       placeholder="0"
@@ -1258,7 +1269,7 @@ export default function ReportEditor() {
                       inputMode="numeric"
                       min={1}
                       value={item.quantity ?? 1}
-                      onFocus={(e) => e.currentTarget.select()}
+                      onFocus={selectOnFocus}
                       onChange={(e) => updateItem(item.id, { quantity: Math.max(1, Number(e.target.value) || 1) })}
                       className="h-9 w-16 min-w-0"
                       placeholder="1"
@@ -1292,10 +1303,10 @@ export default function ReportEditor() {
           )}
 
           {report.surveyType !== "element_stability" && report.surveyType !== "risk_survey" && report.surveyType !== "general_safety" && (
-          <div className="rounded-md border border-primary/30 bg-primary-soft px-4 py-3">
+          <div className="editor-total rounded-2xl bg-primary text-primary-foreground p-4 shadow-glow">
             <div className="flex items-center justify-between">
-              <span className="text-xs font-semibold uppercase tracking-wide text-primary">אומדן תיקונים כולל</span>
-              <strong className="font-mono text-lg text-primary">{formatCurrency(totalCost)}</strong>
+              <span className="text-sm opacity-90">אומדן תיקונים כולל</span>
+              <strong className="text-xl">{formatCurrency(totalCost)}</strong>
             </div>
           </div>
           )}
@@ -2035,7 +2046,7 @@ export default function ReportEditor() {
       </div>
 
       {/* Bottom action bar */}
-      <div className="fixed inset-x-0 z-30 mx-auto max-w-lg px-4" style={{ bottom: 'calc(3.5rem + env(safe-area-inset-bottom, 0px))' }}>
+      <div className="editor-actionbar fixed inset-x-0 z-30 mx-auto max-w-lg px-4" style={{ bottom: 'calc(3.5rem + env(safe-area-inset-bottom, 0px))' }}>
         <div className={cn(
           "grid gap-2 rounded-2xl bg-card/95 p-2 shadow-pop backdrop-blur-md border border-border",
           CAN_SHARE_FILES && madePdf ? "grid-cols-3" : "grid-cols-2",

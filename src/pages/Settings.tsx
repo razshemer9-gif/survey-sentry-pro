@@ -15,6 +15,9 @@ import { ConsultantSettings, SurveyReportFormat, SurveyType, SURVEY_TYPES } from
 import { ELEMENT_STABILITY_DEFAULT_TERMS } from "@/lib/element-stability";
 import { loadUserSettings, saveUserSettings } from "@/lib/storage";
 import { useAuth } from "@/contexts/AuthContext";
+import { Switch } from "@/components/ui/switch";
+import { useCanPreviewEngUi, useEngUi } from "@/hooks/use-eng-ui";
+import { setEngUiPreferred } from "@/lib/eng-ui";
 
 const SETTINGS_TAB_KEY = "settings:lastTab";
 
@@ -32,13 +35,15 @@ export default function Settings() {
   const { user, isAdmin } = useAuth();
   const [s, setS] = useState<ConsultantSettings | null>(null);
   const [savingType, setSavingType] = useState<SurveyType | null>(null);
-  // Reopen on the tab used last time — most consultants work in one survey
-  // type, so this saves a tap (and a sideways scroll) on every visit.
+  const canPreview = useCanPreviewEngUi();
+  const eng = useEngUi();
+  // New design: reopen on the tab used last time — most consultants work in
+  // one survey type, so this saves a tap and a sideways scroll per visit.
   const [tab, setTab] = useState<string>(() => {
     try {
       const saved = localStorage.getItem(SETTINGS_TAB_KEY);
       if (saved && TAB_ORDER.some((t) => t.id === saved)) return saved;
-    } catch { /* storage unavailable — fall back to the first tab */ }
+    } catch { /* storage unavailable — start on the first tab */ }
     return "accessibility";
   });
   function changeTab(v: string) {
@@ -91,22 +96,34 @@ export default function Settings() {
 
   return (
     <AppShell>
-      <header className="brand-gradient text-primary-foreground px-4 pb-3 pt-3 safe-top shadow-elev">
+      <header className="brand-gradient text-primary-foreground px-5 pb-5 pt-4 safe-top rounded-b-3xl shadow-elev">
         <div className="flex items-center justify-between">
           <button
             onClick={() => navigate("/")}
-            className="grid h-9 w-9 place-items-center rounded-full bg-white/10 hover:bg-white/20"
+            className="grid h-10 w-10 place-items-center rounded-full bg-white/15"
           >
             <ArrowRight className="h-5 w-5" />
           </button>
           <div className="text-sm font-semibold opacity-90">הגדרות</div>
-          <div className="w-9" />
+          <div className="w-10" />
         </div>
-        <h1 className="mt-2 text-lg font-bold">{headerTitle}</h1>
-        <p className="mt-0.5 text-xs opacity-75">{headerSubtitle}</p>
+        <h1 className="mt-3 text-2xl font-extrabold">{headerTitle}</h1>
+        <p className="mt-1 text-sm opacity-85">{headerSubtitle}</p>
       </header>
 
       <div className="px-4 pt-4 pb-6" dir="rtl">
+
+        {/* ── New-design trial switch (preview users only) ── */}
+        {canPreview && (
+          <label className="mb-4 flex cursor-pointer select-none items-center justify-between gap-3 rounded-2xl border border-dashed border-primary/40 bg-card px-3 py-2.5">
+            <span className="min-w-0">
+              <span className="block text-sm font-semibold">עיצוב הנדסי (ניסיוני)</span>
+              <span className="block text-xs text-muted-foreground">מוצג רק לך ולזיו. כיבוי מחזיר לעיצוב הקודם במכשיר הזה.</span>
+            </span>
+            {/* The switch component is drawn for LTR; in RTL its thumb runs off the track. */}
+            <span dir="ltr" className="shrink-0"><Switch checked={eng} onCheckedChange={setEngUiPreferred} /></span>
+          </label>
+        )}
 
         {/* ── Admin quick-links ── */}
         {isAdmin && (
@@ -128,7 +145,7 @@ export default function Settings() {
           </div>
         )}
 
-        <Tabs value={tab} onValueChange={changeTab} dir="rtl">
+        <Tabs {...(eng ? { value: tab, onValueChange: changeTab } : { defaultValue: "accessibility" })} dir="rtl">
           <TabsList className="w-full mb-5 h-11 justify-start gap-1 overflow-x-auto no-scrollbar rounded-2xl [scroll-snap-type:x_proximity]">
             {TAB_ORDER.map((t) => (
               <TabsTrigger

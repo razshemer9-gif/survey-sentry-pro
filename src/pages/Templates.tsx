@@ -126,16 +126,16 @@ export default function Templates() {
 
   return (
     <AppShell>
-      <header className="brand-gradient text-primary-foreground px-4 pb-3 pt-3 safe-top shadow-elev">
+      <header className="brand-gradient text-primary-foreground px-5 pb-6 pt-4 safe-top rounded-b-3xl shadow-elev">
         <div className="flex items-center justify-between">
-          <button onClick={() => navigate("/")} className="grid h-9 w-9 place-items-center rounded-full bg-white/10 hover:bg-white/20">
+          <button onClick={() => navigate("/")} className="grid h-10 w-10 place-items-center rounded-full bg-white/15">
             <ArrowRight className="h-5 w-5" />
           </button>
           <div className="text-sm font-semibold opacity-90">תבניות צ׳קליסט</div>
-          <div className="w-9" />
+          <div className="w-10" />
         </div>
-        <h1 className="mt-2 text-lg font-bold">ניהול תבניות</h1>
-        <p className="mt-0.5 text-xs opacity-75">צור רשימות ממצאים מותאמות לסוג מבנה או עסק</p>
+        <h1 className="mt-3 text-2xl font-extrabold">ניהול תבניות</h1>
+        <p className="mt-1 text-sm opacity-90">צור רשימות ממצאים מותאמות לסוג מבנה או עסק</p>
       </header>
 
       {isAdmin && (
