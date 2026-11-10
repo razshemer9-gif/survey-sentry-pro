@@ -16,6 +16,8 @@ import { ELEMENT_STABILITY_DEFAULT_TERMS } from "@/lib/element-stability";
 import { loadUserSettings, saveUserSettings } from "@/lib/storage";
 import { useAuth } from "@/contexts/AuthContext";
 
+const SETTINGS_TAB_KEY = "settings:lastTab";
+
 const TAB_ORDER: { id: SurveyType; label: string }[] = [
   { id: "accessibility",     label: "נגישות" },
   { id: "general_safety",    label: "בטיחות כללי" },
@@ -30,6 +32,19 @@ export default function Settings() {
   const { user, isAdmin } = useAuth();
   const [s, setS] = useState<ConsultantSettings | null>(null);
   const [savingType, setSavingType] = useState<SurveyType | null>(null);
+  // Reopen on the tab used last time — most consultants work in one survey
+  // type, so this saves a tap (and a sideways scroll) on every visit.
+  const [tab, setTab] = useState<string>(() => {
+    try {
+      const saved = localStorage.getItem(SETTINGS_TAB_KEY);
+      if (saved && TAB_ORDER.some((t) => t.id === saved)) return saved;
+    } catch { /* storage unavailable — fall back to the first tab */ }
+    return "accessibility";
+  });
+  function changeTab(v: string) {
+    setTab(v);
+    try { localStorage.setItem(SETTINGS_TAB_KEY, v); } catch { /* ignore */ }
+  }
 
   useEffect(() => {
     if (!user) return;
@@ -76,19 +91,19 @@ export default function Settings() {
 
   return (
     <AppShell>
-      <header className="brand-gradient text-primary-foreground px-5 pb-5 pt-4 safe-top rounded-b-3xl shadow-elev">
+      <header className="brand-gradient text-primary-foreground px-4 pb-3 pt-3 safe-top shadow-elev">
         <div className="flex items-center justify-between">
           <button
             onClick={() => navigate("/")}
-            className="grid h-10 w-10 place-items-center rounded-full bg-white/15"
+            className="grid h-9 w-9 place-items-center rounded-full bg-white/10 hover:bg-white/20"
           >
             <ArrowRight className="h-5 w-5" />
           </button>
           <div className="text-sm font-semibold opacity-90">הגדרות</div>
-          <div className="w-10" />
+          <div className="w-9" />
         </div>
-        <h1 className="mt-3 text-2xl font-extrabold">{headerTitle}</h1>
-        <p className="mt-1 text-sm opacity-85">{headerSubtitle}</p>
+        <h1 className="mt-2 text-lg font-bold">{headerTitle}</h1>
+        <p className="mt-0.5 text-xs opacity-75">{headerSubtitle}</p>
       </header>
 
       <div className="px-4 pt-4 pb-6" dir="rtl">
@@ -113,7 +128,7 @@ export default function Settings() {
           </div>
         )}
 
-        <Tabs defaultValue="accessibility" dir="rtl">
+        <Tabs value={tab} onValueChange={changeTab} dir="rtl">
           <TabsList className="w-full mb-5 h-11 justify-start gap-1 overflow-x-auto no-scrollbar rounded-2xl [scroll-snap-type:x_proximity]">
             {TAB_ORDER.map((t) => (
               <TabsTrigger

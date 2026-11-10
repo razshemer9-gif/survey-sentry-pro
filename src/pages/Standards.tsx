@@ -222,11 +222,11 @@ export default function Standards() {
   return (
     <AppShell>
       {/* Header */}
-      <header className="brand-gradient text-primary-foreground px-5 pb-6 pt-4 safe-top rounded-b-3xl shadow-elev">
+      <header className="brand-gradient text-primary-foreground px-4 pb-3 pt-3 safe-top shadow-elev">
         <div className="flex items-center justify-between">
           <button
             onClick={() => navigate("/")}
-            className="grid h-10 w-10 place-items-center rounded-full bg-white/15"
+            className="grid h-9 w-9 place-items-center rounded-full bg-white/10 hover:bg-white/20"
           >
             <ArrowRight className="h-5 w-5" />
           </button>
@@ -234,9 +234,9 @@ export default function Standards() {
             <BookOpen className="h-4 w-4" />
             מאגר ממצאים
           </div>
-          <div className="w-10" />
+          <div className="w-9" />
         </div>
-        <h1 className="mt-3 text-xl font-extrabold">מאגר ממצאים מקצועי</h1>
+        <h1 className="mt-2 text-lg font-bold">מאגר ממצאים מקצועי</h1>
         <p className="mt-0.5 text-xs opacity-90">נגישות · בטיחות חינוך · בטיחות כללית</p>
         <p className="mt-0.5 text-xs opacity-75">
           {items.length} דרישות · {filtered.length} מוצגות

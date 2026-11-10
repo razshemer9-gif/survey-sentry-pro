@@ -68,14 +68,21 @@ export default {
           ring: "hsl(var(--sidebar-ring))",
         },
       },
+      // Tight, engineering-tool corners. xl/2xl/3xl are pulled in too, so the
+      // pill-shaped cards and buttons across the screens square up from this
+      // one place. rounded-full (dots, avatars, badges) is untouched.
       borderRadius: {
-        lg: "var(--radius)",
-        md: "calc(var(--radius) - 2px)",
-        sm: "calc(var(--radius) - 4px)",
+        sm: "calc(var(--radius) - 2px)",
+        md: "var(--radius)",
+        lg: "calc(var(--radius) + 1px)",
+        xl: "calc(var(--radius) + 2px)",
+        "2xl": "calc(var(--radius) + 2px)",
+        "3xl": "calc(var(--radius) + 4px)",
       },
       fontFamily: {
         sans: ['Heebo', 'Assistant', 'system-ui', 'sans-serif'],
         display: ['Heebo', 'system-ui', 'sans-serif'],
+        mono: ['ui-monospace', 'SFMono-Regular', 'Menlo', 'Consolas', 'monospace'],
       },
       keyframes: {
         "accordion-down": {

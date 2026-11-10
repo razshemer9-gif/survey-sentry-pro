@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Plus, FileText, Trash2, Calendar, MapPin, User, Calculator, ExternalLink } from "lucide-react";
+import { Plus, FileText, Trash2, Calendar, MapPin, User, Calculator, ExternalLink, Search, X, ChevronLeft } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
 import { Button } from "@/components/ui/button";
 import {
@@ -35,6 +35,8 @@ const Index = () => {
   // Only populated with other people's names for owners/admins; RLS returns
   // just the current user's profile to everyone else.
   const [authors, setAuthors] = useState<Record<string, string>>({});
+  // Free-text filter over the list — place, address, survey type or author.
+  const [query, setQuery] = useState("");
 
   // ProtectedRoute (App.tsx) already gates this page on a logged-in user —
   // no need to re-check the session here. listReports() itself is
@@ -84,8 +86,12 @@ const Index = () => {
     setTypeDialogOpen(true);
   }
 
-  async function createNew() {
-    if (!selectedType) return;
+  // `type` is passed when a survey type is picked with a single tap (every
+  // type except the accessibility survey, which first asks for its scope);
+  // otherwise the type chosen in the dialog is used.
+  async function createNew(type: SurveyType | null = selectedType) {
+    const selectedType = type;
+    if (!selectedType || creating) return;
     setCreating(true);
     try {
       // Form 8 snapshots the consultant's מורשה נגישות details from their
@@ -174,29 +180,65 @@ const Index = () => {
     }
   }
 
+  const q = query.trim().toLowerCase();
+  const visibleReports = q
+    ? reports.filter((r) => {
+        const cfg = getSurveyType(r.surveyType);
+        const author = r.ownerId ? authors[r.ownerId] ?? "" : "";
+        return [r.placeName, r.address, cfg.label, cfg.shortLabel, author]
+          .some((v) => (v ?? "").toLowerCase().includes(q));
+      })
+    : reports;
+
   return (
     <AppShell>
-      <header className="hero-gradient text-primary-foreground rounded-b-[2rem] px-5 pb-8 pt-10 safe-top shadow-pop">
-        <div className="text-xs tracking-[0.3em] opacity-80">ANS · SURVEYS</div>
-        <h1 className="mt-2 text-2xl font-extrabold leading-tight">מערכת ניהול סקרים מקצועית</h1>
-        <p className="mt-1 text-sm opacity-90">צור, נהל והפק דוחות מקצועיים ישירות מהטלפון</p>
-
-        <Button
-          onClick={openNewDialog}
-          size="lg"
-          variant="secondary"
-          className="mt-6 w-full gap-2 rounded-2xl bg-card text-foreground shadow-elev hover:bg-card/90"
-        >
-          <Plus className="h-5 w-5" />
-          סקר חדש
-        </Button>
+      <header className="hero-gradient text-primary-foreground px-4 pb-4 pt-5 safe-top">
+        <div className="flex items-end justify-between gap-3">
+          <div className="min-w-0">
+            <div className="font-mono text-[10px] tracking-[0.25em] opacity-60">ANS · SURVEYS</div>
+            <h1 className="mt-1 text-lg font-bold leading-tight">מערכת ניהול סקרים</h1>
+          </div>
+          <Button
+            onClick={openNewDialog}
+            size="sm"
+            className="shrink-0 gap-1.5 bg-primary-foreground text-foreground hover:bg-primary-foreground/90"
+          >
+            <Plus className="h-4 w-4" />
+            סקר חדש
+          </Button>
+        </div>
       </header>
 
-      <section className="px-5 pt-6">
-        <div className="mb-3 flex items-center justify-between">
-          <h2 className="text-lg font-bold">דוחות אחרונים</h2>
-          <span className="text-xs text-muted-foreground">{reports.length} סה״כ</span>
+      <section className="px-4 pt-4">
+        <div className="mb-2 flex items-center justify-between">
+          <h2 className="text-xs font-bold uppercase tracking-wide text-muted-foreground">דוחות אחרונים</h2>
+          <span className="font-mono text-[11px] text-muted-foreground">
+            {query.trim() ? `${visibleReports.length}/${reports.length}` : reports.length}
+          </span>
         </div>
+
+        {reports.length > 3 && (
+          <div className="relative mb-3">
+            <Search className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <input
+              type="search"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="חיפוש לפי שם, כתובת, סוג סקר..."
+              className="h-9 w-full rounded-md border border-input bg-card pr-9 pl-9 text-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring [&::-webkit-search-cancel-button]:hidden"
+            />
+            {query && (
+              <button
+                type="button"
+                onClick={() => setQuery("")}
+                className="absolute left-2 top-1/2 grid h-6 w-6 -translate-y-1/2 place-items-center rounded text-muted-foreground hover:bg-muted hover:text-foreground"
+                aria-label="נקה חיפוש"
+              >
+                <X className="h-3.5 w-3.5" />
+              </button>
+            )}
+          </div>
+        )}
 
         {loading ? (
           <div className="grid place-items-center py-14">
@@ -207,29 +249,31 @@ const Index = () => {
             <FileText className="mb-3 h-10 w-10 text-muted-foreground/70" />
             <p className="text-sm text-muted-foreground">אין דוחות שמורים. לחץ על "סקר חדש" כדי להתחיל.</p>
           </div>
+        ) : visibleReports.length === 0 ? (
+          <p className="py-10 text-center text-sm text-muted-foreground">אין דוחות התואמים לחיפוש.</p>
         ) : (
-          <ul className="space-y-3">
-            {reports.map((r) => {
+          <ul className="space-y-2">
+            {visibleReports.map((r) => {
               const cfg = getSurveyType(r.surveyType);
               return (
                 <li key={r.id} className="animate-fade-in">
                   <Link
                     to={`/report/${r.id}`}
-                    className="block rounded-2xl border border-border bg-card shadow-soft transition-all duration-200 hover:shadow-elev hover:-translate-y-0.5 active:scale-[0.99] active:shadow-soft overflow-hidden"
+                    className="group block rounded-md border border-border bg-card shadow-soft transition-colors hover:border-primary/50 active:bg-muted/40 overflow-hidden"
                   >
-                    <div className="flex items-start gap-3 p-4">
+                    <div className="flex items-start gap-3 p-3">
                       {r.coverPhoto ? (
-                        <img src={r.coverPhoto} alt="" className="h-16 w-16 flex-shrink-0 rounded-xl object-cover" />
+                        <img src={r.coverPhoto} alt="" className="h-14 w-14 flex-shrink-0 rounded border border-border object-cover" />
                       ) : (
                         <div
-                          className="grid h-16 w-16 flex-shrink-0 place-items-center rounded-xl text-white"
+                          className="grid h-14 w-14 flex-shrink-0 place-items-center rounded text-white"
                           style={{ background: cfg.color }}
                         >
-                          <FileText className="h-7 w-7" />
+                          <FileText className="h-6 w-6" />
                         </div>
                       )}
                       <div className="min-w-0 flex-1">
-                        <div className="truncate text-base font-bold">{r.placeName || "ללא שם"}</div>
+                        <div className="truncate text-[15px] font-bold">{r.placeName || "ללא שם"}</div>
                         <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
                           {r.address && (
                             <span className="inline-flex items-center gap-1">
@@ -237,28 +281,28 @@ const Index = () => {
                               {r.address}
                             </span>
                           )}
-                          <span className="inline-flex items-center gap-1">
+                          <span className="inline-flex items-center gap-1 tabular">
                             <Calendar className="h-3 w-3" />
                             {formatHebrewDate(r.surveyDate)}
                           </span>
                         </div>
                         <div className="mt-2 flex flex-wrap items-center gap-2">
                           <span
-                            className="inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-semibold text-white"
+                            className="inline-flex items-center rounded-sm px-1.5 py-0.5 text-[10px] font-semibold text-white"
                             style={{ background: cfg.color }}
                           >
                             {cfg.shortLabel}
                           </span>
                           {dirtyIds.has(r.id) && (
-                            <span className="inline-flex items-center gap-1 rounded-full bg-amber-500/10 px-2 py-0.5 text-[10px] font-semibold text-amber-600">
+                            <span className="inline-flex items-center gap-1 rounded-sm bg-amber-500/10 px-1.5 py-0.5 text-[10px] font-semibold text-amber-600">
                               ⏳ ממתין לסנכרון
                             </span>
                           )}
-                          <span className="inline-flex items-center gap-1 rounded-full bg-success/10 px-2 py-0.5 text-[10px] font-semibold text-success">
+                          <span className="inline-flex items-center gap-1 rounded-sm bg-success/10 px-1.5 py-0.5 text-[10px] font-semibold text-success">
                             ✓ {r.items.filter((i) => i.status === "compliant").length} תקין
                           </span>
                           {r.items.filter((i) => i.status === "non_compliant").length > 0 && (
-                            <span className="inline-flex items-center gap-1 rounded-full bg-destructive/10 px-2 py-0.5 text-[10px] font-semibold text-destructive">
+                            <span className="inline-flex items-center gap-1 rounded-sm bg-destructive/10 px-1.5 py-0.5 text-[10px] font-semibold text-destructive">
                               ✕ {r.items.filter((i) => i.status === "non_compliant").length} לא תקין
                             </span>
                           )}
@@ -275,7 +319,7 @@ const Index = () => {
                       </div>
                       <button
                         onClick={(e) => { e.preventDefault(); remove(r.id); }}
-                        className="grid h-8 w-8 place-items-center rounded-full text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive"
+                        className="grid h-8 w-8 place-items-center rounded text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive"
                         aria-label="מחק"
                       >
                         <Trash2 className="h-4 w-4" />
@@ -286,7 +330,7 @@ const Index = () => {
                       const ok = r.items.filter(i => i.status === "compliant").length;
                       const bad = r.items.filter(i => i.status === "non_compliant").length;
                       return (
-                        <div className="flex h-1 w-full overflow-hidden">
+                        <div className="flex h-[3px] w-full overflow-hidden">
                           <div className="bg-success/60 transition-all" style={{ width: `${(ok / total) * 100}%` }} />
                           <div className="bg-destructive/50 transition-all" style={{ width: `${(bad / total) * 100}%` }} />
                           <div className="flex-1 bg-border/40" />
@@ -307,13 +351,20 @@ const Index = () => {
           <DialogHeader>
             <DialogTitle>בחר סוג סקר</DialogTitle>
           </DialogHeader>
-          <div className="space-y-2 py-1">
+          <p className="-mt-2 text-xs text-muted-foreground">הקשה על סוג הסקר פותחת דוח חדש מיד.</p>
+          <div className="space-y-1.5 py-1">
             {SURVEY_TYPES.map((t) => (
               <button
                 key={t.id}
-                onClick={() => setSelectedType(t.id)}
+                disabled={creating}
+                onClick={() => {
+                  setSelectedType(t.id);
+                  // The accessibility survey still asks which certification
+                  // it covers; every other type opens straight away.
+                  if (t.id !== "accessibility") createNew(t.id);
+                }}
                 className={cn(
-                  "w-full rounded-2xl border-2 px-4 py-4 text-right transition-all",
+                  "w-full rounded-md border px-3 py-3 text-right transition-colors disabled:opacity-60",
                   selectedType === t.id
                     ? "ring-2 ring-offset-1"
                     : "border-border bg-background hover:bg-muted",
@@ -326,7 +377,7 @@ const Index = () => {
               >
                 <div className="flex items-center gap-3">
                   <span
-                    className="h-4 w-4 rounded-full border-2 flex-shrink-0 transition-colors"
+                    className="h-3 w-3 rounded-sm border-2 flex-shrink-0 transition-colors"
                     style={{
                       borderColor: t.color,
                       background: selectedType === t.id ? t.color : "transparent",
@@ -338,6 +389,11 @@ const Index = () => {
                   >
                     {t.label}
                   </span>
+                  {creating && selectedType === t.id ? (
+                    <Loader2 className="ms-auto h-4 w-4 flex-shrink-0 animate-spin text-muted-foreground" />
+                  ) : t.id !== "accessibility" ? (
+                    <ChevronLeft className="ms-auto h-4 w-4 flex-shrink-0 text-muted-foreground" />
+                  ) : null}
                 </div>
               </button>
             ))}
@@ -357,7 +413,7 @@ const Index = () => {
               href={STATIC_CALC_URL}
               target="_blank"
               rel="noopener noreferrer"
-              className="mt-1 flex w-full items-center gap-3 rounded-2xl border-2 border-dashed border-border bg-background px-4 py-4 text-right transition-colors hover:bg-muted"
+              className="mt-1 flex w-full items-center gap-3 rounded-md border border-dashed border-border bg-background px-3 py-3 text-right transition-colors hover:bg-muted"
             >
               <Calculator className="h-4 w-4 flex-shrink-0 text-muted-foreground" />
               <span className="text-sm font-semibold">חישובים סטטיים</span>
@@ -402,14 +458,16 @@ const Index = () => {
               )}
             </div>
           )}
+          {selectedType === "accessibility" && (
           <Button
-            onClick={createNew}
-            disabled={!selectedType || creating || (selectedType === "accessibility" && !scopeMatos && !scopeService)}
+            onClick={() => createNew()}
+            disabled={creating || (!scopeMatos && !scopeService)}
             className="mt-1 w-full gap-2"
           >
             {creating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
             צור דוח
           </Button>
+          )}
         </DialogContent>
       </Dialog>
     </AppShell>
