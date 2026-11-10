@@ -16,9 +16,7 @@ import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
-
-/** Our static-calculations app, which lives on its own and is linked to. */
-const STATIC_CALC_URL = "https://shemer-static-calc.web.app/";
+import { canUseStaticCalc, STATIC_CALC_URL } from "@/lib/static-calc-access";
 
 const Index = () => {
   const navigate = useNavigate();
@@ -350,7 +348,11 @@ const Index = () => {
                 updates arrive on their own — and kept out of an iframe,
                 where iOS files its saved calculations under a different site
                 and restricts the microphone and sharing that its dictation
-                and PDF sending need. */}
+                and PDF sending need.
+
+                Only the people who work with that app are offered it; for
+                everyone else the list ends at the survey types. */}
+            {canUseStaticCalc(user?.email) && (
             <a
               href={STATIC_CALC_URL}
               target="_blank"
@@ -361,6 +363,7 @@ const Index = () => {
               <span className="text-sm font-semibold">חישובים סטטיים</span>
               <ExternalLink className="ms-auto h-3.5 w-3.5 flex-shrink-0 text-muted-foreground" />
             </a>
+            )}
           </div>
           {selectedType === "accessibility" && (
             <div className="rounded-2xl border-2 border-primary/25 bg-primary-soft/30 p-3">
