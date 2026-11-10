@@ -15,6 +15,11 @@ import { ConsultantSettings, SurveyReportFormat, SurveyType, SURVEY_TYPES } from
 import { ELEMENT_STABILITY_DEFAULT_TERMS } from "@/lib/element-stability";
 import { loadUserSettings, saveUserSettings } from "@/lib/storage";
 import { useAuth } from "@/contexts/AuthContext";
+import { Switch } from "@/components/ui/switch";
+import { useCanPreviewEngUi, useEngUi } from "@/hooks/use-eng-ui";
+import { setEngUiPreferred } from "@/lib/eng-ui";
+
+const SETTINGS_TAB_KEY = "settings:lastTab";
 
 const TAB_ORDER: { id: SurveyType; label: string }[] = [
   { id: "accessibility",     label: "נגישות" },
@@ -30,6 +35,21 @@ export default function Settings() {
   const { user, isAdmin } = useAuth();
   const [s, setS] = useState<ConsultantSettings | null>(null);
   const [savingType, setSavingType] = useState<SurveyType | null>(null);
+  const canPreview = useCanPreviewEngUi();
+  const eng = useEngUi();
+  // New design: reopen on the tab used last time — most consultants work in
+  // one survey type, so this saves a tap and a sideways scroll per visit.
+  const [tab, setTab] = useState<string>(() => {
+    try {
+      const saved = localStorage.getItem(SETTINGS_TAB_KEY);
+      if (saved && TAB_ORDER.some((t) => t.id === saved)) return saved;
+    } catch { /* storage unavailable — start on the first tab */ }
+    return "accessibility";
+  });
+  function changeTab(v: string) {
+    setTab(v);
+    try { localStorage.setItem(SETTINGS_TAB_KEY, v); } catch { /* ignore */ }
+  }
 
   useEffect(() => {
     if (!user) return;
@@ -93,6 +113,18 @@ export default function Settings() {
 
       <div className="px-4 pt-4 pb-6" dir="rtl">
 
+        {/* ── New-design trial switch (preview users only) ── */}
+        {canPreview && (
+          <label className="mb-4 flex cursor-pointer select-none items-center justify-between gap-3 rounded-2xl border border-dashed border-primary/40 bg-card px-3 py-2.5">
+            <span className="min-w-0">
+              <span className="block text-sm font-semibold">עיצוב הנדסי (ניסיוני)</span>
+              <span className="block text-xs text-muted-foreground">מוצג רק לך ולזיו. כיבוי מחזיר לעיצוב הקודם במכשיר הזה.</span>
+            </span>
+            {/* The switch component is drawn for LTR; in RTL its thumb runs off the track. */}
+            <span dir="ltr" className="shrink-0"><Switch checked={eng} onCheckedChange={setEngUiPreferred} /></span>
+          </label>
+        )}
+
         {/* ── Admin quick-links ── */}
         {isAdmin && (
           <div className="flex gap-3 mb-5">
@@ -113,7 +145,7 @@ export default function Settings() {
           </div>
         )}
 
-        <Tabs defaultValue="accessibility" dir="rtl">
+        <Tabs {...(eng ? { value: tab, onValueChange: changeTab } : { defaultValue: "accessibility" })} dir="rtl">
           <TabsList className="w-full mb-5 h-11 justify-start gap-1 overflow-x-auto no-scrollbar rounded-2xl [scroll-snap-type:x_proximity]">
             {TAB_ORDER.map((t) => (
               <TabsTrigger

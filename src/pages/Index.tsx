@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Plus, FileText, Trash2, Calendar, MapPin, User, Calculator, ExternalLink } from "lucide-react";
+import { Plus, FileText, Trash2, Calendar, MapPin, User, Calculator, ExternalLink, Search, X, ChevronLeft } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
 import { Button } from "@/components/ui/button";
 import {
@@ -17,6 +17,7 @@ import { Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
 import { canUseStaticCalc, STATIC_CALC_URL } from "@/lib/static-calc-access";
+import { useEngUi } from "@/hooks/use-eng-ui";
 
 const Index = () => {
   const navigate = useNavigate();
@@ -35,6 +36,10 @@ const Index = () => {
   // Only populated with other people's names for owners/admins; RLS returns
   // just the current user's profile to everyone else.
   const [authors, setAuthors] = useState<Record<string, string>>({});
+  // New design (preview users only): compact header, a search box over the
+  // list, dense rows, and survey types that open with a single tap.
+  const eng = useEngUi();
+  const [query, setQuery] = useState("");
 
   // ProtectedRoute (App.tsx) already gates this page on a logged-in user —
   // no need to re-check the session here. listReports() itself is
@@ -84,8 +89,11 @@ const Index = () => {
     setTypeDialogOpen(true);
   }
 
-  async function createNew() {
-    if (!selectedType) return;
+  // `type` is passed when a survey type is opened with a single tap (new
+  // design); otherwise the type chosen in the dialog is used.
+  async function createNew(type: SurveyType | null = selectedType) {
+    const selectedType = type;
+    if (!selectedType || creating) return;
     setCreating(true);
     try {
       // Form 8 snapshots the consultant's מורשה נגישות details from their
@@ -174,8 +182,39 @@ const Index = () => {
     }
   }
 
+  const q = query.trim().toLowerCase();
+  const visibleReports = eng && q
+    ? reports.filter((r) => {
+        const cfg = getSurveyType(r.surveyType);
+        const author = r.ownerId ? authors[r.ownerId] ?? "" : "";
+        return [r.placeName, r.address, cfg.label, cfg.shortLabel, author]
+          .some((v) => (v ?? "").toLowerCase().includes(q));
+      })
+    : reports;
+
+  const authorName = (r: SurveyReport) =>
+    r.ownerId ? (authors[r.ownerId] || (r.ownerId === user?.id ? "אני" : "משתמש אחר")) : "אני";
+
   return (
     <AppShell>
+      {eng ? (
+      <header className="hero-gradient text-primary-foreground px-4 pb-3 pt-4 safe-top">
+        <div className="flex items-center justify-between gap-3">
+          <div className="min-w-0">
+            <div className="font-mono text-[10px] tracking-[0.25em] opacity-55">ANS · SURVEYS</div>
+            <h1 className="mt-0.5 text-[17px] font-bold leading-tight">מערכת ניהול סקרים</h1>
+          </div>
+          <Button
+            onClick={openNewDialog}
+            size="sm"
+            className="shrink-0 gap-1.5 bg-primary-glow text-white hover:bg-primary-glow/90"
+          >
+            <Plus className="h-4 w-4" />
+            סקר חדש
+          </Button>
+        </div>
+      </header>
+      ) : (
       <header className="hero-gradient text-primary-foreground rounded-b-[2rem] px-5 pb-8 pt-10 safe-top shadow-pop">
         <div className="text-xs tracking-[0.3em] opacity-80">ANS · SURVEYS</div>
         <h1 className="mt-2 text-2xl font-extrabold leading-tight">מערכת ניהול סקרים מקצועית</h1>
@@ -191,7 +230,108 @@ const Index = () => {
           סקר חדש
         </Button>
       </header>
+      )}
 
+      {eng ? (
+      <section className="px-3 pt-3">
+        <div className="mb-2 flex items-center gap-2">
+          <div className="relative flex-1">
+            <Search className="pointer-events-none absolute right-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <input
+              type="search"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="חיפוש: שם, כתובת, סוג סקר, כותב"
+              className="h-9 w-full rounded-md border border-input bg-card pr-8 pl-8 text-sm placeholder:text-muted-foreground focus-visible:outline-none [&::-webkit-search-cancel-button]:hidden"
+            />
+            {query && (
+              <button
+                type="button"
+                onClick={() => setQuery("")}
+                className="absolute left-1.5 top-1/2 grid h-6 w-6 -translate-y-1/2 place-items-center rounded text-muted-foreground hover:bg-muted hover:text-foreground"
+                aria-label="נקה חיפוש"
+              >
+                <X className="h-3.5 w-3.5" />
+              </button>
+            )}
+          </div>
+          <span className="shrink-0 rounded-sm border border-border bg-card px-2 py-1.5 font-mono text-[11px] text-muted-foreground">
+            {q ? `${visibleReports.length}/${reports.length}` : reports.length}
+          </span>
+        </div>
+
+        {loading ? (
+          <div className="grid place-items-center py-14">
+            <Loader2 className="h-6 w-6 animate-spin text-primary" />
+          </div>
+        ) : reports.length === 0 ? (
+          <div className="rounded-md border border-dashed border-border bg-card px-6 py-10 text-center text-sm text-muted-foreground">
+            אין דוחות שמורים. לחץ על "סקר חדש" כדי להתחיל.
+          </div>
+        ) : visibleReports.length === 0 ? (
+          <p className="py-10 text-center text-sm text-muted-foreground">אין דוחות התואמים לחיפוש.</p>
+        ) : (
+          <ul className="divide-y divide-border overflow-hidden rounded-md border border-border bg-card">
+            {visibleReports.map((r) => {
+              const cfg = getSurveyType(r.surveyType);
+              const total = r.items.length;
+              const ok = r.items.filter((i) => i.status === "compliant").length;
+              const bad = r.items.filter((i) => i.status === "non_compliant").length;
+              return (
+                <li key={r.id}>
+                  <Link
+                    to={`/report/${r.id}`}
+                    className="relative flex items-stretch gap-3 py-2.5 pe-1.5 ps-3 transition-colors hover:bg-accent/60 active:bg-accent"
+                  >
+                    {/* Survey type: a colour rule down the leading edge. */}
+                    <span className="absolute inset-y-0 start-0 w-[3px]" style={{ background: cfg.color }} />
+                    {r.coverPhoto ? (
+                      <img src={r.coverPhoto} alt="" className="h-12 w-12 flex-shrink-0 rounded-sm border border-border object-cover" />
+                    ) : (
+                      <div className="grid h-12 w-12 flex-shrink-0 place-items-center rounded-sm border border-border bg-muted" style={{ color: cfg.color }}>
+                        <FileText className="h-5 w-5" />
+                      </div>
+                    )}
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-baseline gap-2">
+                        <span className="truncate text-sm font-bold">{r.placeName || "ללא שם"}</span>
+                        <span className="shrink-0 text-[10px] font-semibold" style={{ color: cfg.color }}>{cfg.shortLabel}</span>
+                      </div>
+                      <div className="mt-0.5 flex items-center gap-x-3 text-[11px] text-muted-foreground">
+                        <span className="tabular shrink-0 font-mono">{formatHebrewDate(r.surveyDate)}</span>
+                        {r.address && <span className="truncate">{r.address}</span>}
+                      </div>
+                      <div className="mt-1 flex items-center gap-2 font-mono text-[10px]">
+                        <span className="text-success">✓{ok}</span>
+                        {bad > 0 && <span className="text-destructive">✕{bad}</span>}
+                        {total > 0 && (
+                          <span className="flex h-1 w-16 overflow-hidden rounded-sm bg-border/60">
+                            <span className="bg-success/70" style={{ width: `${(ok / total) * 100}%` }} />
+                            <span className="bg-destructive/60" style={{ width: `${(bad / total) * 100}%` }} />
+                          </span>
+                        )}
+                        {dirtyIds.has(r.id) && <span className="text-amber-600">⏳ ממתין לסנכרון</span>}
+                        <span className="ms-auto inline-flex items-center gap-1 font-sans text-muted-foreground">
+                          <User className="h-3 w-3" />
+                          {authorName(r)}
+                        </span>
+                      </div>
+                    </div>
+                    <button
+                      onClick={(e) => { e.preventDefault(); remove(r.id); }}
+                      className="grid w-8 flex-shrink-0 place-items-center self-center rounded-sm py-2 text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive"
+                      aria-label="מחק"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </button>
+                  </Link>
+                </li>
+              );
+            })}
+          </ul>
+        )}
+      </section>
+      ) : (
       <section className="px-5 pt-6">
         <div className="mb-3 flex items-center justify-between">
           <h2 className="text-lg font-bold">דוחות אחרונים</h2>
@@ -300,6 +440,7 @@ const Index = () => {
           </ul>
         )}
       </section>
+      )}
 
       {/* Survey type selection dialog */}
       <Dialog open={typeDialogOpen} onOpenChange={(o) => { if (!creating) setTypeDialogOpen(o); }}>
@@ -307,13 +448,21 @@ const Index = () => {
           <DialogHeader>
             <DialogTitle>בחר סוג סקר</DialogTitle>
           </DialogHeader>
+          {eng && <p className="-mt-2 text-xs text-muted-foreground">הקשה על סוג הסקר פותחת דוח חדש מיד.</p>}
           <div className="space-y-2 py-1">
             {SURVEY_TYPES.map((t) => (
               <button
                 key={t.id}
-                onClick={() => setSelectedType(t.id)}
+                disabled={eng && creating}
+                onClick={() => {
+                  setSelectedType(t.id);
+                  // New design: every type but the accessibility survey
+                  // (which first asks for its certification) opens at once.
+                  if (eng && t.id !== "accessibility") createNew(t.id);
+                }}
                 className={cn(
                   "w-full rounded-2xl border-2 px-4 py-4 text-right transition-all",
+                  eng && "border px-3 py-3 disabled:opacity-60",
                   selectedType === t.id
                     ? "ring-2 ring-offset-1"
                     : "border-border bg-background hover:bg-muted",
@@ -338,6 +487,11 @@ const Index = () => {
                   >
                     {t.label}
                   </span>
+                  {eng && (creating && selectedType === t.id ? (
+                    <Loader2 className="ms-auto h-4 w-4 flex-shrink-0 animate-spin text-muted-foreground" />
+                  ) : t.id !== "accessibility" ? (
+                    <ChevronLeft className="ms-auto h-4 w-4 flex-shrink-0 text-muted-foreground" />
+                  ) : null)}
                 </div>
               </button>
             ))}
@@ -402,14 +556,16 @@ const Index = () => {
               )}
             </div>
           )}
+          {(!eng || selectedType === "accessibility") && (
           <Button
-            onClick={createNew}
+            onClick={() => createNew()}
             disabled={!selectedType || creating || (selectedType === "accessibility" && !scopeMatos && !scopeService)}
             className="mt-1 w-full gap-2"
           >
             {creating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
             צור דוח
           </Button>
+          )}
         </DialogContent>
       </Dialog>
     </AppShell>

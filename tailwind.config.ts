@@ -68,14 +68,21 @@ export default {
           ring: "hsl(var(--sidebar-ring))",
         },
       },
+      // Every corner size reads a CSS variable. The defaults (index.css,
+      // :root) are exactly the values these had before; the new design
+      // (html.eng-ui) squares them all up from that one place.
       borderRadius: {
-        lg: "var(--radius)",
-        md: "calc(var(--radius) - 2px)",
-        sm: "calc(var(--radius) - 4px)",
+        sm: "var(--r-sm)",
+        md: "var(--r-md)",
+        lg: "var(--r-lg)",
+        xl: "var(--r-xl)",
+        "2xl": "var(--r-2xl)",
+        "3xl": "var(--r-3xl)",
       },
       fontFamily: {
         sans: ['Heebo', 'Assistant', 'system-ui', 'sans-serif'],
         display: ['Heebo', 'system-ui', 'sans-serif'],
+        mono: ['ui-monospace', 'SFMono-Regular', 'Menlo', 'Consolas', 'monospace'],
       },
       keyframes: {
         "accordion-down": {

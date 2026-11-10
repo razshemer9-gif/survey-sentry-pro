@@ -6,6 +6,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import { importWithReload } from "@/lib/dynamic-import";
+import { EngUiRoot } from "@/hooks/use-eng-ui";
 
 // Route-level code splitting — each page loads only when visited.
 // Behavior and appearance are unchanged; the Suspense fallback is the same
@@ -53,6 +54,7 @@ const App = () => (
       <Sonner position="top-center" />
       <HashRouter>
         <AuthProvider>
+          <EngUiRoot />
           <Suspense fallback={<LoadingSpinner />}>
             <Routes>
               <Route path="/auth" element={<AuthPage />} />

@@ -47,6 +47,15 @@
 
     --radius: 0.875rem;
 
+    /* Corner sizes (tailwind.config reads these). The values are the ones
+       the classes had before they became variables — unchanged here. */
+    --r-sm: calc(var(--radius) - 4px);
+    --r-md: calc(var(--radius) - 2px);
+    --r-lg: var(--radius);
+    --r-xl: 0.75rem;
+    --r-2xl: 1rem;
+    --r-3xl: 1.5rem;
+
     --gradient-primary: linear-gradient(135deg, hsl(217 91% 38%) 0%, hsl(213 94% 56%) 100%);
     --gradient-hero: linear-gradient(160deg, hsl(217 91% 38%) 0%, hsl(199 89% 48%) 100%);
     --gradient-soft: linear-gradient(180deg, hsl(214 95% 97%) 0%, hsl(210 40% 98%) 100%);
@@ -92,6 +101,9 @@
     -webkit-tap-highlight-color: transparent;
     -webkit-font-smoothing: antialiased;
     overflow-x: hidden;
+    /* Where supported, clip trims sideways overflow the same way without
+       making <body> a scroll container — so position: sticky works. */
+    overflow-x: clip;
   }
 
   body {
@@ -503,3 +515,201 @@ button:active, a:active { opacity: 0.85; }
 }
 
 /* end of styles */
+
+/* ============================================================
+   ENGINEERING UI — the new design, on trial.
+   Everything below applies only under <html class="eng-ui">, which is set
+   for the two preview users (src/lib/eng-ui.ts). Everyone else never
+   matches any of it. The printed report is styled inline and reads none
+   of these tokens, so a generated PDF is the same either way.
+   ============================================================ */
+
+html.eng-ui {
+  --background: 220 14% 94%;
+  --foreground: 222 24% 11%;
+  --card: 0 0% 100%;
+  --card-foreground: 222 24% 11%;
+  --popover: 0 0% 100%;
+  --popover-foreground: 222 24% 11%;
+
+  --primary: 211 100% 36%;
+  --primary-foreground: 0 0% 100%;
+  --primary-glow: 211 100% 45%;
+  --primary-soft: 211 80% 95%;
+
+  --secondary: 220 13% 91%;
+  --secondary-foreground: 222 24% 11%;
+  --muted: 220 14% 93%;
+  --muted-foreground: 220 9% 38%;
+  --accent: 211 55% 92%;
+  --accent-foreground: 222 24% 11%;
+
+  --success: 142 64% 29%;
+  --warning: 32 95% 44%;
+  --destructive: 0 72% 44%;
+
+  --border: 220 13% 83%;
+  --input: 220 12% 74%;
+  --ring: 211 100% 42%;
+
+  --radius: 4px;
+  --r-sm: 2px;
+  --r-md: 3px;
+  --r-lg: 4px;
+  --r-xl: 4px;
+  --r-2xl: 4px;
+  --r-3xl: 6px;
+
+  --header-bg: 220 16% 13%;
+  --gradient-primary: hsl(var(--header-bg));
+  --gradient-hero: hsl(var(--header-bg));
+  --gradient-soft: hsl(var(--background));
+
+  --shadow-sm: none;
+  --shadow-md: 0 1px 2px hsl(222 24% 11% / 0.08);
+  --shadow-lg: 0 4px 14px -4px hsl(222 24% 11% / 0.28);
+  --shadow-glow: none;
+}
+
+/* Figures line up in columns: costs, counts, dates, IDs. */
+.eng-ui :is(input, textarea, table, strong, .tabular) {
+  font-variant-numeric: tabular-nums;
+}
+.eng-ui ::selection { background: hsl(var(--primary) / 0.2); }
+
+/* Snappier motion. */
+.eng-ui .animate-fade-in  { animation-duration: 0.12s; }
+.eng-ui .animate-slide-up { animation-duration: 0.15s; }
+.eng-ui .animate-scale-in { animation-duration: 0.1s; }
+
+/* ── Title-block header: graphite, drafting grid, blue rule ───────────── */
+.eng-ui :is(.brand-gradient, .hero-gradient) {
+  background-color: hsl(var(--header-bg));
+  background-image:
+    linear-gradient(hsl(0 0% 100% / 0.04) 1px, transparent 1px),
+    linear-gradient(90deg, hsl(0 0% 100% / 0.04) 1px, transparent 1px);
+  background-size: 14px 14px;
+  border-bottom: 2px solid hsl(var(--primary-glow));
+  box-shadow: none;
+}
+/* The secondary screens' headers (templates, settings, standards, users):
+   shorter, square, small type. */
+.eng-ui header.brand-gradient:not(.editor-toolbar) {
+  padding-top: max(0.625rem, env(safe-area-inset-top, 0px));
+  padding-bottom: 0.75rem;
+  border-radius: 0;
+}
+.eng-ui header.brand-gradient:not(.editor-toolbar) h1 {
+  margin-top: 0.375rem;
+  font-size: 1.0625rem;
+  font-weight: 700;
+  line-height: 1.3;
+}
+.eng-ui header.brand-gradient:not(.editor-toolbar) p {
+  margin-top: 0.125rem;
+  font-size: 0.75rem;
+  opacity: 0.65;
+}
+.eng-ui header.brand-gradient:not(.editor-toolbar) > div:first-child > div {
+  font-size: 0.6875rem;
+  letter-spacing: 0.06em;
+  opacity: 0.6;
+}
+.eng-ui :is(.brand-gradient, .hero-gradient) button.rounded-full {
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: 4px;
+  border: 1px solid hsl(0 0% 100% / 0.16);
+  background: hsl(0 0% 100% / 0.06);
+}
+.eng-ui :is(.brand-gradient, .hero-gradient) button.rounded-full:hover {
+  background: hsl(0 0% 100% / 0.14);
+}
+
+/* ── Surfaces: borders carry the structure, not shadows ──────────────── */
+.eng-ui body { background: hsl(var(--background)); }
+
+/* Section headings inside the report editor read as drawing-sheet labels. */
+.eng-ui h3.text-xs.text-primary {
+  padding-bottom: 0.25rem;
+  border-bottom: 1px solid hsl(var(--border));
+  letter-spacing: 0.02em;
+}
+
+/* Field labels: small and quiet, like a spec sheet. */
+.eng-ui .field-label {
+  font-size: 0.71875rem;
+  letter-spacing: 0.02em;
+}
+
+/* ── Inputs: white, hairline frame, 1px blue focus line (no halo) ────── */
+/* Matched by attribute, not as .bg-background: Tailwind would fold a rule
+   naming that class into every `@apply bg-background`. */
+.eng-ui input[class~="bg-background"],
+.eng-ui textarea[class~="bg-background"],
+.eng-ui button[role="combobox"][class~="bg-background"] {
+  background-color: hsl(var(--card));
+}
+.eng-ui input:where(:not([type="checkbox"], [type="radio"], [type="file"], [type="range"], .border-0)):hover,
+.eng-ui textarea:where(:not(.border-0)):hover {
+  border-color: hsl(var(--muted-foreground) / 0.6);
+}
+.eng-ui input:where(:not([type="checkbox"], [type="radio"], [type="file"], [type="range"], .border-0)):focus-visible,
+.eng-ui textarea:where(:not(.border-0)):focus-visible,
+.eng-ui button[role="combobox"]:focus {
+  border-color: hsl(var(--ring));
+  box-shadow: 0 0 0 1px hsl(var(--ring));
+}
+.eng-ui :is(input[type="checkbox"], input[type="radio"]) {
+  accent-color: hsl(var(--primary));
+}
+/* Number spinners waste width on a phone and invite mis-taps. */
+.eng-ui input[type="number"]::-webkit-outer-spin-button,
+.eng-ui input[type="number"]::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+.eng-ui input[type="number"] { -moz-appearance: textfield; }
+
+/* ── Tabs (settings): underline tabs instead of a pill track ─────────── */
+.eng-ui [role="tablist"] {
+  background: transparent;
+  border-bottom: 1px solid hsl(var(--border));
+  border-radius: 0;
+  padding: 0;
+  height: 2.5rem;
+}
+.eng-ui [role="tab"] {
+  border-radius: 0;
+  height: 100%;
+}
+.eng-ui [role="tab"][data-state="active"] {
+  background: transparent;
+  color: hsl(var(--primary));
+  box-shadow: inset 0 -2px 0 hsl(var(--primary));
+}
+
+/* ── Bottom navigation: flat bar, active tab marked by its rule only ─── */
+.eng-ui .app-bottomnav {
+  background: hsl(var(--card));
+  backdrop-filter: none;
+  box-shadow: none;
+}
+.eng-ui .app-bottomnav [class~="bg-primary/10"] { background: transparent; }
+
+/* ── Report editor: floating action bar and the cost readout ─────────── */
+.eng-ui .editor-actionbar > div {
+  background: hsl(var(--card));
+  backdrop-filter: none;
+}
+.eng-ui .editor-total {
+  background: hsl(var(--primary-soft));
+  color: hsl(var(--primary));
+  border: 1px solid hsl(var(--primary) / 0.3);
+  padding: 0.75rem 1rem;
+}
+.eng-ui .editor-total span { font-size: 0.75rem; font-weight: 600; opacity: 1; }
+.eng-ui .editor-total strong {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 1.125rem;
+}
