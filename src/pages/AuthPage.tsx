@@ -20,6 +20,16 @@ export default function AuthPage() {
   const [regSuccess,  setRegSuccess]  = useState(false);
   const [showRegPwd,  setShowRegPwd]  = useState(false);
 
+  // Registration is closed to the public: accounts are opened by the owner,
+  // not by whoever finds the address. The form is still here, reachable at
+  // /?register — nothing on the page leads to it, so the only person who
+  // opens it is the person who was told it exists.
+  //
+  // This is the app's half of the lock. The other half is Supabase's own
+  // "allow new users to sign up" switch, which is what stops someone calling
+  // the sign-up endpoint directly, without the page.
+  const registrationOpen = new URLSearchParams(window.location.search).has("register");
+
   const [activeTab, setActiveTab] = useState<"login" | "register">("login");
 
   async function handleLogin(e: FormEvent) {
@@ -182,15 +192,17 @@ export default function AuthPage() {
             >
               התחברות
             </button>
-            <button
-              type="button"
-              role="tab"
-              aria-selected={activeTab === "register"}
-              className={`ap-tab${activeTab === "register" ? " ap-tab-active" : ""}`}
-              onClick={() => setActiveTab("register")}
-            >
-              הרשמה
-            </button>
+            {registrationOpen && (
+              <button
+                type="button"
+                role="tab"
+                aria-selected={activeTab === "register"}
+                className={`ap-tab${activeTab === "register" ? " ap-tab-active" : ""}`}
+                onClick={() => setActiveTab("register")}
+              >
+                הרשמה
+              </button>
+            )}
           </div>
 
           {/* Login form */}
@@ -246,7 +258,7 @@ export default function AuthPage() {
           )}
 
           {/* Register form */}
-          {activeTab === "register" && (
+          {registrationOpen && activeTab === "register" && (
             regSuccess ? (
               <div className="ap-success">
                 <p className="ap-success-title">ההרשמה הושלמה!</p>
