@@ -32,10 +32,23 @@ describe("rowBelongsTo", () => {
     expect(rowBelongsTo(row(undefined), null)).toBe(false);
   });
 
-  // Rows cached before the account was recorded: whoever they belong to is
-  // unknown, so they belong to nobody and are fetched again from the server.
-  it("ignores a row that predates the account being recorded", () => {
-    expect(rowBelongsTo(row(undefined), OWNER)).toBe(false);
-    expect(rowBelongsTo(row(""), OWNER)).toBe(false);
+  // Rows cached before the account was recorded still carry the report, and
+  // the report says who owns it. Without reading that, an edit or a deletion
+  // made before the change would sit in the queue for ever — never sent,
+  // because the queue is filtered by the same rule.
+  describe("a row cached before the account was recorded", () => {
+    const owned = (ownerId?: string): CachedReportRow => ({
+      ...row(undefined),
+      report: { id: "r1", ownerId } as SurveyReport,
+    });
+
+    it("falls back to the owner written on the report itself", () => {
+      expect(rowBelongsTo(owned(OWNER), OWNER)).toBe(true);
+      expect(rowBelongsTo(owned(OWNER), EMPLOYEE)).toBe(false);
+    });
+
+    it("belongs to nobody when the report names no owner either", () => {
+      expect(rowBelongsTo(owned(undefined), OWNER)).toBe(false);
+    });
   });
 });
