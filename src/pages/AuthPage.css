@@ -160,6 +160,18 @@
 }
 
 /* ── Tab bar ────────────────────────────────────────────────────────── */
+/* The card's heading, since there is only one way in: accounts are opened
+   by the owner from ניהול משתמשים, never from this page. */
+.ap-card-title {
+  text-align: center;
+  color: #fff;
+  font-size: 1.15rem;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  padding: 0.35rem 0 0.1rem;
+  margin-bottom: 1.1rem;
+}
+
 .ap-tabs {
   display: grid;
   grid-template-columns: 1fr 1fr;
