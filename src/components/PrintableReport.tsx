@@ -4,6 +4,7 @@ import { accessibilityBanner, accessibilityScopeLabel, accessibilityScopeOf, acc
 import { EDU_INSPECTION_TABLE } from "@/lib/edu-inspection-table";
 import { FORM8_REQUIREMENTS } from "@/lib/form8-data";
 import { itemPhotos } from "@/lib/item-photos";
+import { anySignature } from "@/lib/report-signature";
 import { ISRAEL_STATE_EMBLEM, MOLSA_HEADER_LOGO } from "@/lib/welfare-logos";
 import {
   ELEMENT_STABILITY_FOOTER,
@@ -59,6 +60,11 @@ const HeaderBanner = ({ src, alt = "" }: { src: string; alt?: string }) => (
 export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, settings }, ref) => {
   const surveyConfig = getSurveyType(report.surveyType);
   const fmt = getFormat(settings, report);
+  // The stamp this report signs with. A stamp set for this report type, or
+  // signed onto this report, wins; otherwise any the consultant has set —
+  // settings keep one per report type, and nobody expects to upload the same
+  // stamp seven times. See ./lib/report-signature.
+  const settingsSignature = fmt.signatureImage || anySignature(settings);
 
   const SAFETY_CLAUSES_FIXED = [
     "המקום נבדק באזורים המיועדים להימצאות קהל בלבד.",
@@ -664,7 +670,7 @@ export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, sett
     const isElementApproval = report.reportMode === "approval";
     const showSig = fmt.showSignature !== false;
     const showFooter = fmt.showFooter !== false;
-    const sigImg = showSig ? (report.signatureDataUrl || fmt.signatureImage) : undefined;
+    const sigImg = showSig ? (report.signatureDataUrl || settingsSignature) : undefined;
 
     const CoverLine = ({ label, value }: { label: string; value?: string }) => (
       <div style={{ display: "flex", alignItems: "baseline", gap: 6, marginBottom: 10, fontSize: 14, direction: "rtl" }}>
@@ -869,8 +875,8 @@ export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, sett
 
           {/* Signature — bottom of the report */}
           <div data-pdf-no-break="" style={{ marginTop: 32 }}>
-            {(fmt.signatureImage || report.signatureDataUrl) ? (
-              <img src={fmt.signatureImage || report.signatureDataUrl} alt="חתימה" crossOrigin="anonymous"
+            {(settingsSignature || report.signatureDataUrl) ? (
+              <img src={settingsSignature || report.signatureDataUrl} alt="חתימה" crossOrigin="anonymous"
                 style={{ maxHeight: 64, maxWidth: 200, display: "block" }} />
             ) : (
               <div style={{ height: 56, width: 200, borderBottom: "1px solid #94a3b8" }} />
@@ -1203,8 +1209,8 @@ export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, sett
                   signature and nothing else, so a stamp set in settings never
                   reached it and the line came out blank. Taller than it was,
                   too: at 36px a stamp's registration numbers were a smudge. */}
-              {(fmt.signatureImage || report.signatureDataUrl) ? (
-                <img src={fmt.signatureImage || report.signatureDataUrl} alt="חתימה" crossOrigin="anonymous"
+              {(settingsSignature || report.signatureDataUrl) ? (
+                <img src={settingsSignature || report.signatureDataUrl} alt="חתימה" crossOrigin="anonymous"
                   style={{ maxHeight: 64, maxWidth: 210, height: "auto", display: "block", borderBottom: "1px solid #000000", flexShrink: 0 }} />
               ) : (
                 <span style={{ flex: 1, borderBottom: "1px solid #000000", minHeight: 18 }} />
@@ -1496,8 +1502,8 @@ export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, sett
         <div data-pdf-no-break="" style={{ padding: "0 56px", marginTop: 32, marginBottom: 28 }}>
           <div style={{ display: "flex", gap: 48, alignItems: "flex-end" }}>
             <div style={{ textAlign: "center" }}>
-              {(fmt.signatureImage || report.signatureDataUrl) ? (
-                <img src={fmt.signatureImage || report.signatureDataUrl} alt="חתימה" crossOrigin="anonymous"
+              {(settingsSignature || report.signatureDataUrl) ? (
+                <img src={settingsSignature || report.signatureDataUrl} alt="חתימה" crossOrigin="anonymous"
                   style={{ maxHeight: 78, maxWidth: 240, height: "auto", display: "block", margin: "0 auto" }} />
               ) : (
                 <div style={{ height: 68, width: 240 }} />
@@ -1803,7 +1809,7 @@ export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, sett
         )}
 
         {/* CLOSING: general notes + professional sign-off */}
-        {(report.generalNotes || fmt.professionalName || settings.consultantName || fmt.signatureImage || report.signatureDataUrl) && (
+        {(report.generalNotes || fmt.professionalName || settings.consultantName || settingsSignature || report.signatureDataUrl) && (
           <div style={{ marginTop: 40, pageBreakInside: "avoid" }}>
             {report.generalNotes && (
               <>
@@ -1878,9 +1884,9 @@ export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, sett
 
             <div style={{ marginTop: 28, display: "flex", justifyContent: "flex-start", gap: 48, alignItems: "flex-end" }}>
               <div>
-                {(fmt.signatureImage || report.signatureDataUrl) ? (
+                {(settingsSignature || report.signatureDataUrl) ? (
                   <img
-                    src={fmt.signatureImage || report.signatureDataUrl}
+                    src={settingsSignature || report.signatureDataUrl}
                     alt="חתימה"
                     style={{ maxHeight: 64, height: "auto", maxWidth: 200, display: "block" }}
                     crossOrigin="anonymous"
