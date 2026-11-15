@@ -72,7 +72,7 @@ npm test           # בדיקות יחידה
 npm run build      # תוצר סטטי בתיקייה dist/
 ```
 
-**משתני סביבה** (קובץ `.env.local` או משתני ה־CI):
+**משתני סביבה** (מעתיקים את `.env.example` ל־`.env.local`, או מגדירים במשתני ה־CI):
 
 ```
 VITE_SUPABASE_URL=https://<project-ref>.supabase.co
