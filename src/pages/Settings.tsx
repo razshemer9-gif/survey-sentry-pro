@@ -25,6 +25,7 @@ const TAB_ORDER: { id: SurveyType; label: string }[] = [
   { id: "accessibility",     label: "נגישות" },
   { id: "general_safety",    label: "בטיחות כללי" },
   { id: "education_safety",  label: 'בטיחות מוס"ח' },
+  { id: "welfare_inspection", label: "רווחה" },
   { id: "element_stability", label: "יציבות אלמנטים" },
   { id: "risk_survey",       label: "סקר סיכונים" },
   { id: "accessibility_form_8", label: "טופס 8" },
@@ -194,6 +195,15 @@ export default function Settings() {
                       />
                     </Field>
                   </>
+                )}
+
+                {/* The welfare inspection is the ministry's own form, printed
+                    as it is written. Only the stamp below reaches it, so say
+                    so rather than let the other fields look as if they do. */}
+                {id === "welfare_inspection" && (
+                  <p className="rounded-xl bg-muted/60 px-3 py-2.5 text-xs leading-relaxed text-muted-foreground">
+                    דוח הרווחה הוא הטופס הרשמי של משרד הרווחה ומודפס כלשונו. מתוך ההגדרות כאן משפיעה עליו <strong className="text-foreground">החתימה והחותמת</strong> בלבד — היא נכנסת לשורת "חתימת עורך המבדק" בעמוד האחרון.
+                  </p>
                 )}
 
                 {/* ── Personal details / PDF text overrides / media — not used by
