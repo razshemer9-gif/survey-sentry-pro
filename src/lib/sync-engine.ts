@@ -3,6 +3,7 @@
 // (see storage.ts); this module is what eventually reconciles them with
 // the server.
 import { getDirtyRows, markSynced, removeCachedReport } from "./offline-db";
+import { supabase } from "./supabase";
 import { remoteSaveReport, remoteDeleteReport } from "./reports-remote";
 
 export interface SyncStatus {
@@ -35,7 +36,12 @@ export async function syncPendingReports(): Promise<void> {
   syncPromise = (async () => {
     setStatus({ syncing: true });
     try {
-      const dirty = await getDirtyRows();
+      // Only this account's work is pushed. Another account's unsent rows
+      // wait on the device until they sign back in — pushing them now would
+      // either be refused, or, for an owner, file them under the wrong name.
+      const { data: { session } } = await supabase.auth.getSession();
+      const userId = session?.user?.id ?? null;
+      const dirty = await getDirtyRows(userId);
       setStatus({ pendingCount: dirty.length });
       for (const row of dirty) {
         try {
@@ -50,7 +56,7 @@ export async function syncPendingReports(): Promise<void> {
           // stays dirty — will retry on the next trigger
         }
       }
-      const remaining = await getDirtyRows();
+      const remaining = await getDirtyRows(userId);
       setStatus({ pendingCount: remaining.length });
     } finally {
       setStatus({ syncing: false });

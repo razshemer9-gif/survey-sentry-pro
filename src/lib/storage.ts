@@ -9,6 +9,16 @@ import {
 } from "./types";
 import { AccessibilityRequirement } from "./standards-types";
 import { supabase } from "./supabase";
+
+/**
+ * The account signed in right now, read from the session already on the
+ * device — never a network call, because every cache read waits on it.
+ * Null when nobody is signed in, which shows nothing rather than everything.
+ */
+async function currentUserId(): Promise<string | null> {
+  const { data: { session } } = await supabase.auth.getSession();
+  return session?.user?.id ?? null;
+}
 import { RISK_SURVEY_DEFAULT_FENCING_NOTE } from "./risk-survey";
 import { FORM8_REQUIREMENTS } from "./form8-data";
 import { withTimeout } from "./async";
@@ -66,6 +76,7 @@ const LIST_TIMEOUT_MS = 30_000;
 export async function listReports(): Promise<SurveyReport[]> {
   startSyncEngine();
   lastRefreshError = null;
+  const userId = await currentUserId();
   let summaries: SurveyReport[] = [];
 
   // The list itself. This is the whole list — every report the account may
@@ -94,17 +105,17 @@ export async function listReports(): Promise<SurveyReport[]> {
       TIMED_OUT,
     );
     if (remote !== TIMED_OUT) {
-      const dirty = await getDirtyRows();
+      const dirty = await getDirtyRows(userId);
       const dirtyIds = new Set(dirty.map((r) => r.id));
       for (const r of remote) {
-        if (!dirtyIds.has(r.id)) await putCachedReport(r, false);
+        if (!dirtyIds.has(r.id)) await putCachedReport(r, false, userId);
       }
     }
   } catch (err) {
     console.warn("[listReports] offline prefetch failed:", err);
   }
 
-  const cached = await getAllCachedReports();
+  const cached = await getAllCachedReports(userId);
   // The cache wins for any report it holds in full; summaries only fill in
   // rows the device has never had (i.e. other users').
   const byId = new Set(cached.map((r) => r.id));
@@ -127,13 +138,14 @@ export async function listReportAuthors(): Promise<Record<string, string>> {
 
 export async function getReport(id: string): Promise<SurveyReport | undefined> {
   startSyncEngine();
-  const cached = await getCachedReport(id);
+  const userId = await currentUserId();
+  const cached = await getCachedReport(id, userId);
   try {
     const dirty = await isDirty(id);
     if (!dirty) {
       const remote = await withTimeout(remoteGetReport(id), 6000, undefined);
       if (remote) {
-        await putCachedReport(remote, false);
+        await putCachedReport(remote, false, userId);
         return remote;
       }
     }
@@ -145,7 +157,7 @@ export async function getReport(id: string): Promise<SurveyReport | undefined> {
 
 export async function saveReport(report: SurveyReport): Promise<SurveyReport> {
   const updated = { ...report, updatedAt: Date.now() };
-  await putCachedReport(updated, true);
+  await putCachedReport(updated, true, await currentUserId());
   void syncPendingReports();
   return updated;
 }

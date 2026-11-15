@@ -12,6 +12,23 @@ export interface CachedReportRow {
   report: SurveyReport;
   dirty: boolean;
   deleted: boolean;
+  /**
+   * The account this copy was cached for.
+   *
+   * IndexedDB belongs to the site, not to whoever is signed in, so without
+   * this a second person signing in on the same phone was handed the first
+   * one's reports: the list merges the cache, and the cache had never been
+   * told that the account had changed. Every read is now filtered by it.
+   *
+   * Rows written before this existed carry no account and are ignored —
+   * they are re-fetched from the server for whoever is actually signed in.
+   */
+  userId?: string;
+}
+
+/** Whether a cached row may be shown to the account now signed in. */
+export function rowBelongsTo(row: CachedReportRow, userId: string | null): boolean {
+  return !!userId && row.userId === userId;
 }
 
 let dbPromise: Promise<IDBDatabase> | null = null;
@@ -70,23 +87,28 @@ async function getAllRows(): Promise<CachedReportRow[]> {
 
 // ── Public API ──────────────────────────────────────────────────────────
 
-export async function getCachedReport(id: string): Promise<SurveyReport | undefined> {
+export async function getCachedReport(id: string, userId: string | null): Promise<SurveyReport | undefined> {
   const row = await getRow(id);
-  return row && !row.deleted ? row.report : undefined;
+  return row && !row.deleted && rowBelongsTo(row, userId) ? row.report : undefined;
 }
 
-export async function putCachedReport(report: SurveyReport, dirty: boolean): Promise<void> {
-  await putRow({ id: report.id, report, dirty, deleted: false });
+export async function putCachedReport(report: SurveyReport, dirty: boolean, userId: string | null): Promise<void> {
+  await putRow({ id: report.id, report, dirty, deleted: false, userId: userId ?? undefined });
 }
 
-export async function getAllCachedReports(): Promise<SurveyReport[]> {
+export async function getAllCachedReports(userId: string | null): Promise<SurveyReport[]> {
   const rows = await getAllRows();
-  return rows.filter((r) => !r.deleted).map((r) => r.report);
+  return rows.filter((r) => !r.deleted && rowBelongsTo(r, userId)).map((r) => r.report);
 }
 
-export async function getDirtyRows(): Promise<CachedReportRow[]> {
+/**
+ * Rows waiting to be pushed, for this account only. Someone else's unsent
+ * work stays where it is — it is not shown, and not pushed under the wrong
+ * account; it goes up when they sign back in.
+ */
+export async function getDirtyRows(userId: string | null): Promise<CachedReportRow[]> {
   const rows = await getAllRows();
-  return rows.filter((r) => r.dirty);
+  return rows.filter((r) => r.dirty && rowBelongsTo(r, userId));
 }
 
 export async function isDirty(id: string): Promise<boolean> {
@@ -108,6 +130,14 @@ export async function markDeletedLocally(id: string): Promise<void> {
   const row = await getRow(id);
   if (!row) return;
   await putRow({ ...row, deleted: true, dirty: true });
+}
+
+/** Everything this device holds for one account — used when they sign out. */
+export async function clearCacheFor(userId: string): Promise<void> {
+  const rows = await getAllRows();
+  for (const row of rows) {
+    if (row.userId === userId && !row.dirty) await deleteRow(row.id);
+  }
 }
 
 export async function removeCachedReport(id: string): Promise<void> {

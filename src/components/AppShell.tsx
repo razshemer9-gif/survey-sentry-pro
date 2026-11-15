@@ -2,6 +2,8 @@ import { Link, useLocation, useNavigate } from "react-router-dom";
 import { ClipboardList, Settings, FileStack, LogOut } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { signOut } from "@/lib/auth";
+import { supabase } from "@/lib/supabase";
+import { clearCacheFor } from "@/lib/offline-db";
 
 const tabs = [
   { to: "/", label: "דוחות", icon: FileStack },
@@ -14,6 +16,15 @@ export function BottomNav() {
   const navigate = useNavigate();
 
   async function handleSignOut() {
+    // Drop this account's cached reports before letting go of the session:
+    // the next person to sign in on this phone must not find them. Anything
+    // still waiting to be sent is left alone, and goes up on the next sign-in.
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session?.user?.id) await clearCacheFor(session.user.id);
+    } catch (err) {
+      console.warn("[sign-out] could not clear the cached reports", err);
+    }
     await signOut();
     navigate("/auth");
   }
