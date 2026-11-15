@@ -37,7 +37,17 @@ export function resolveOwnerId(report: Pick<SurveyReport, "ownerId">, currentUse
 }
 
 /**
- * The caller's OWN reports, in full.
+ * How many of the caller's own reports are pulled down in full so that they
+ * can be opened with no signal. A report carries its photos inline and
+ * averages well over a megabyte, so "all of them" was never a real option:
+ * for an account with 146 reports that was a quarter of a gigabyte, which
+ * failed every time and took the whole list down with it. The rest of the
+ * list arrives as summaries, and opening any report fetches it in full.
+ */
+const OFFLINE_PREFETCH = 10;
+
+/**
+ * The caller's most recent reports, in full.
  *
  * Deliberately scoped to one account even though RLS would allow an admin to
  * read every row: a report stores its photos inline, so pulling everyone's
@@ -46,13 +56,14 @@ export function resolveOwnerId(report: Pick<SurveyReport, "ownerId">, currentUse
  * set, and fetching them in full is what keeps the offline cache complete.
  * Other people's reports arrive as summaries instead — see below.
  */
-export async function remoteListReports(): Promise<SurveyReport[]> {
+export async function remoteListReports(limit = OFFLINE_PREFETCH): Promise<SurveyReport[]> {
   const userId = await getUserId();
   const { data, error } = await supabase
     .from("reports")
     .select("device_id, data")
     .eq("device_id", userId)
-    .order("updated_at", { ascending: false });
+    .order("updated_at", { ascending: false })
+    .limit(limit);
   if (error) throw error;
   return (data ?? [])
     .map((row: { device_id: string; data: SurveyReport }) => withOwner(row.data, row.device_id))

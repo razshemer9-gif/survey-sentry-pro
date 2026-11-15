@@ -66,7 +66,26 @@ const LIST_TIMEOUT_MS = 30_000;
 export async function listReports(): Promise<SurveyReport[]> {
   startSyncEngine();
   lastRefreshError = null;
-  let otherSummaries: SurveyReport[] = [];
+  let summaries: SurveyReport[] = [];
+
+  // The list itself. This is the whole list — every report the account may
+  // see, names and dates only — and it is fetched FIRST and on its own.
+  //
+  // It used to be nested inside the full-report prefetch below, so when that
+  // threw, this never ran at all: the screen fell back to whatever the device
+  // had cached. On a new phone, which has cached nothing, that meant a list of
+  // two reports standing in for two hundred and seventy-seven.
+  try {
+    summaries = await withTimeout(remoteListReportSummaries(), LIST_TIMEOUT_MS, [] as SurveyReport[]);
+  } catch (err) {
+    const detail = err instanceof Error ? err.message : String((err as { message?: string })?.message ?? err);
+    lastRefreshError = `שגיאה בטעינת רשימת הדוחות: ${detail}`;
+    console.error("[listReports] summary fetch failed:", err);
+  }
+
+  // Separately, and best-effort: pull the most recent reports down in full so
+  // they can be opened with no signal. Failing here costs offline access to
+  // them, nothing more — the list above is already complete.
   try {
     const TIMED_OUT = Symbol("timeout");
     const remote = await withTimeout<SurveyReport[] | typeof TIMED_OUT>(
@@ -74,38 +93,22 @@ export async function listReports(): Promise<SurveyReport[]> {
       LIST_TIMEOUT_MS,
       TIMED_OUT,
     );
-    if (remote === TIMED_OUT) {
-      lastRefreshError = `הרשימה לא התרעננה מהשרת (יותר מ-${LIST_TIMEOUT_MS / 1000} שניות). מוצגים הדוחות השמורים במכשיר.`;
-    } else {
+    if (remote !== TIMED_OUT) {
       const dirty = await getDirtyRows();
       const dirtyIds = new Set(dirty.map((r) => r.id));
       for (const r of remote) {
         if (!dirtyIds.has(r.id)) await putCachedReport(r, false);
       }
     }
-
-    // Other people's reports, as summaries. Kept out of the cache on purpose:
-    // they are incomplete, and caching them would let the editor save a
-    // stripped summary over a real report.
-    try {
-      const summaries = await withTimeout(remoteListReportSummaries(), LIST_TIMEOUT_MS, [] as SurveyReport[]);
-      otherSummaries = summaries;
-    } catch (err) {
-      // The list still works without them — an employee has none to show, and
-      // an admin simply sees their own until report-summaries.sql is applied.
-      console.warn("[listReports] summary fetch failed:", err);
-    }
   } catch (err) {
-    // Still serve the cache — but do not pretend the refresh succeeded.
-    const detail = err instanceof Error ? err.message : String((err as { message?: string })?.message ?? err);
-    lastRefreshError = `שגיאה בטעינה מהשרת: ${detail}`;
-    console.error("[listReports] remote refresh failed:", err);
+    console.warn("[listReports] offline prefetch failed:", err);
   }
+
   const cached = await getAllCachedReports();
   // The cache wins for any report it holds in full; summaries only fill in
   // rows the device has never had (i.e. other users').
   const byId = new Set(cached.map((r) => r.id));
-  const merged = [...cached, ...otherSummaries.filter((r) => !byId.has(r.id))];
+  const merged = [...cached, ...summaries.filter((r) => !byId.has(r.id))];
   return merged.sort((a, b) => (b.updatedAt ?? 0) - (a.updatedAt ?? 0));
 }
 
