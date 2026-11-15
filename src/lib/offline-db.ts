@@ -28,7 +28,13 @@ export interface CachedReportRow {
 
 /** Whether a cached row may be shown to the account now signed in. */
 export function rowBelongsTo(row: CachedReportRow, userId: string | null): boolean {
-  return !!userId && row.userId === userId;
+  if (!userId) return false;
+  if (row.userId) return row.userId === userId;
+  // No account recorded: the row was cached before this existed. The report
+  // itself still says who owns it, and that is just as good an answer — and
+  // it has to be asked, because without it a deletion or an edit made before
+  // the change would sit in the queue for ever, never sent and never shown.
+  return row.report?.ownerId === userId;
 }
 
 let dbPromise: Promise<IDBDatabase> | null = null;
