@@ -1,5 +1,5 @@
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { ClipboardList, Settings, FileStack, LogOut } from "lucide-react";
+import { Settings, FileStack, LogOut } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { signOut } from "@/lib/auth";
 import { supabase } from "@/lib/supabase";
@@ -7,7 +7,6 @@ import { clearCacheFor } from "@/lib/offline-db";
 
 const tabs = [
   { to: "/", label: "דוחות", icon: FileStack },
-  { to: "/templates", label: "תבניות", icon: ClipboardList },
   { to: "/settings", label: "הגדרות", icon: Settings },
 ];
 
@@ -31,7 +30,7 @@ export function BottomNav() {
 
   return (
     <nav className="app-bottomnav fixed bottom-0 inset-x-0 z-40 border-t border-border/80 bg-card/95 backdrop-blur-md safe-bottom shadow-[0_-1px_12px_hsl(217_91%_20%/0.06)]">
-      <ul className="mx-auto grid max-w-lg grid-cols-4">
+      <ul className="mx-auto grid max-w-lg grid-cols-3">
         {tabs.map((t) => {
           const active =
             t.to === "/" ? pathname === "/" || pathname.startsWith("/report") : pathname.startsWith(t.to);

@@ -17,7 +17,6 @@ const Index          = lazy(() => importWithReload(() => import("./pages/Index.t
 const NotFound       = lazy(() => importWithReload(() => import("./pages/NotFound.tsx")));
 const ReportEditor   = lazy(() => importWithReload(() => import("./pages/ReportEditor.tsx")));
 const Settings       = lazy(() => importWithReload(() => import("./pages/Settings.tsx")));
-const Templates      = lazy(() => importWithReload(() => import("./pages/Templates.tsx")));
 const Standards      = lazy(() => importWithReload(() => import("./pages/Standards.tsx")));
 const UserManagement = lazy(() => importWithReload(() => import("./pages/UserManagement.tsx")));
 const AuthPage       = lazy(() => importWithReload(() => import("./pages/AuthPage.tsx")));
@@ -60,7 +59,6 @@ const App = () => (
               <Route path="/auth" element={<AuthPage />} />
               <Route path="/" element={<ProtectedRoute><Index /></ProtectedRoute>} />
               <Route path="/report/:id" element={<ProtectedRoute><ReportEditor /></ProtectedRoute>} />
-              <Route path="/templates" element={<ProtectedRoute><Templates /></ProtectedRoute>} />
               <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
               <Route path="/standards" element={<AdminRoute><Standards /></AdminRoute>} />
               <Route path="/admin/users" element={<AdminRoute><UserManagement /></AdminRoute>} />
