@@ -1,9 +1,12 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowRight, RefreshCw } from "lucide-react";
+import { ArrowRight, RefreshCw, UserPlus, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/lib/supabase";
 import { AppShell } from "@/components/AppShell";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
   Select,
   SelectContent,
@@ -39,6 +42,9 @@ export default function UserManagement() {
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [loading, setLoading]   = useState(true);
   const [updating, setUpdating] = useState<string | null>(null);
+  const [newEmail, setNewEmail] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [creating, setCreating] = useState(false);
 
   const load = async () => {
     setLoading(true);
@@ -69,6 +75,38 @@ export default function UserManagement() {
     setUpdating(null);
   };
 
+  /**
+   * Opening an account is done by the server, not here.
+   * The key that can create a user has full run of the database, and this app
+   * is a static site — anything it holds is readable by anyone who opens the
+   * page. So the request goes to the create-user function, which checks that
+   * the caller is an owner or an admin before it uses that key.
+   */
+  const createUser = async () => {
+    const email = newEmail.trim().toLowerCase();
+    if (!email || newPassword.length < 8) {
+      toast.error("יש להזין דוא\"ל וסיסמה באורך 8 תווים לפחות");
+      return;
+    }
+    setCreating(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("create-user", {
+        body: { email, password: newPassword },
+      });
+      // A refused request carries its reason in the body, not in `error`.
+      const failure = (data as { error?: string } | null)?.error;
+      if (error || failure) throw new Error(failure || error?.message || "שגיאה");
+      toast.success(`נפתח חשבון עבור ${email}`);
+      setNewEmail("");
+      setNewPassword("");
+      await load();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "שגיאה בפתיחת החשבון");
+    } finally {
+      setCreating(false);
+    }
+  };
+
   return (
     <AppShell>
       <header className="brand-gradient text-primary-foreground px-5 pb-5 pt-4 safe-top rounded-b-3xl shadow-elev">
@@ -93,6 +131,46 @@ export default function UserManagement() {
       </header>
 
       <div className="px-4 pt-4 pb-8 space-y-3" dir="rtl">
+
+        {/* Opening an account. Registration is closed to the public, so this
+            is the way in for a new member of the team. */}
+        <div className="rounded-2xl border-2 border-primary/20 bg-card p-4 space-y-3">
+          <h2 className="flex items-center gap-2 text-sm font-bold text-primary">
+            <UserPlus className="h-4 w-4" /> פתיחת חשבון חדש
+          </h2>
+          <p className="text-xs text-muted-foreground">
+            המשתמש ייפתח כ"עובד" ויוכל להתחבר מיד. אפשר לשנות לו הרשאה ברשימה שלמטה.
+          </p>
+          <div className="space-y-2">
+            <div>
+              <Label className="mb-1 block text-xs">דואר אלקטרוני</Label>
+              <Input
+                value={newEmail}
+                onChange={(e) => setNewEmail(e.target.value)}
+                type="email"
+                dir="ltr"
+                autoComplete="off"
+                placeholder="name@example.com"
+              />
+            </div>
+            <div>
+              <Label className="mb-1 block text-xs">סיסמה ראשונית (8 תווים לפחות)</Label>
+              <Input
+                value={newPassword}
+                onChange={(e) => setNewPassword(e.target.value)}
+                type="text"
+                dir="ltr"
+                autoComplete="off"
+                placeholder="הסיסמה שתמסור לו"
+              />
+            </div>
+          </div>
+          <Button onClick={createUser} disabled={creating} className="w-full gap-2">
+            {creating ? <Loader2 className="h-4 w-4 animate-spin" /> : <UserPlus className="h-4 w-4" />}
+            פתח חשבון
+          </Button>
+        </div>
+
         {loading ? (
           <p className="text-center text-sm text-muted-foreground py-10">טוען...</p>
         ) : profiles.length === 0 ? (
