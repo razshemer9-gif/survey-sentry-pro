@@ -1198,9 +1198,14 @@ export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, sett
           <div style={{ display: "flex", gap: 40, marginTop: 40, fontSize: 13, direction: "rtl" }}>
             <div style={{ display: "flex", alignItems: "flex-end", gap: 6, flex: 1.2 }}>
               <span style={{ fontWeight: 700, flexShrink: 0 }}>חתימת עורך המבדק:</span>
-              {report.signatureDataUrl ? (
-                <img src={report.signatureDataUrl} alt="חתימה" crossOrigin="anonymous"
-                  style={{ maxHeight: 36, maxWidth: 160, height: "auto", display: "block", borderBottom: "1px solid #000000", flexShrink: 0 }} />
+              {/* The stamp kept in the account settings, as every other report
+                  type takes it. This form used to read the report's own
+                  signature and nothing else, so a stamp set in settings never
+                  reached it and the line came out blank. Taller than it was,
+                  too: at 36px a stamp's registration numbers were a smudge. */}
+              {(fmt.signatureImage || report.signatureDataUrl) ? (
+                <img src={fmt.signatureImage || report.signatureDataUrl} alt="חתימה" crossOrigin="anonymous"
+                  style={{ maxHeight: 64, maxWidth: 210, height: "auto", display: "block", borderBottom: "1px solid #000000", flexShrink: 0 }} />
               ) : (
                 <span style={{ flex: 1, borderBottom: "1px solid #000000", minHeight: 18 }} />
               )}
