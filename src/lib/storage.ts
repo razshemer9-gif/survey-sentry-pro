@@ -12,6 +12,7 @@ import { supabase } from "./supabase";
 import { RISK_SURVEY_DEFAULT_FENCING_NOTE } from "./risk-survey";
 import { FORM8_REQUIREMENTS } from "./form8-data";
 import { withTimeout } from "./async";
+import { cacheSettings, cachedSettings, resolveSettings } from "./settings-cache";
 import {
   getAllCachedReports,
   getCachedReport,
@@ -24,7 +25,6 @@ import { remoteGetReport, remoteListReports, remoteListReportAuthors, remoteList
 import { startSyncEngine, syncPendingReports } from "./sync-engine";
 
 const K_TEMPLATES = "ans.templates.v1";
-const K_SETTINGS = "ans.settings.v1";
 
 async function getUserId(): Promise<string> {
   const { data: { user } } = await supabase.auth.getUser();
@@ -321,21 +321,35 @@ export async function migrateLocalTemplates(): Promise<number> {
 }
 
 // ---------- Settings (localStorage) ----------
-export function getSettings(): ConsultantSettings {
-  return { ...DEFAULT_SETTINGS, ...read<ConsultantSettings>(K_SETTINGS, DEFAULT_SETTINGS) };
-}
-export function saveSettings(s: ConsultantSettings) {
-  write(K_SETTINGS, s);
-}
-
-// ---------- User settings (Supabase) ----------
+// ---------- User settings (Supabase, with a local copy) ----------
+/**
+ * The settings a report is drawn from. Read from Supabase, and kept locally
+ * so that a read which does not answer — offline, or a request that fails —
+ * no longer silently hands the report blank defaults, printing it without the
+ * consultant's stamp or company name. See ./settings-cache.
+ */
 export async function loadUserSettings(userId: string): Promise<ConsultantSettings> {
-  const { data } = await supabase
-    .from("user_settings")
-    .select("settings")
-    .eq("user_id", userId)
-    .single();
-  return { ...DEFAULT_SETTINGS, ...(data?.settings as ConsultantSettings | undefined) };
+  try {
+    // A timeout, because a phone with one bar should fall back to the local
+    // copy rather than keep the report waiting for its stamp.
+    const row = await withTimeout<{ settings?: ConsultantSettings } | null>(
+      (async () => {
+        const { data } = await supabase
+          .from("user_settings").select("settings").eq("user_id", userId).single();
+        return data as { settings?: ConsultantSettings } | null;
+      })(),
+      6000,
+      null,
+    );
+    const remote = row?.settings;
+    if (remote) {
+      cacheSettings(userId, remote);
+      return resolveSettings(remote, null);
+    }
+  } catch {
+    // Offline, slow, or no row yet — fall back to the copy we kept.
+  }
+  return resolveSettings(null, cachedSettings(userId));
 }
 
 export async function saveUserSettings(userId: string, s: ConsultantSettings): Promise<void> {
@@ -343,4 +357,6 @@ export async function saveUserSettings(userId: string, s: ConsultantSettings): P
     .from("user_settings")
     .upsert({ user_id: userId, settings: s, updated_at: Date.now() });
   if (error) throw error;
+  // Only once the server has it, so the local copy never gets ahead of it.
+  cacheSettings(userId, s);
 }
