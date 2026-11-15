@@ -24,9 +24,12 @@ vi.mock("./offline-db", () => ({
   getDirtyRows: async () => [],
   isDirty: async () => false,
   markDeletedLocally: async () => {},
+  rowBelongsTo: () => true,
 }));
 vi.mock("./sync-engine", () => ({ startSyncEngine: () => {}, syncPendingReports: async () => {} }));
-vi.mock("./supabase", () => ({ supabase: {} }));
+vi.mock("./supabase", () => ({
+  supabase: { auth: { getSession: async () => ({ data: { session: { user: { id: "owner-uuid" } } } }) } },
+}));
 
 const report = (id: string): SurveyReport =>
   ({ id, placeName: id, items: [], updatedAt: Number(id) } as unknown as SurveyReport);
