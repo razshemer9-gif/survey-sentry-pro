@@ -1,6 +1,5 @@
 import { v4 as uuid } from "uuid";
 import {
-  ChecklistTemplate,
   ConsultantSettings,
   DEFAULT_CHECKLIST,
   DEFAULT_SETTINGS,
@@ -189,28 +188,12 @@ export async function addRequirementToReport(
   await saveReport({ ...report, items: [...report.items, newItem] });
 }
 
-export function newReport(
-  surveyType: SurveyType = "accessibility",
-  templateItems?: ChecklistTemplate["items"]
-): SurveyReport {
-  const items = templateItems
-    ? templateItems.map((i) => ({
-        id: uuid(),
-        title: i.title,
-        status: "non_compliant" as const,
-        notes: i.notes || "",
-        estimatedCost: i.defaultCost || 0,
-        ...(i.defaultPriority !== undefined && { priority: i.defaultPriority }),
-        ...(i.includeInCost !== undefined && { includeInCost: i.includeInCost }),
-        ...(i.referencePhoto && { referencePhoto: i.referencePhoto }),
-        ...(i.referencePhotos?.length && { referencePhotos: i.referencePhotos }),
-        ...(i.referenceLabel && { referenceLabel: i.referenceLabel }),
-        ...(i.suggestedCorrection && { suggestedCorrection: i.suggestedCorrection }),
-        ...(i.matchedRequirementId && { matchedRequirementId: i.matchedRequirementId }),
-        ...(i.standardPart && { standardPart: i.standardPart }),
-        ...(i.clause && { clause: i.clause }),
-      }))
-    : surveyType === "education_safety" || surveyType === "welfare_inspection" || surveyType === "element_stability"
+export function newReport(surveyType: SurveyType = "accessibility"): SurveyReport {
+  const items =
+    // Safety surveys are written from what the inspector finds on site, so
+    // they open on one empty finding rather than a list to work through.
+    surveyType === "general_safety"
+    || surveyType === "education_safety" || surveyType === "welfare_inspection" || surveyType === "element_stability"
     ? [{
         id: uuid(),
         title: "",
@@ -249,90 +232,6 @@ export function newReport(
       form8Requirements: FORM8_REQUIREMENTS.map((r) => ({ id: r.id, response: r.defaultResponse ?? "" })),
     }),
   };
-}
-
-// ---------- Templates (Supabase) ----------
-const BUILT_IN_TEMPLATES: ChecklistTemplate[] = [
-  {
-    id: "builtin-default",
-    name: "תבנית ברירת מחדל",
-    description: "רשימה כללית לסקר נגישות מתו״ס ושירות",
-    items: DEFAULT_CHECKLIST,
-    builtIn: true,
-  },
-];
-
-function rowToTemplate(row: {
-  id: string;
-  name: string;
-  description: string | null;
-  items: unknown;
-  survey_type: string | null;
-}): ChecklistTemplate {
-  return {
-    id: row.id,
-    name: row.name,
-    description: row.description ?? "",
-    items: Array.isArray(row.items) ? (row.items as ChecklistTemplate["items"]) : [],
-    ...(row.survey_type ? { surveyType: row.survey_type as ChecklistTemplate["surveyType"] } : {}),
-  };
-}
-
-export async function listTemplates(): Promise<ChecklistTemplate[]> {
-  const userId = await getUserId();
-  const { data, error } = await supabase
-    .from("user_templates")
-    .select("id, name, description, items, survey_type")
-    .eq("user_id", userId)
-    .order("updated_at", { ascending: false });
-  if (error) throw error;
-  const custom = (data ?? []).map(rowToTemplate);
-  return [...BUILT_IN_TEMPLATES, ...custom];
-}
-
-export async function saveTemplate(t: ChecklistTemplate): Promise<void> {
-  if (t.builtIn) return;
-  const userId = await getUserId();
-  const now = Date.now();
-  const { error } = await supabase.from("user_templates").upsert({
-    id: t.id,
-    user_id: userId,
-    name: t.name,
-    description: t.description ?? null,
-    items: t.items,
-    survey_type: t.surveyType ?? null,
-    updated_at: now,
-  });
-  if (error) throw error;
-}
-
-export async function deleteTemplate(id: string): Promise<void> {
-  const userId = await getUserId();
-  const { error } = await supabase
-    .from("user_templates")
-    .delete()
-    .eq("id", id)
-    .eq("user_id", userId);
-  if (error) throw error;
-}
-
-export async function migrateLocalTemplates(): Promise<number> {
-  const raw = localStorage.getItem(K_TEMPLATES);
-  if (!raw) return 0;
-  try {
-    const local = JSON.parse(raw) as ChecklistTemplate[];
-    if (!Array.isArray(local) || local.length === 0) {
-      localStorage.removeItem(K_TEMPLATES);
-      return 0;
-    }
-    for (const t of local) {
-      if (!t.builtIn) await saveTemplate(t);
-    }
-    localStorage.removeItem(K_TEMPLATES);
-    return local.length;
-  } catch {
-    return 0;
-  }
 }
 
 // ---------- Settings (localStorage) ----------

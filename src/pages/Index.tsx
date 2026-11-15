@@ -7,7 +7,7 @@ import {
   Dialog, DialogContent, DialogHeader, DialogTitle,
 } from "@/components/ui/dialog";
 import { accessibilityScopeLabel, scopeFromChecks } from "@/lib/accessibility-scope";
-import { deleteReport, getLastRefreshError, listReportAuthors, listReports, listTemplates, loadUserSettings, newReport, saveReport } from "@/lib/storage";
+import { deleteReport, getLastRefreshError, listReportAuthors, listReports, loadUserSettings, newReport, saveReport } from "@/lib/storage";
 import { isDirty } from "@/lib/offline-db";
 import { subscribeSyncStatus } from "@/lib/sync-engine";
 import { getSurveyType, SURVEY_TYPES, SurveyReport, SurveyType } from "@/lib/types";
@@ -144,22 +144,12 @@ const Index = () => {
         return;
       }
 
-      const templates = await listTemplates();
-      const surveyLabel = SURVEY_TYPES.find((t) => t.id === selectedType)?.label ?? "";
-      const normalize = (s: string) =>
-        s.trim().replace(/[״"]/g, '"').replace(/[׳']/g, "'");
-
-      const matched =
-        templates.find((t) => !t.builtIn && t.surveyType === selectedType) ??
-        templates.find((t) => !t.builtIn && normalize(t.name) === normalize(surveyLabel));
-
-      if (!matched) {
-        toast.error("לא הוגדרה תבנית עבור סוג סקר זה. יש ליצור תבנית מתאימה בדף התבניות.");
-        return;
-      }
-      const draft = newReport(selectedType, matched.items);
-      // Only the accessibility survey carries a certification scope; the other
-      // templated types have nothing to record here.
+      // Every type starts from its own standing list, so a report can be
+      // started by anyone, on any device, with nothing set up first. A new
+      // account used to be told to go and make a template before it could
+      // begin a survey at all.
+      const draft = newReport(selectedType);
+      // Only the accessibility survey carries a certification scope.
       const scope = selectedType === "accessibility" ? scopeFromChecks(scopeMatos, scopeService) : null;
       const r = await saveReport(scope ? { ...draft, accessibilityScope: scope } : draft);
       setTypeDialogOpen(false);
