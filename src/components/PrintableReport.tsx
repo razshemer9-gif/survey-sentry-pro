@@ -65,23 +65,24 @@ const HeaderBanner = ({ src, alt = "" }: { src: string; alt?: string }) => (
  * clear band this title is drawn in.
  *
  * The band is the part of the 1600px artwork between the photograph and the
- * logo's divider rule — x 440..1096 — expressed as percentages so it holds
- * at any rendered width.
+ * logo's divider rule — x 400..1096 — expressed as percentages so it holds
+ * at any rendered width. It is wide enough for the longest title this report
+ * carries, "אישור יציבות קונסטרוקציה", on one line.
  */
 const ElementStabilityBanner = ({ title }: { title: string }) => (
   <div style={{ position: "relative", width: "100%", height: BANNER_H, overflow: "hidden", display: "flex", alignItems: "center" }}>
     <img src={ELEMENT_STABILITY_HEADER_BANNER} alt={title} crossOrigin="anonymous" style={{ width: "100%", display: "block" }} />
     <div
       style={{
-        position: "absolute", top: 0, bottom: 0, left: "27.5%", right: "31.5%",
+        position: "absolute", top: 0, bottom: 0, left: "25%", right: "31.5%",
         display: "flex", alignItems: "center", justifyContent: "center",
         // Centred on the divider rule beside it — rows 79..182 of the 248px
         // artwork, so a little above the banner's own middle. The artwork's
         // baked-in title sat lower than that and looked dropped.
-        paddingTop: 7,
+        paddingTop: 4.5,
       }}
     >
-      <div dir="rtl" style={{ color: "#ffffff", fontWeight: 800, fontSize: 28, lineHeight: 1.15, textAlign: "center" }}>
+      <div dir="rtl" style={{ color: "#ffffff", fontWeight: 800, fontSize: 27, lineHeight: 1.15, textAlign: "center", whiteSpace: "nowrap" }}>
         {title}
       </div>
     </div>
@@ -718,7 +719,7 @@ export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, sett
             wide against the 794px used everywhere else. */}
         {/* The banner's title says what the document is: a survey in survey
             mode, an approval once the editor is switched to "אישור". */}
-        <ElementStabilityBanner title={isElementApproval ? "אישור יציבות אלמנטים" : "דו״ח יציבות קונסטרוקציה"} />
+        <ElementStabilityBanner title={isElementApproval ? "אישור יציבות קונסטרוקציה" : "דו״ח יציבות קונסטרוקציה"} />
         <section style={{ padding: "12px 56px 28px", background: "#fff" }}>
           {/* The heading below the banner names the site this document is
               about — the survey's own name, as typed into the editor. It used
