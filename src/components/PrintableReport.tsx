@@ -75,9 +75,10 @@ const ElementStabilityBanner = ({ title }: { title: string }) => (
       style={{
         position: "absolute", top: 0, bottom: 0, left: "27.5%", right: "31.5%",
         display: "flex", alignItems: "center", justifyContent: "center",
-        // The artwork's own title sat a little below the middle, level with
-        // the logo beside it; this keeps the replacement on that line.
-        paddingTop: 21,
+        // Centred on the divider rule beside it — rows 79..182 of the 248px
+        // artwork, so a little above the banner's own middle. The artwork's
+        // baked-in title sat lower than that and looked dropped.
+        paddingTop: 7,
       }}
     >
       <div dir="rtl" style={{ color: "#ffffff", fontWeight: 800, fontSize: 28, lineHeight: 1.15, textAlign: "center" }}>
