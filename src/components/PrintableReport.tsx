@@ -57,6 +57,36 @@ const HeaderBanner = ({ src, alt = "" }: { src: string; alt?: string }) => (
   </div>
 );
 
+/**
+ * The element-stability banner, whose title is live text rather than part of
+ * the artwork. The supplied JPEG had "דו״ח יציבות קונסטרוקציה" painted into
+ * it, so an approval was stuck carrying the word "דו״ח"; the lettering was
+ * removed from the file and the backdrop behind it extended, leaving the
+ * clear band this title is drawn in.
+ *
+ * The band is the part of the 1600px artwork between the photograph and the
+ * logo's divider rule — x 440..1096 — expressed as percentages so it holds
+ * at any rendered width.
+ */
+const ElementStabilityBanner = ({ title }: { title: string }) => (
+  <div style={{ position: "relative", width: "100%", height: BANNER_H, overflow: "hidden", display: "flex", alignItems: "center" }}>
+    <img src={ELEMENT_STABILITY_HEADER_BANNER} alt={title} crossOrigin="anonymous" style={{ width: "100%", display: "block" }} />
+    <div
+      style={{
+        position: "absolute", top: 0, bottom: 0, left: "27.5%", right: "31.5%",
+        display: "flex", alignItems: "center", justifyContent: "center",
+        // The artwork's own title sat a little below the middle, level with
+        // the logo beside it; this keeps the replacement on that line.
+        paddingTop: 21,
+      }}
+    >
+      <div dir="rtl" style={{ color: "#ffffff", fontWeight: 800, fontSize: 28, lineHeight: 1.15, textAlign: "center" }}>
+        {title}
+      </div>
+    </div>
+  </div>
+);
+
 export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, settings }, ref) => {
   const surveyConfig = getSurveyType(report.surveyType);
   const fmt = getFormat(settings, report);
@@ -685,22 +715,20 @@ export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, sett
         {/* 1. Header banner — full-bleed, exactly as on every other report type.
             It used to sit inside the padded section below, which made it 682px
             wide against the 794px used everywhere else. */}
-        <HeaderBanner src={ELEMENT_STABILITY_HEADER_BANNER} alt="דו״ח יציבות קונסטרוקציה" />
-        <section style={{ padding: `${isElementApproval ? 12 : 22}px 56px 28px`, background: "#fff" }}>
-          {/* Title only shown when it differs from the banner's baked-in "דו״ח
-              יציבות קונסטרוקציה" — i.e. only in approval mode. */}
-          {isElementApproval && (
+        {/* The banner's title says what the document is: a survey in survey
+            mode, an approval once the editor is switched to "אישור". */}
+        <ElementStabilityBanner title={isElementApproval ? "אישור יציבות אלמנטים" : "דו״ח יציבות קונסטרוקציה"} />
+        <section style={{ padding: "12px 56px 28px", background: "#fff" }}>
+          {/* The heading below the banner names the site this document is
+              about — the survey's own name, as typed into the editor. It used
+              to repeat the document type, which the banner already states. */}
+          {report.placeName && (
             <h1 style={{ fontSize: 22, fontWeight: 800, color: accent, textAlign: "center", margin: "0 0 20px" }}>
-              אישור יציבות קונסטרוקציה
+              {report.placeName}
             </h1>
           )}
 
           {/* 2. Report details */}
-          {/* The survey's own name. It names the report everywhere else — on
-              the card in the list, on the PDF's file name — and was the one
-              place it never reached: the consultant filled it in and it
-              appeared nowhere in what the client was sent. */}
-          <CoverLine label="שם הסקר" value={report.placeName} />
           <CoverLine label="שם המזמין" value={report.clientName} />
           <CoverLine label="שם הבודק" value={inspectorName} />
           <CoverLine label="מיקום" value={report.address} />
