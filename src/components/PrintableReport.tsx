@@ -13,7 +13,7 @@ import {
   ELEMENT_STABILITY_STABLE_ONLY_INDICES,
   resolveStabilityTerms,
 } from "@/lib/element-stability";
-import { ELEMENT_STABILITY_HEADER_BANNER } from "@/lib/element-stability-banner";
+import { ELEMENT_STABILITY_HEADER_BANNER_APPROVAL, ELEMENT_STABILITY_HEADER_BANNER_SURVEY } from "@/lib/element-stability-banner";
 import { GENERAL_SAFETY_HEADER_BANNER_APPROVAL, GENERAL_SAFETY_HEADER_BANNER_SURVEY } from "@/lib/general-safety-banner";
 import { RISK_SURVEY_DEFAULT_FENCING_NOTE, RISK_SURVEY_SUBTITLE } from "@/lib/risk-survey";
 import { RISK_SURVEY_HEADER_BANNER } from "@/lib/risk-survey-banner";
@@ -54,38 +54,6 @@ const BANNER_H = 123; // 794px page / 6.455
 const HeaderBanner = ({ src, alt = "" }: { src: string; alt?: string }) => (
   <div style={{ width: "100%", height: BANNER_H, overflow: "hidden", display: "flex", alignItems: "center" }}>
     <img src={src} alt={alt} crossOrigin="anonymous" style={{ width: "100%", display: "block" }} />
-  </div>
-);
-
-/**
- * The element-stability banner, whose title is live text rather than part of
- * the artwork. The supplied JPEG had "דו״ח יציבות קונסטרוקציה" painted into
- * it, so an approval was stuck carrying the word "דו״ח"; the lettering was
- * removed from the file and the backdrop behind it extended, leaving the
- * clear band this title is drawn in.
- *
- * The band is the part of the 1600px artwork between the photograph and the
- * logo's divider rule — x 400..1096 — expressed as percentages so it holds
- * at any rendered width. It is wide enough for the longest title this report
- * carries, "אישור יציבות קונסטרוקציה", on one line.
- */
-const ElementStabilityBanner = ({ title }: { title: string }) => (
-  <div style={{ position: "relative", width: "100%", height: BANNER_H, overflow: "hidden", display: "flex", alignItems: "center" }}>
-    <img src={ELEMENT_STABILITY_HEADER_BANNER} alt={title} crossOrigin="anonymous" style={{ width: "100%", display: "block" }} />
-    <div
-      style={{
-        position: "absolute", top: 0, bottom: 0, left: "25%", right: "31.5%",
-        display: "flex", alignItems: "center", justifyContent: "center",
-        // Centred on the divider rule beside it — rows 79..182 of the 248px
-        // artwork, so a little above the banner's own middle. The artwork's
-        // baked-in title sat lower than that and looked dropped.
-        paddingTop: 4.5,
-      }}
-    >
-      <div dir="rtl" style={{ color: "#ffffff", fontWeight: 800, fontSize: 27, lineHeight: 1.15, textAlign: "center", whiteSpace: "nowrap" }}>
-        {title}
-      </div>
-    </div>
   </div>
 );
 
@@ -717,9 +685,13 @@ export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, sett
         {/* 1. Header banner — full-bleed, exactly as on every other report type.
             It used to sit inside the padded section below, which made it 682px
             wide against the 794px used everywhere else. */}
-        {/* The banner's title says what the document is: a survey in survey
-            mode, an approval once the editor is switched to "אישור". */}
-        <ElementStabilityBanner title={isElementApproval ? "אישור יציבות קונסטרוקציה" : "דו״ח יציבות קונסטרוקציה"} />
+        {/* The banner says what the document is: a survey in survey mode, an
+            approval once the editor is switched to "אישור". One piece of
+            artwork each, titles included — see lib/element-stability-banner. */}
+        <HeaderBanner
+          src={isElementApproval ? ELEMENT_STABILITY_HEADER_BANNER_APPROVAL : ELEMENT_STABILITY_HEADER_BANNER_SURVEY}
+          alt={isElementApproval ? "אישור יציבות קונסטרוקציה" : "דו״ח יציבות קונסטרוקציה"}
+        />
         <section style={{ padding: "12px 56px 28px", background: "#fff" }}>
           {/* The heading below the banner names the site this document is
               about — the survey's own name, as typed into the editor. It used
