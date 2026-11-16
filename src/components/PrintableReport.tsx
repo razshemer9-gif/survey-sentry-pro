@@ -696,6 +696,11 @@ export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, sett
           )}
 
           {/* 2. Report details */}
+          {/* The survey's own name. It names the report everywhere else — on
+              the card in the list, on the PDF's file name — and was the one
+              place it never reached: the consultant filled it in and it
+              appeared nowhere in what the client was sent. */}
+          <CoverLine label="שם הסקר" value={report.placeName} />
           <CoverLine label="שם המזמין" value={report.clientName} />
           <CoverLine label="שם הבודק" value={inspectorName} />
           <CoverLine label="מיקום" value={report.address} />
