@@ -25,6 +25,10 @@ export interface SavedListRow {
   id: string;
   name: string;
   survey_type: string | null;
+  /** Absent on an account's own rows fetched the narrow way. */
+  user_id?: string;
+  /** The company list, published from the owner's account for everyone. */
+  shared?: boolean;
 }
 
 /**
@@ -35,22 +39,36 @@ export interface SavedListRow {
 const normalize = (s: string) => s.trim().replace(/[״"]/g, '"').replace(/[׳']/g, "'");
 
 /**
- * Which saved list a new report of this type starts from, or null when the
- * account has none — in which case the built-in checklist is used and the
- * report still opens. A row tagged with the type wins; otherwise a row whose
- * name is the type's own label, which is how the older rows are tied to a
- * type (the accessibility list predates the tag and carries none).
+ * Which saved list a new report of this type starts from, or null when
+ * there is none — in which case the built-in checklist is used and the
+ * report still opens.
+ *
+ * An account's own list wins; failing that, the company list the owner
+ * publishes, so that an employee starting an accessibility survey begins
+ * from the same 39 findings as the consultant rather than from bare
+ * titles. Within each, a row tagged with the report type wins over one
+ * merely named after it — the older rows predate the tag and are tied to a
+ * type only by their name.
+ *
+ * `userId` null (signed out, or an identity that could not be read) leaves
+ * only the company list, which is the safe way round: a list is never
+ * treated as this account's own unless it is known to be.
  */
 export function pickSavedList(
   rows: SavedListRow[],
   surveyType: SurveyType,
   surveyLabel: string,
+  userId?: string | null,
 ): SavedListRow | null {
-  return (
-    rows.find((r) => r.survey_type === surveyType) ??
-    rows.find((r) => normalize(r.name) === normalize(surveyLabel)) ??
-    null
-  );
+  const match = (within: SavedListRow[]) =>
+    within.find((r) => r.survey_type === surveyType) ??
+    within.find((r) => normalize(r.name) === normalize(surveyLabel));
+
+  // A row with no user_id came from a read that asked for this account's
+  // rows only, so it is this account's.
+  const own = rows.filter((r) => r.user_id === undefined || r.user_id === userId);
+  const company = rows.filter((r) => r.shared && r.user_id !== undefined && r.user_id !== userId);
+  return (userId ? match(own) : undefined) ?? match(company) ?? null;
 }
 
 /**
