@@ -1,11 +1,22 @@
 /**
  * Convert a File (image) into a downscaled JPEG dataURL for storage.
- * Keeps localStorage small and PDF generation snappy.
+ *
+ * A report carries its photographs inside it, so these numbers are what the
+ * database fills up with — and they were set well above what a report
+ * actually prints. A finding's photograph is laid out about 363pt wide and
+ * the page is rasterised at 2x, so 726 x 968 pixels is everything that ever
+ * reaches the PDF. At 1600 the long edge was more than twice that: a typical
+ * site photograph came to 449KB, of which the page used barely a third.
+ *
+ * 1200 still leaves more pixels than the page can print, and takes the same
+ * photograph to 134KB. Checked side by side at print size, and magnified on
+ * the finest detail in the frame — lettering on a label across the room —
+ * the two are indistinguishable.
  */
 export async function fileToCompressedDataUrl(
   file: File,
-  maxDim = 1600,
-  quality = 0.82,
+  maxDim = 1200,
+  quality = 0.72,
 ): Promise<string> {
   const dataUrl = await readAsDataURL(file);
   const img = await loadImage(dataUrl);
