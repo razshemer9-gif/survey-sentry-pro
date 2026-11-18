@@ -8,7 +8,7 @@ import {
   SurveyReport,
   SurveyType,
 } from "./types";
-import { pickSavedList, savedListToItems, TYPES_WITH_SAVED_START } from "./starting-items";
+import { pickSavedList, SavedListRow, savedListToItems, TYPES_WITH_SAVED_START } from "./starting-items";
 import { AccessibilityRequirement } from "./standards-types";
 import { supabase } from "./supabase";
 
@@ -267,21 +267,37 @@ export async function loadStartingItems(surveyType: SurveyType): Promise<SurveyR
     // Two reads rather than one: the lists carry reference photographs and
     // run to megabytes, so the names come over first and only the matching
     // list is fetched whole.
-    const { data: rows, error } = await supabase
+    //
+    // No user filter: the database hands back this account's own lists and
+    // the company list the owner publishes, and pickSavedList prefers the
+    // account's own. The narrow read is the fallback for a database that
+    // does not have the shared column yet, so the order in which the
+    // migration and this code land cannot leave anybody without a list.
+    let rows: SavedListRow[] | null = null;
+    const wide = await supabase
       .from("user_templates")
-      .select("id, name, survey_type")
-      .eq("user_id", userId)
+      .select("id, name, survey_type, user_id, shared")
       .order("updated_at", { ascending: false });
-    if (error) throw error;
+    if (wide.error) {
+      console.warn("[starting-items] shared lists unavailable, reading own only", wide.error);
+      const narrow = await supabase
+        .from("user_templates")
+        .select("id, name, survey_type")
+        .eq("user_id", userId)
+        .order("updated_at", { ascending: false });
+      if (narrow.error) throw narrow.error;
+      rows = narrow.data as SavedListRow[] | null;
+    } else {
+      rows = wide.data as SavedListRow[] | null;
+    }
 
-    const match = pickSavedList(rows ?? [], surveyType, label);
+    const match = pickSavedList(rows ?? [], surveyType, label, userId);
     if (!match) return null;
 
     const { data: row, error: itemsError } = await supabase
       .from("user_templates")
       .select("items")
       .eq("id", match.id)
-      .eq("user_id", userId)
       .maybeSingle();
     if (itemsError) throw itemsError;
 
