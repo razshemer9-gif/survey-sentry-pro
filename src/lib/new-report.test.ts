@@ -36,6 +36,21 @@ describe("newReport", () => {
     }
   });
 
+  it("opens on the consultant's own saved list when the account has one", () => {
+    const saved = [
+      { id: "x", title: "שילוט- כניסה נגישה", status: "non_compliant" as const, notes: "",
+        estimatedCost: 0, suggestedCorrection: "יוצב שילוט", standardPart: "1" },
+    ];
+    const r = newReport("accessibility", saved);
+    expect(r.items).toEqual(saved);
+  });
+
+  it("falls back to the built-in list when the saved one is empty or absent", () => {
+    const builtIn = newReport("accessibility").items.length;
+    expect(newReport("accessibility", []).items.length).toBe(builtIn);
+    expect(newReport("accessibility", undefined).items.length).toBe(builtIn);
+  });
+
   it("starts every type without anything having to be set up first", () => {
     for (const t of ["accessibility", "general_safety", "education_safety", "welfare_inspection",
                      "element_stability", "risk_survey", "accessibility_form_8",

@@ -1,11 +1,14 @@
 import { v4 as uuid } from "uuid";
 import {
+  ChecklistTemplate,
   ConsultantSettings,
   DEFAULT_CHECKLIST,
   DEFAULT_SETTINGS,
+  SURVEY_TYPES,
   SurveyReport,
   SurveyType,
 } from "./types";
+import { pickSavedList, savedListToItems, TYPES_WITH_SAVED_START } from "./starting-items";
 import { AccessibilityRequirement } from "./standards-types";
 import { supabase } from "./supabase";
 
@@ -188,11 +191,24 @@ export async function addRequirementToReport(
   await saveReport({ ...report, items: [...report.items, newItem] });
 }
 
-export function newReport(surveyType: SurveyType = "accessibility"): SurveyReport {
+/**
+ * A new, empty report of this type.
+ *
+ * `savedItems` is the consultant's own starting list for this type, when
+ * there is one — see ./starting-items and loadStartingItems below. Without
+ * it each type falls back to what it can supply on its own, so a report can
+ * always be started, on any account, with nothing set up first.
+ */
+export function newReport(
+  surveyType: SurveyType = "accessibility",
+  savedItems?: SurveyReport["items"],
+): SurveyReport {
   const items =
+    savedItems?.length
+    ? savedItems
     // Safety surveys are written from what the inspector finds on site, so
     // they open on one empty finding rather than a list to work through.
-    surveyType === "general_safety"
+    : surveyType === "general_safety"
     || surveyType === "education_safety" || surveyType === "welfare_inspection" || surveyType === "element_stability"
     ? [{
         id: uuid(),
@@ -232,6 +248,50 @@ export function newReport(surveyType: SurveyType = "accessibility"): SurveyRepor
       form8Requirements: FORM8_REQUIREMENTS.map((r) => ({ id: r.id, response: r.defaultResponse ?? "" })),
     }),
   };
+}
+
+/**
+ * The consultant's own starting list for this report type, or null when the
+ * account has none and the built-in list should be used instead.
+ *
+ * Never throws and never blocks: a list that cannot be read is simply a
+ * report that opens on the built-in checklist. See ./starting-items for what
+ * the list is and why it has no page of its own.
+ */
+export async function loadStartingItems(surveyType: SurveyType): Promise<SurveyReport["items"] | null> {
+  if (!TYPES_WITH_SAVED_START.includes(surveyType)) return null;
+  try {
+    const userId = await getUserId();
+    const label = SURVEY_TYPES.find((t) => t.id === surveyType)?.label ?? "";
+
+    // Two reads rather than one: the lists carry reference photographs and
+    // run to megabytes, so the names come over first and only the matching
+    // list is fetched whole.
+    const { data: rows, error } = await supabase
+      .from("user_templates")
+      .select("id, name, survey_type")
+      .eq("user_id", userId)
+      .order("updated_at", { ascending: false });
+    if (error) throw error;
+
+    const match = pickSavedList(rows ?? [], surveyType, label);
+    if (!match) return null;
+
+    const { data: row, error: itemsError } = await supabase
+      .from("user_templates")
+      .select("items")
+      .eq("id", match.id)
+      .eq("user_id", userId)
+      .maybeSingle();
+    if (itemsError) throw itemsError;
+
+    const items = row?.items;
+    if (!Array.isArray(items) || items.length === 0) return null;
+    return savedListToItems(items as ChecklistTemplate["items"]);
+  } catch (err) {
+    console.error("[starting-items] could not read the saved list", err);
+    return null;
+  }
 }
 
 // ---------- Settings (localStorage) ----------

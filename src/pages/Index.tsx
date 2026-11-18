@@ -7,7 +7,7 @@ import {
   Dialog, DialogContent, DialogHeader, DialogTitle,
 } from "@/components/ui/dialog";
 import { accessibilityScopeLabel, scopeFromChecks } from "@/lib/accessibility-scope";
-import { deleteReport, getLastRefreshError, listReportAuthors, listReports, loadUserSettings, newReport, saveReport } from "@/lib/storage";
+import { deleteReport, getLastRefreshError, listReportAuthors, listReports, loadStartingItems, loadUserSettings, newReport, saveReport } from "@/lib/storage";
 import { isDirty } from "@/lib/offline-db";
 import { subscribeSyncStatus } from "@/lib/sync-engine";
 import { getSurveyType, SURVEY_TYPES, SurveyReport, SurveyType } from "@/lib/types";
@@ -144,11 +144,13 @@ const Index = () => {
         return;
       }
 
-      // Every type starts from its own standing list, so a report can be
-      // started by anyone, on any device, with nothing set up first. A new
-      // account used to be told to go and make a template before it could
-      // begin a survey at all.
-      const draft = newReport(selectedType);
+      // The accessibility survey opens on the consultant's own list, with
+      // the clause, the proposed correction and the reference drawing
+      // already on every finding. An account that has no list of its own
+      // opens on the built-in checklist and the report still starts: a new
+      // account used to be turned away here and told to go and build one.
+      const savedItems = await loadStartingItems(selectedType);
+      const draft = newReport(selectedType, savedItems ?? undefined);
       // Only the accessibility survey carries a certification scope.
       const scope = selectedType === "accessibility" ? scopeFromChecks(scopeMatos, scopeService) : null;
       const r = await saveReport(scope ? { ...draft, accessibilityScope: scope } : draft);
