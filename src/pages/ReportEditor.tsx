@@ -147,8 +147,17 @@ export default function ReportEditor() {
           ...STANDARDS_DATA.map((s) => s.requirementTitle),
         ]);
         const isAccessibilityJunk = (it: ChecklistItem) => {
-          if (it.matchedRequirementId || it.standardPart || it.clause || it.suggestedCorrection) return true;
-          // Accessibility title with nothing the surveyor filled in.
+          // A finding is removed only when it is one of the pre-filled
+          // accessibility titles AND the surveyor put nothing in it.
+          //
+          // It used to be enough for a finding to carry a standards-library
+          // signature — a requirement id, a part, a clause, a proposed
+          // correction. That is exactly what a finding added from the
+          // standards library carries, and what the proposed-solution field
+          // writes, so a real finding was deleted, with its photographs, the
+          // next time the report was opened, and the deletion was saved to
+          // the server. Whether a finding is junk is decided by whether
+          // anybody worked on it, never by which fields it has.
           const untouched = !it.fieldNotes && itemPhotos(it).length === 0 && !(it.notes && it.notes.trim());
           return ACCESSIBILITY_TITLES.has(it.title) && untouched;
         };

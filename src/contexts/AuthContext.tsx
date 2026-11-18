@@ -23,12 +23,18 @@ const AuthContext = createContext<AuthContextValue>({
 
 async function fetchRole(userId: string): Promise<UserRole> {
   try {
-    const { data } = await withTimeout(
-      supabase.from("profiles").select("role").eq("user_id", userId).single(),
+    // Narrowed to the one field this reads: the builder is thenable rather
+    // than a Promise, and its full response type has no shape a timeout
+    // fallback could stand in for.
+    const { data } = await withTimeout<{ data: { role?: string } | null }>(
+      (async () => {
+        const res = await supabase.from("profiles").select("role").eq("user_id", userId).single();
+        return { data: res.data as { role?: string } | null };
+      })(),
       5000,
-      { data: null, error: null }
+      { data: null },
     );
-    return ((data as { role?: string } | null)?.role as UserRole) ?? "employee";
+    return (data?.role as UserRole) ?? "employee";
   } catch {
     return "employee";
   }

@@ -58,8 +58,6 @@ const ROOT_MAP: Record<string, string> = {
   "מקלטים": "מקלט",
   // מרחב
   "מרחבים": "מרחב",
-  // ישיבה
-  "מקומות": "מקום",
   // גובה
   "בגובה": "גובה",
   // רוחב
@@ -72,7 +70,7 @@ function normalize(word: string): string {
 
 function tokenize(text: string): string[] {
   return text
-    .replace(/[()\/\-.,;:"'״׳]/g, " ")
+    .replace(/[()/\-.,;:"'״׳]/g, " ")
     .split(/\s+/)
     .map((w) => w.trim().toLowerCase())
     .filter((w) => w.length > 1 && !STOP_WORDS.has(w))

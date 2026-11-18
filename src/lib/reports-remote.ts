@@ -90,6 +90,27 @@ export async function remoteListReportSummaries(): Promise<SurveyReport[]> {
     .sort((a, b) => (b.updatedAt ?? 0) - (a.updatedAt ?? 0));
 }
 
+/**
+ * The caller's own reports, oldest first, as just enough to choose one to
+ * remove when the database has no room left — see ./storage-pressure. Never
+ * anyone else's: an owner can read the whole company's reports, and making
+ * room for their own work must not cost an employee theirs.
+ */
+export async function remoteOldestOwnReports(
+  limit = 20,
+): Promise<{ id: string; updatedAt: number; name: string | null }[]> {
+  const userId = await getUserId();
+  const { data, error } = await supabase
+    .from("reports")
+    .select("id, updated_at, name:data->>placeName")
+    .eq("device_id", userId)
+    .order("updated_at", { ascending: true })
+    .limit(limit);
+  if (error) throw error;
+  return ((data ?? []) as { id: string; updated_at: number; name: string | null }[])
+    .map((row) => ({ id: row.id, updatedAt: Number(row.updated_at) || 0, name: row.name }));
+}
+
 export async function remoteGetReport(id: string): Promise<SurveyReport | undefined> {
   const { data, error } = await supabase
     .from("reports")
