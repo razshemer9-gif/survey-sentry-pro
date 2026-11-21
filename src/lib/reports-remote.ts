@@ -122,21 +122,74 @@ export async function remoteGetReport(id: string): Promise<SurveyReport | undefi
   return withOwner(data.data as SurveyReport, data.device_id as string);
 }
 
-export async function remoteSaveReport(report: SurveyReport): Promise<SurveyReport> {
+/**
+ * What happened to a report that was sent to the server.
+ *
+ * "stale" means somebody else saved that report after the copy on this
+ * device was last in step with the server — a colleague editing from the
+ * office while this phone was out of signal. `report` is then the server's
+ * copy, not the one that was sent.
+ */
+export type SaveOutcome =
+  | { status: "saved"; report: SurveyReport }
+  | { status: "stale"; report: SurveyReport };
+
+/**
+ * Sends a report, unless the server holds a newer one.
+ *
+ * This used to be a plain upsert, which meant the last device to reach the
+ * server won, whatever it was carrying. A phone that had been out of signal
+ * since the morning would quietly overwrite an afternoon's work from the
+ * office, with nobody told. Worse, it stamped the moment of *sending* onto
+ * the report, so a stale copy always looked like the freshest one there was.
+ *
+ * Now the report carries the moment it was actually edited, and the write
+ * only lands if the server has nothing newer. If it does, nothing is
+ * overwritten and the caller is handed the server's copy to keep instead.
+ */
+export async function remoteSaveReport(report: SurveyReport): Promise<SaveOutcome> {
   const userId = await getUserId();
-  const updated = { ...report, updatedAt: Date.now() };
-  const { error } = await supabase.from("reports").upsert({
-    id: report.id,
-    // Preserve the original author. Without this, an admin editing someone
-    // else's report would rewrite device_id to their own id and quietly take
-    // the report away from whoever wrote it.
-    device_id: resolveOwnerId(report, userId),
-    data: updated,
-    created_at: updated.createdAt,
-    updated_at: updated.updatedAt,
-  });
+  // The time of the edit, set when it was saved on the device — never the
+  // time this happens to reach the server.
+  const updated = { ...report, updatedAt: report.updatedAt || Date.now() };
+
+  const { data: written, error } = await supabase
+    .from("reports")
+    .update({ data: updated, updated_at: updated.updatedAt })
+    .eq("id", report.id)
+    .lte("updated_at", updated.updatedAt)
+    .select("id");
   if (error) throw error;
-  return updated;
+  if (written && written.length > 0) return { status: "saved", report: updated };
+
+  // Nothing was written: either the report is not on the server yet, or what
+  // is there is newer than this.
+  const { data: existing, error: readError } = await supabase
+    .from("reports")
+    .select("device_id, data, updated_at")
+    .eq("id", report.id)
+    .maybeSingle();
+  if (readError) throw readError;
+
+  if (!existing) {
+    const { error: insertError } = await supabase.from("reports").insert({
+      id: report.id,
+      // Preserve the original author. Without this, an admin editing someone
+      // else's report would rewrite device_id to their own id and quietly take
+      // the report away from whoever wrote it.
+      device_id: resolveOwnerId(report, userId),
+      data: updated,
+      created_at: updated.createdAt,
+      updated_at: updated.updatedAt,
+    });
+    if (insertError) throw insertError;
+    return { status: "saved", report: updated };
+  }
+
+  return {
+    status: "stale",
+    report: withOwner(existing.data as SurveyReport, existing.device_id as string),
+  };
 }
 
 export async function remoteDeleteReport(id: string): Promise<void> {
