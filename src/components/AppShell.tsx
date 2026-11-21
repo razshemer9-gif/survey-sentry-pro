@@ -1,75 +1,57 @@
-import { Link, useLocation, useNavigate } from "react-router-dom";
-import { Settings, FileStack, LogOut } from "lucide-react";
+import { Link, useLocation } from "react-router-dom";
+import { Home, FileStack, Building2 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { signOut } from "@/lib/auth";
-import { supabase } from "@/lib/supabase";
-import { clearCacheFor } from "@/lib/offline-db";
+import { useAuth } from "@/contexts/AuthContext";
 
-const tabs = [
-  { to: "/", label: "דוחות", icon: FileStack },
-  { to: "/settings", label: "הגדרות", icon: Settings },
-];
-
+/**
+ * Two places to be, three for whoever runs the company.
+ *
+ * Settings moved to the gear on Home, and signing out moved into Settings
+ * with it: a bar that is reached dozens of times a day should hold the
+ * places the work happens, not the way out of the app.
+ */
 export function BottomNav() {
   const { pathname } = useLocation();
-  const navigate = useNavigate();
+  const { isAdmin } = useAuth();
 
-  async function handleSignOut() {
-    // Drop this account's cached reports before letting go of the session:
-    // the next person to sign in on this phone must not find them. Anything
-    // still waiting to be sent is left alone, and goes up on the next sign-in.
-    try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (session?.user?.id) await clearCacheFor(session.user.id);
-    } catch (err) {
-      console.warn("[sign-out] could not clear the cached reports", err);
-    }
-    await signOut();
-    navigate("/auth");
-  }
+  const tabs = [
+    { to: "/", label: "בית", icon: Home, match: (p: string) => p === "/" },
+    { to: "/my-reports", label: "הדוחות שלי", icon: FileStack, match: (p: string) => p.startsWith("/my-reports") || p.startsWith("/report") },
+    ...(isAdmin
+      ? [{ to: "/company-reports", label: "דוחות החברה", icon: Building2, match: (p: string) => p.startsWith("/company-reports") }]
+      : []),
+  ];
 
   return (
-    <nav className="app-bottomnav fixed bottom-0 inset-x-0 z-40 border-t border-border/80 bg-card/95 backdrop-blur-md safe-bottom shadow-[0_-1px_12px_hsl(217_91%_20%/0.06)]">
-      <ul className="mx-auto grid max-w-lg grid-cols-3">
-        {tabs.map((t) => {
-          const active =
-            t.to === "/" ? pathname === "/" || pathname.startsWith("/report") : pathname.startsWith(t.to);
-          const Icon = t.icon;
+    <nav
+      className="fixed inset-x-0 bottom-0 z-40 border-t border-[var(--home-surface-border)] safe-bottom backdrop-blur-md"
+      style={{ background: "var(--home-nav)" }}
+    >
+      <ul
+        className="mx-auto grid max-w-lg gap-2 px-3 py-2"
+        style={{ gridTemplateColumns: `repeat(${tabs.length}, minmax(0, 1fr))` }}
+      >
+        {tabs.map(({ to, label, icon: Icon, match }) => {
+          const active = match(pathname);
           return (
-            <li key={t.to}>
+            <li key={to}>
               <Link
-                to={t.to}
+                to={to}
+                aria-current={active ? "page" : undefined}
                 className={cn(
-                  "relative flex flex-col items-center justify-center gap-0.5 py-2 text-[10px] sm:text-xs font-medium transition-colors duration-150",
-                  active ? "text-primary" : "text-muted-foreground hover:text-foreground",
+                  "flex flex-col items-center justify-center gap-1 rounded-2xl py-2 text-[11px] font-semibold transition-colors",
+                  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--home-cta-top)]",
+                  active
+                    ? "bg-[var(--home-nav-active)] text-foreground"
+                    : "text-[var(--home-muted)] hover:text-foreground",
                 )}
               >
-                {active && (
-                  <span className="absolute top-0 inset-x-4 h-[2px] rounded-b-full bg-primary" />
-                )}
-                <span className={cn(
-                  "grid place-items-center rounded-xl px-3 py-1 transition-all duration-200",
-                  active ? "bg-primary/10" : "",
-                )}>
-                  <Icon className="h-5 w-5 shrink-0" />
-                </span>
-                <span className="truncate">{t.label}</span>
+                <Icon className="h-5 w-5 shrink-0" aria-hidden />
+                <span className="truncate">{label}</span>
               </Link>
             </li>
           );
         })}
-        <li>
-          <button
-            onClick={handleSignOut}
-            className="flex w-full flex-col items-center justify-center gap-0.5 py-2 text-[10px] sm:text-xs font-medium text-muted-foreground transition-colors hover:text-destructive"
-            title="התנתק"
-          >
-            <span className="grid place-items-center rounded-xl px-3 py-1">
-              <LogOut className="h-5 w-5 shrink-0" />
-            </span>
-            <span className="truncate">יציאה</span>
-          </button>
-        </li>
       </ul>
     </nav>
   );
@@ -77,7 +59,7 @@ export function BottomNav() {
 
 export function AppShell({ children, hideNav }: { children: React.ReactNode; hideNav?: boolean }) {
   return (
-    <div className="min-h-screen" style={{ paddingBottom: 'calc(7rem + env(safe-area-inset-bottom, 0px))' }}>
+    <div className="min-h-screen" style={{ paddingBottom: 'calc(5.5rem + env(safe-area-inset-bottom, 0px))' }}>
       <div className="mx-auto max-w-lg w-full">{children}</div>
       {!hideNav && <BottomNav />}
     </div>
