@@ -2,6 +2,7 @@ import { createContext, useContext, useEffect, useRef, useState, ReactNode } fro
 import { User } from "@supabase/supabase-js";
 import { supabase } from "@/lib/supabase";
 import { withTimeout } from "@/lib/async";
+import { cacheRole, clearCachedRole, readCachedRole } from "@/lib/role-cache";
 
 export type UserRole = "owner" | "admin" | "employee";
 
@@ -21,22 +22,34 @@ const AuthContext = createContext<AuthContextValue>({
   refreshRole: async () => {},
 });
 
-async function fetchRole(userId: string): Promise<UserRole> {
+/**
+ * The account's role, or null when the question could not be answered.
+ *
+ * Null is not "employee". A timeout on a weak connection used to demote an
+ * owner, who then found דוחות החברה missing from the bar; the caller now
+ * keeps what it knew instead. See lib/role-cache.
+ */
+async function fetchRole(userId: string): Promise<UserRole | null> {
   try {
     // Narrowed to the one field this reads: the builder is thenable rather
     // than a Promise, and its full response type has no shape a timeout
     // fallback could stand in for.
-    const { data } = await withTimeout<{ data: { role?: string } | null }>(
+    const TIMED_OUT = Symbol("timeout");
+    const result = await withTimeout<{ data: { role?: string } | null } | typeof TIMED_OUT>(
       (async () => {
         const res = await supabase.from("profiles").select("role").eq("user_id", userId).single();
+        if (res.error) throw res.error;
         return { data: res.data as { role?: string } | null };
       })(),
       5000,
-      { data: null },
+      TIMED_OUT,
     );
-    return (data?.role as UserRole) ?? "employee";
+    if (result === TIMED_OUT) return null;
+    const role = result.data?.role;
+    // A row with no role is a real answer, and it means the plainest one.
+    return role === "owner" || role === "admin" || role === "employee" ? role : "employee";
   } catch {
-    return "employee";
+    return null;
   }
 }
 
@@ -47,12 +60,32 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const mounted = useRef(true);
 
   async function loadRole(u: User | null) {
-    const r = u ? await fetchRole(u.id) : null;
-    if (mounted.current) setRole(r);
+    if (!u) {
+      clearCachedRole();
+      if (mounted.current) setRole(null);
+      return;
+    }
+    // What the device remembers, right away, so the bar is right before the
+    // network has said anything.
+    const remembered = readCachedRole(u.id);
+    if (remembered && mounted.current) setRole(remembered);
+
+    const fresh = await fetchRole(u.id);
+    if (fresh) {
+      cacheRole(u.id, fresh);
+      if (mounted.current) setRole(fresh);
+    } else if (!remembered && mounted.current) {
+      // Nothing known and nothing to be had: the least the app can offer.
+      setRole("employee");
+    }
   }
 
   async function refreshRole() {
-    if (user) setRole(await fetchRole(user.id));
+    if (!user) return;
+    const fresh = await fetchRole(user.id);
+    if (!fresh) return;
+    cacheRole(user.id, fresh);
+    setRole(fresh);
   }
 
   useEffect(() => {
