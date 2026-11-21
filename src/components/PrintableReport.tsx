@@ -616,10 +616,6 @@ export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, sett
   if (report.surveyType === "element_stability") {
     const accent = "#1e3a8a"; // blue accent (matches brand)
     const inspectorName = report.elementInspectorName || sigName;
-    // The qualification set for this report type — "קונסטרוקטור", "הנדסאי
-    // בנין". It is what makes a stability certificate worth anything, and it
-    // had a box in the settings that nothing read.
-    const inspectorRole = fmt.professionalRole?.trim();
 
     // Always the company's own identity — not personalized per consultant
     // account (see ELEMENT_STABILITY_FOOTER).
@@ -708,7 +704,7 @@ export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, sett
 
           {/* 2. Report details */}
           <CoverLine label="שם המזמין" value={report.clientName} />
-          <CoverLine label="שם הבודק" value={[inspectorName, inspectorRole].filter(Boolean).join(" — ")} />
+          <CoverLine label="שם הבודק" value={inspectorName} />
           <CoverLine label="מיקום" value={report.address} />
           <CoverLine label="תאריך הבדיקה" value={report.surveyDate ? formatHebrewDate(report.surveyDate) : ""} />
           <CoverLine label={isElementApproval ? "תוקף האישור" : "תוקף הבדיקה"} value={validUntilText} />
@@ -800,7 +796,6 @@ export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, sett
                 <img src={sigImg} alt="חתימה" crossOrigin="anonymous" style={{ maxHeight: 70, maxWidth: 200, height: "auto", display: "block", margin: "0 auto" }} />
                 <div style={{ borderTop: "1px solid #0f172a", marginTop: 4, paddingTop: 4, fontSize: 12, color: "#64748b" }}>
                   חתימת הבודק{inspectorName ? ` — ${inspectorName}` : ""}
-                  {inspectorRole ? `, ${inspectorRole}` : ""}
                 </div>
               </div>
             </div>
