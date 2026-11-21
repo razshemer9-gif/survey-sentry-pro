@@ -81,10 +81,29 @@ export async function remoteListReports(limit = OFFLINE_PREFETCH): Promise<Surve
  *
  * Requires report-summaries.sql. Without it the RPC is missing and the caller
  * falls back to own-reports-only, which is the pre-existing behaviour.
+ *
+ * The limit is the ceiling on what can be found at all: the rows come back
+ * newest-first, so anything past it is not merely further down the screen,
+ * it is absent, and a search for an older site returns nothing. We therefore
+ * ask for the most the function will give. Its own `least(p_limit, 1000)`
+ * still clamps us, so past a thousand reports the list needs searching on
+ * the server rather than in the browser. Until then the warning below is
+ * what tells us the day has come.
  */
+export const SUMMARY_LIMIT = 1000;
+
+/** True when the server had at least as many rows as we asked for, i.e. the
+ *  list may be cut short and older reports are missing from it. */
+export function summariesWereTruncated(rows: unknown[]): boolean {
+  return rows.length >= SUMMARY_LIMIT;
+}
+
 export async function remoteListReportSummaries(): Promise<SurveyReport[]> {
-  const { data, error } = await supabase.rpc("list_report_summaries", { p_limit: 300 });
+  const { data, error } = await supabase.rpc("list_report_summaries", { p_limit: SUMMARY_LIMIT });
   if (error) throw error;
+  if (summariesWereTruncated((data ?? []) as unknown[])) {
+    console.warn(`[reports] the list stops at ${SUMMARY_LIMIT} reports; older ones are not searchable`);
+  }
   return ((data ?? []) as { id: string; device_id: string; summary: SurveyReport }[])
     .map((row) => withOwner(row.summary, row.device_id))
     .sort((a, b) => (b.updatedAt ?? 0) - (a.updatedAt ?? 0));

@@ -283,7 +283,7 @@ const Index = () => {
     ? mine.filter((r) => (r.placeName ?? "").toLowerCase().includes(q))
     : mine;
   const recent = matching.slice(0, HOME_ROWS);
-  const hasMore = matching.length > recent.length;
+  const hidden = matching.length - recent.length;
 
   return (
     <AppShell>
@@ -369,15 +369,21 @@ const Index = () => {
             )}
           </div>
 
-          {hasMore && (
-            <Link
-              to={q ? `/my-reports?q=${encodeURIComponent(query.trim())}` : "/my-reports"}
-              className="mt-3 flex h-12 w-full items-center justify-center gap-1.5 rounded-2xl border border-[var(--home-surface-border)] bg-[var(--home-surface)] text-[15px] font-semibold transition-colors hover:bg-[var(--home-field)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--home-cta-top)]"
-            >
-              הצג הכל
-              <ChevronLeft className="h-4 w-4" aria-hidden />
-            </Link>
-          )}
+          {/* Always here, whether or not five rows filled the screen: the
+              full list is the way to every older report, and a way out that
+              appears only sometimes is one the hand stops reaching for. */}
+          <Link
+            to={q ? `/my-reports?q=${encodeURIComponent(query.trim())}` : "/my-reports"}
+            className="mt-3 flex h-12 w-full items-center justify-center gap-1.5 rounded-2xl border border-[var(--home-surface-border)] bg-[var(--home-surface)] text-[15px] font-semibold transition-colors hover:bg-[var(--home-field)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--home-cta-top)]"
+          >
+            הצג הכל
+            {hidden > 0 && (
+              <span className="text-[13px] font-normal tabular-nums text-[var(--home-muted)]">
+                ועוד {hidden}
+              </span>
+            )}
+            <ChevronLeft className="h-4 w-4" aria-hidden />
+          </Link>
         </section>
       </div>
 

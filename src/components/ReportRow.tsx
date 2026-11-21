@@ -117,8 +117,15 @@ function Thumbnail({ report, color }: { report: SurveyReport; color: string }) {
 
 /**
  * Opening and deleting are what this screen can really do to a report today.
- * Duplicating one, and giving one a workflow status, are Phase 2: a menu
- * entry that does nothing is worse than no menu entry.
+ *
+ * The menu is meant to end up with three entries and no more: עריכה,
+ * שכפול (a full, independent copy — photographs, findings, signatures and
+ * approvals alike) and מחיקה (a confirmation, then six seconds in which it
+ * can be taken back). The last two are Phase 2 work and are not here yet,
+ * because a menu entry that does nothing is worse than no menu entry.
+ *
+ * There is deliberately no report status, now or later. The statuses that
+ * exist belong to the findings inside a report, and they stay there.
  */
 function RowMenu({ reportId, onDelete }: { reportId: string; onDelete?: (id: string) => void }) {
   if (!onDelete) return null;
