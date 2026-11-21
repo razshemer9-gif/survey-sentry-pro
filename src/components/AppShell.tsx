@@ -1,10 +1,10 @@
 import { Link, useLocation } from "react-router-dom";
-import { Home, FileStack, Building2 } from "lucide-react";
+import { Home, FileStack, Building2, Clock } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
 
 /**
- * Two places to be, three for whoever runs the company.
+ * Three places to be, four for whoever runs the company.
  *
  * Settings moved to the gear on Home, and signing out moved into Settings
  * with it: a bar that is reached dozens of times a day should hold the
@@ -17,6 +17,7 @@ export function BottomNav() {
   const tabs = [
     { to: "/", label: "בית", icon: Home, match: (p: string) => p === "/" },
     { to: "/my-reports", label: "הדוחות שלי", icon: FileStack, match: (p: string) => p.startsWith("/my-reports") || p.startsWith("/report") },
+    { to: "/hours", label: "שעות", icon: Clock, match: (p: string) => p.startsWith("/hours") },
     ...(isAdmin
       ? [{ to: "/company-reports", label: "דוחות החברה", icon: Building2, match: (p: string) => p.startsWith("/company-reports") }]
       : []),
