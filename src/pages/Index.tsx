@@ -1,13 +1,14 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Plus, Calculator, ChevronLeft, ExternalLink, FileStack, Building2, Settings as SettingsIcon } from "lucide-react";
+import { Plus, Calculator, ChevronLeft, ExternalLink, Settings as SettingsIcon } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
 import { Button } from "@/components/ui/button";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle,
 } from "@/components/ui/dialog";
 import { accessibilityScopeLabel, scopeFromChecks } from "@/lib/accessibility-scope";
-import { cachedReports, getLastRefreshError, loadStartingItems, loadUserSettings, newReport, refreshReports, saveReport } from "@/lib/storage";
+import { loadStartingItems, loadUserSettings, newReport, refreshReports, saveReport } from "@/lib/storage";
+import { startSyncEngine } from "@/lib/sync-engine";
 import { welfareInspectorPrefill } from "@/lib/welfare-prefill";
 import { getSurveyType, SURVEY_TYPES, SurveyReport, SurveyType } from "@/lib/types";
 import { toast } from "sonner";
@@ -23,46 +24,9 @@ import { ConsultantSettings } from "@/lib/types";
 import logoDark from "@/assets/logo-shemer-dark.webp";
 import logoLight from "@/assets/logo-shemer-light.webp";
 
-/**
- * A way to a list, and how much is waiting in it.
- *
- * Home used to carry five report rows and a search box, which took two
- * thirds of a phone screen to say what the bar at the bottom already said.
- * The reports live in their own screen now; these are the doors to it.
- */
-function HomeDestination({
-  to, icon: Icon, label, count,
-}: {
-  to: string;
-  icon: typeof FileStack;
-  label: string;
-  /** Undefined while the device is still being read. */
-  count?: number;
-}) {
-  return (
-    <Link
-      to={to}
-      className="flex h-[4.5rem] items-center gap-4 rounded-[22px] border border-[var(--home-surface-border)] bg-[var(--home-surface)] px-4 transition-colors hover:bg-[var(--home-field)] active:bg-[var(--home-field)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--home-cta-top)]"
-    >
-      <span aria-hidden className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-[var(--home-field)] text-[var(--home-cta-top)]">
-        <Icon className="h-[22px] w-[22px]" />
-      </span>
-      <span className="min-w-0 flex-1">
-        <span className="block text-[17px] font-bold">{label}</span>
-        <span className="mt-0.5 block text-[13px] tabular-nums text-[var(--home-muted)]">
-          {count === undefined ? "טוען…" : count === 1 ? "דוח אחד" : `${count} דוחות`}
-        </span>
-      </span>
-      <ChevronLeft aria-hidden className="h-5 w-5 shrink-0 text-[var(--home-muted)]" />
-    </Link>
-  );
-}
-
 const Index = () => {
   const navigate = useNavigate();
-  const { user, isAdmin } = useAuth();
-  const [reports, setReports] = useState<SurveyReport[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { user } = useAuth();
   const [typeDialogOpen, setTypeDialogOpen] = useState(false);
   const [selectedType, setSelectedType] = useState<SurveyType | null>(null);
   const [creating, setCreating] = useState(false);
@@ -90,31 +54,20 @@ const Index = () => {
   // when the names arrive, once when the recent reports have been pulled
   // down in full for offline use. See lib/storage.
   useEffect(() => {
-    let cancelled = false;
-
-    cachedReports()
-      .then((rs) => { if (!cancelled) setReports(rs); })
-      .catch((err) => console.warn("[home] cache read failed", err))
-      .finally(() => { if (!cancelled) setLoading(false); });
-
-    refreshReports((rs) => { if (!cancelled) setReports(rs); })
-      .then(() => {
-        if (cancelled) return;
-        // A refresh that quietly failed leaves stale data on screen — say so,
-        // otherwise "I can't see the other users' reports" looks like a bug
-        // in permissions rather than a connection problem.
-        const refreshErr = getLastRefreshError();
-        if (refreshErr) toast.warning(refreshErr, { duration: 8000 });
-      })
-      .catch((err: unknown) => {
-        const detail = err instanceof Error
-          ? err.message
-          : (err as { message?: string })?.message ?? JSON.stringify(err);
-        console.error("refreshReports error:", err);
-        toast.error(`שגיאה בטעינת הדוחות: ${detail}`);
-      })
-
-    return () => { cancelled = true; };
+    // Nothing on this screen shows a report, so nothing here waits for one.
+    // Two things still happen, both out of sight:
+    //
+    // The sync engine starts, so work written on site with no signal goes up
+    // as soon as the app is opened somewhere with one — it must not wait for
+    // the consultant to visit a list first.
+    //
+    // And the reports are pulled down in the background, so that opening
+    // הדוחות שלי on the way to a site, or at the site itself, finds them
+    // already on the device. Failures are logged, not shown: a message about
+    // a list would make no sense on a screen that shows no list, and the
+    // list screen reports them where they mean something.
+    startSyncEngine();
+    refreshReports().catch((err) => console.warn("[home] background refresh failed", err));
   }, []);
 
   // The greeting's name, and nothing else from settings.
@@ -225,9 +178,6 @@ const Index = () => {
     }
   }
 
-  // Only to say how many are waiting behind each door; the reports
-  // themselves are listed in their own screens.
-  const mine = reports.filter((r) => !r.ownerId || r.ownerId === user?.id);
 
   return (
     <AppShell>
@@ -272,22 +222,6 @@ const Index = () => {
           יצירת דוח חדש
         </button>
 
-        <nav className="mt-7 grid gap-3" aria-label="רשימות הדוחות">
-          <HomeDestination
-            to="/my-reports"
-            icon={FileStack}
-            label="הדוחות שלי"
-            count={loading ? undefined : mine.length}
-          />
-          {isAdmin && (
-            <HomeDestination
-              to="/company-reports"
-              icon={Building2}
-              label="דוחות החברה"
-              count={loading ? undefined : reports.length}
-            />
-          )}
-        </nav>
       </div>
 
       {/* Survey type selection dialog */}
