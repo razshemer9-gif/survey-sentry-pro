@@ -155,6 +155,10 @@ export interface SurveyReport {
   signatureDate?: string;
   signatureConsultantName?: string;
 
+  /** A mark the consultant puts on this report by hand — see
+   *  ./report-mark. Never set by the app, and never printed. */
+  mark?: "green" | "red";
+
   // Account that owns this report. Stamped from the row's device_id when a
   // report is loaded, so that an admin editing someone else's report saves it
   // back under the ORIGINAL author rather than taking it over. Undefined for a

@@ -1,16 +1,14 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Plus, Calculator, ExternalLink, Search, X, ChevronLeft, Settings as SettingsIcon } from "lucide-react";
+import { Plus, Calculator, ChevronLeft, ExternalLink, FileStack, Building2, Settings as SettingsIcon } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
 import { Button } from "@/components/ui/button";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle,
 } from "@/components/ui/dialog";
 import { accessibilityScopeLabel, scopeFromChecks } from "@/lib/accessibility-scope";
-import { cachedReports, getLastRefreshError, listReportAuthors, loadStartingItems, loadUserSettings, newReport, refreshReports, saveReport } from "@/lib/storage";
-import { isDirty } from "@/lib/offline-db";
+import { cachedReports, getLastRefreshError, loadStartingItems, loadUserSettings, newReport, refreshReports, saveReport } from "@/lib/storage";
 import { welfareInspectorPrefill } from "@/lib/welfare-prefill";
-import { subscribeSyncStatus } from "@/lib/sync-engine";
 import { getSurveyType, SURVEY_TYPES, SurveyReport, SurveyType } from "@/lib/types";
 import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
@@ -19,65 +17,50 @@ import { useAuth } from "@/contexts/AuthContext";
 import { canUseStaticCalc, STATIC_CALC_URL } from "@/lib/static-calc-access";
 import { useEngUi } from "@/hooks/use-eng-ui";
 import { useResolvedTheme } from "@/hooks/use-theme";
-import { useReportActions } from "@/hooks/use-report-actions";
 import { ThemeToggle } from "@/components/ThemeToggle";
-import { ReportRow } from "@/components/ReportRow";
 import { greeting } from "@/lib/display-name";
 import { ConsultantSettings } from "@/lib/types";
 import logoDark from "@/assets/logo-shemer-dark.webp";
 import logoLight from "@/assets/logo-shemer-light.webp";
 
-/** How many of the consultant's own reports Home shows before "הצג הכל". */
-const HOME_ROWS = 5;
-
-/** Shapes of the rows that are coming, so the list does not jump when it lands. */
-function RowSkeletons() {
+/**
+ * A way to a list, and how much is waiting in it.
+ *
+ * Home used to carry five report rows and a search box, which took two
+ * thirds of a phone screen to say what the bar at the bottom already said.
+ * The reports live in their own screen now; these are the doors to it.
+ */
+function HomeDestination({
+  to, icon: Icon, label, count,
+}: {
+  to: string;
+  icon: typeof FileStack;
+  label: string;
+  /** Undefined while the device is still being read. */
+  count?: number;
+}) {
   return (
-    <ul className="space-y-2.5" aria-hidden>
-      {Array.from({ length: 3 }).map((_, i) => (
-        <li
-          key={i}
-          className="h-[76px] animate-pulse rounded-2xl border border-[var(--home-surface-border)] bg-[var(--home-surface)]"
-        />
-      ))}
-    </ul>
-  );
-}
-
-/** An empty screen is an invitation to act, not an apology. */
-function EmptyState({ searching, refreshing, onNew }: { searching: boolean; refreshing: boolean; onNew: () => void }) {
-  if (searching) {
-    return (
-      <p className="rounded-2xl border border-dashed border-[var(--home-surface-border)] px-5 py-8 text-center text-sm text-[var(--home-muted)]">
-        אין דוח בשם הזה.
-      </p>
-    );
-  }
-  if (refreshing) {
-    return (
-      <p className="flex items-center justify-center gap-2 rounded-2xl border border-dashed border-[var(--home-surface-border)] px-5 py-8 text-center text-sm text-[var(--home-muted)]">
-        <Loader2 className="h-4 w-4 animate-spin" />
-        טוען את הדוחות שלך…
-      </p>
-    );
-  }
-  return (
-    <div className="rounded-2xl border border-dashed border-[var(--home-surface-border)] px-5 py-8 text-center">
-      <p className="text-sm text-[var(--home-muted)]">עוד לא יצרת דוחות.</p>
-      <button
-        type="button"
-        onClick={onNew}
-        className="mt-3 text-sm font-bold text-[var(--home-cta-top)] underline-offset-4 hover:underline"
-      >
-        התחל את הדוח הראשון
-      </button>
-    </div>
+    <Link
+      to={to}
+      className="flex h-[4.5rem] items-center gap-4 rounded-[22px] border border-[var(--home-surface-border)] bg-[var(--home-surface)] px-4 transition-colors hover:bg-[var(--home-field)] active:bg-[var(--home-field)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--home-cta-top)]"
+    >
+      <span aria-hidden className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-[var(--home-field)] text-[var(--home-cta-top)]">
+        <Icon className="h-[22px] w-[22px]" />
+      </span>
+      <span className="min-w-0 flex-1">
+        <span className="block text-[17px] font-bold">{label}</span>
+        <span className="mt-0.5 block text-[13px] tabular-nums text-[var(--home-muted)]">
+          {count === undefined ? "טוען…" : count === 1 ? "דוח אחד" : `${count} דוחות`}
+        </span>
+      </span>
+      <ChevronLeft aria-hidden className="h-5 w-5 shrink-0 text-[var(--home-muted)]" />
+    </Link>
   );
 }
 
 const Index = () => {
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, isAdmin } = useAuth();
   const [reports, setReports] = useState<SurveyReport[]>([]);
   const [loading, setLoading] = useState(true);
   const [typeDialogOpen, setTypeDialogOpen] = useState(false);
@@ -87,22 +70,17 @@ const Index = () => {
   // default — the consultant unticks the one they are not certified for.
   const [scopeMatos, setScopeMatos] = useState(true);
   const [scopeService, setScopeService] = useState(true);
-  const [dirtyIds, setDirtyIds] = useState<Set<string>>(new Set());
   // Account id -> display name, used to label reports written by someone else.
   // Only populated with other people's names for owners/admins; RLS returns
   // just the current user's profile to everyone else.
-  const [authors, setAuthors] = useState<Record<string, string>>({});
   // New design (preview users only): compact header, a search box over the
   // list, dense rows, and survey types that open with a single tap.
   const eng = useEngUi();
-  const [query, setQuery] = useState("");
   const theme = useResolvedTheme();
   const isDark = theme === "dark";
   const [settings, setSettings] = useState<ConsultantSettings | null>(null);
   // True only while the first refresh is still in flight, so an empty cache
   // says "loading" rather than "you have no reports".
-  const [refreshing, setRefreshing] = useState(true);
-  const { duplicate, remove, duplicatingId, hiddenIds } = useReportActions(setReports);
 
   // ProtectedRoute (App.tsx) already gates this page on a logged-in user.
   //
@@ -135,10 +113,7 @@ const Index = () => {
         console.error("refreshReports error:", err);
         toast.error(`שגיאה בטעינת הדוחות: ${detail}`);
       })
-      .finally(() => { if (!cancelled) setRefreshing(false); });
 
-    // Best-effort: a failure here only means no author names.
-    listReportAuthors().then(setAuthors).catch(() => setAuthors({}));
     return () => { cancelled = true; };
   }, []);
 
@@ -151,22 +126,6 @@ const Index = () => {
       .catch(() => {});
     return () => { cancelled = true; };
   }, [user?.id]);
-
-  // Show a "pending sync" badge on reports that are saved locally but
-  // haven't reached Supabase yet; re-checked whenever the sync engine runs.
-  useEffect(() => {
-    let cancelled = false;
-    const refresh = () => {
-      Promise.all(reports.map((r) => isDirty(r.id).then((d) => (d ? r.id : null))))
-        .then((ids) => {
-          if (cancelled) return;
-          setDirtyIds(new Set(ids.filter((x): x is string => !!x)));
-        });
-    };
-    refresh();
-    const unsubscribe = subscribeSyncStatus(refresh);
-    return () => { cancelled = true; unsubscribe(); };
-  }, [reports]);
 
   function openNewDialog() {
     setSelectedType(null);
@@ -266,17 +225,9 @@ const Index = () => {
     }
   }
 
-  // Home lists this account's own work. Reports written by colleagues are a
-  // screen of their own — see pages/CompanyReports.
-  const mine = reports
-    .filter((r) => !hiddenIds.has(r.id))
-    .filter((r) => !r.ownerId || r.ownerId === user?.id);
-  const q = query.trim().toLowerCase();
-  const matching = q
-    ? mine.filter((r) => (r.placeName ?? "").toLowerCase().includes(q))
-    : mine;
-  const recent = matching.slice(0, HOME_ROWS);
-  const hidden = matching.length - recent.length;
+  // Only to say how many are waiting behind each door; the reports
+  // themselves are listed in their own screens.
+  const mine = reports.filter((r) => !r.ownerId || r.ownerId === user?.id);
 
   return (
     <AppShell>
@@ -321,69 +272,22 @@ const Index = () => {
           יצירת דוח חדש
         </button>
 
-        <section className="pt-7">
-          <h2 className="text-[17px] font-bold">דוחות אחרונים</h2>
-
-          <div className="relative mt-3">
-            <Search aria-hidden className="pointer-events-none absolute end-4 top-1/2 h-[18px] w-[18px] -translate-y-1/2 text-[var(--home-muted)]" />
-            <input
-              type="search"
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              placeholder="חיפוש דוח לפי שם"
-              aria-label="חיפוש דוח לפי שם"
-              className="h-12 w-full rounded-2xl border border-[var(--home-surface-border)] bg-[var(--home-field)] pe-12 ps-10 text-[15px] placeholder:text-[var(--home-muted)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--home-cta-top)] [&::-webkit-search-cancel-button]:hidden"
+        <nav className="mt-7 grid gap-3" aria-label="רשימות הדוחות">
+          <HomeDestination
+            to="/my-reports"
+            icon={FileStack}
+            label="הדוחות שלי"
+            count={loading ? undefined : mine.length}
+          />
+          {isAdmin && (
+            <HomeDestination
+              to="/company-reports"
+              icon={Building2}
+              label="דוחות החברה"
+              count={loading ? undefined : reports.length}
             />
-            {query && (
-              <button
-                type="button"
-                onClick={() => setQuery("")}
-                aria-label="נקה חיפוש"
-                className="absolute start-3 top-1/2 grid h-7 w-7 -translate-y-1/2 place-items-center rounded-full text-[var(--home-muted)] hover:bg-[var(--home-surface)] hover:text-foreground"
-              >
-                <X className="h-4 w-4" />
-              </button>
-            )}
-          </div>
-
-          <div className="mt-3">
-            {loading ? (
-              <RowSkeletons />
-            ) : recent.length === 0 ? (
-              <EmptyState searching={!!q} refreshing={refreshing} onNew={openNewDialog} />
-            ) : (
-              <ul className="home-enter space-y-2.5">
-                {recent.map((r) => (
-                  <ReportRow
-                    key={r.id}
-                    report={r}
-                    isDark={isDark}
-                    pendingSync={dirtyIds.has(r.id)}
-                    onDelete={remove}
-                    onDuplicate={duplicate}
-                    duplicating={duplicatingId === r.id}
-                  />
-                ))}
-              </ul>
-            )}
-          </div>
-
-          {/* Always here, whether or not five rows filled the screen: the
-              full list is the way to every older report, and a way out that
-              appears only sometimes is one the hand stops reaching for. */}
-          <Link
-            to={q ? `/my-reports?q=${encodeURIComponent(query.trim())}` : "/my-reports"}
-            className="mt-3 flex h-12 w-full items-center justify-center gap-1.5 rounded-2xl border border-[var(--home-surface-border)] bg-[var(--home-surface)] text-[15px] font-semibold transition-colors hover:bg-[var(--home-field)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--home-cta-top)]"
-          >
-            הצג הכל
-            {hidden > 0 && (
-              <span className="text-[13px] font-normal tabular-nums text-[var(--home-muted)]">
-                ועוד {hidden}
-              </span>
-            )}
-            <ChevronLeft className="h-4 w-4" aria-hidden />
-          </Link>
-        </section>
+          )}
+        </nav>
       </div>
 
       {/* Survey type selection dialog */}
