@@ -1,7 +1,7 @@
 import { useCallback, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
-import { deleteReport, duplicateReport } from "@/lib/storage";
+import { deleteReport, duplicateReport, getReport, saveReport } from "@/lib/storage";
 import { scheduleDelete, undoDelete, UNDO_WINDOW_MS } from "@/lib/undo-delete";
 import { SurveyReport } from "@/lib/types";
 
@@ -81,5 +81,25 @@ export function useReportActions(
     });
   }, [setReports]);
 
-  return { duplicate, remove, duplicatingId, hiddenIds };
+  /**
+   * The coloured mark on a report. Written straight through to the report,
+   * and shown at once — a mark that waits for the network is a mark pressed
+   * twice.
+   */
+  const setMark = useCallback(async (id: string, mark: SurveyReport["mark"]) => {
+    setReports((prev) => prev.map((r) => (r.id === id ? { ...r, mark } : r)));
+    let previous: SurveyReport["mark"];
+    try {
+      const full = await getReport(id);
+      if (!full) throw new Error("הדוח לא נמצא");
+      previous = full.mark;   // what to put back, from the report itself
+      await saveReport({ ...full, mark });
+    } catch (err) {
+      console.error("[mark] failed", err);
+      setReports((prev) => prev.map((r) => (r.id === id ? { ...r, mark: previous } : r)));
+      toast.error("לא הצלחתי לשמור את הסימון");
+    }
+  }, [setReports]);
+
+  return { duplicate, remove, setMark, duplicatingId, hiddenIds };
 }

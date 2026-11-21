@@ -8,8 +8,11 @@ import { useAuth } from "@/contexts/AuthContext";
 import { isDirty } from "@/lib/offline-db";
 import { cachedReports, listReportAuthors, refreshReports } from "@/lib/storage";
 import { useReportActions } from "@/hooks/use-report-actions";
+import { ReportListControls } from "@/components/ReportListControls";
+import { arrangeReports, SortKey } from "@/lib/report-sort";
+import { MarkFilter } from "@/lib/report-mark";
 import { subscribeSyncStatus } from "@/lib/sync-engine";
-import { getSurveyType, SurveyReport } from "@/lib/types";
+import { getSurveyType, SurveyReport, SurveyType } from "@/lib/types";
 
 /**
  * The full list, used by both "הדוחות שלי" and "דוחות החברה". One screen with
@@ -38,7 +41,10 @@ export function ReportListScreen({
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(true);
   const [query, setQuery] = useState(params.get("q") ?? "");
-  const { duplicate, remove, duplicatingId, hiddenIds } = useReportActions(setReports);
+  const [sort, setSort] = useState<SortKey>("updated");
+  const [typeFilter, setTypeFilter] = useState<SurveyType | undefined>(undefined);
+  const [markFilter, setMarkFilter] = useState<MarkFilter>("all");
+  const { duplicate, remove, setMark, duplicatingId, hiddenIds } = useReportActions(setReports);
 
   useEffect(() => {
     let cancelled = false;
@@ -69,20 +75,24 @@ export function ReportListScreen({
     return authors[r.ownerId] || "עובד אחר";
   }, [authors, user?.id]);
 
-  const visible = useMemo(() => {
+  /** Everything this screen is about, before any search or filter. */
+  const scoped = useMemo(() => {
     const live = reports.filter((r) => !hiddenIds.has(r.id));
-    const scoped = scope === "mine"
+    return scope === "mine"
       ? live.filter((r) => !r.ownerId || r.ownerId === user?.id)
       : live;
-    const q = query.trim().toLowerCase();
-    if (!q) return scoped;
-    return scoped.filter((r) => {
+  }, [reports, hiddenIds, scope, user?.id]);
+
+  const visible = useMemo(() => {
+    return arrangeReports(scoped, { query, sort, type: typeFilter, mark: markFilter }, (r) => {
       const config = getSurveyType(r.surveyType);
       const fields = [r.placeName, r.address, config.label, config.shortLabel];
       if (showAuthor) fields.push(authorName(r));
-      return fields.some((value) => (value ?? "").toLowerCase().includes(q));
+      return fields;
     });
-  }, [reports, scope, query, user?.id, showAuthor, authorName, hiddenIds]);
+  }, [scoped, query, sort, typeFilter, markFilter, showAuthor, authorName]);
+
+  const narrowed = !!typeFilter || markFilter !== "all" || query.trim() !== "";
 
   function onQuery(next: string) {
     setQuery(next);
@@ -99,9 +109,9 @@ export function ReportListScreen({
           <h1 className="text-[22px] font-extrabold tracking-[-0.01em]">{title}</h1>
           {!loading && (
             <span className="text-[13px] tabular-nums text-[var(--home-muted)]">
-              {visible.length === reports.length || query.trim() === ""
-                ? `${visible.length}`
-                : `${visible.length} מתוך ${reports.length}`}
+              {narrowed && visible.length !== scoped.length
+                ? `${visible.length} מתוך ${scoped.length}`
+                : `${visible.length}`}
             </span>
           )}
         </header>
@@ -128,6 +138,16 @@ export function ReportListScreen({
           )}
         </div>
 
+        <ReportListControls
+          sort={sort}
+          onSort={setSort}
+          type={typeFilter}
+          onType={setTypeFilter}
+          mark={markFilter}
+          onMark={setMarkFilter}
+          isDark={isDark}
+        />
+
         <div className="mt-3">
           {loading ? (
             <p className="flex items-center justify-center gap-2 py-12 text-sm text-[var(--home-muted)]">
@@ -136,7 +156,7 @@ export function ReportListScreen({
             </p>
           ) : visible.length === 0 ? (
             <p className="rounded-2xl border border-dashed border-[var(--home-surface-border)] px-5 py-10 text-center text-sm text-[var(--home-muted)]">
-              {query.trim() ? "אין דוח שתואם לחיפוש." : refreshing ? "טוען…" : emptyText}
+              {narrowed ? "אין דוח שתואם לסינון." : refreshing ? "טוען…" : emptyText}
             </p>
           ) : (
             <ul className="space-y-2.5">
@@ -150,6 +170,7 @@ export function ReportListScreen({
                   onDelete={remove}
                   onDuplicate={duplicate}
                   duplicating={duplicatingId === r.id}
+                  onMark={setMark}
                 />
               ))}
             </ul>

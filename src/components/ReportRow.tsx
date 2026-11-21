@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
-import { Copy, FileText, Loader2, MoreHorizontal, Pencil, Trash2, User } from "lucide-react";
+import { Circle, Copy, FileText, Loader2, MoreHorizontal, Pencil, Trash2, User } from "lucide-react";
+import { markColor, markLabel, nextMark } from "@/lib/report-mark";
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
@@ -17,7 +18,7 @@ import { getSurveyType, SurveyReport } from "@/lib/types";
  * colour-coded signal in the list would only make the type colour mean less.
  */
 export function ReportRow({
-  report, isDark, authorName, pendingSync, onDelete, onDuplicate, duplicating,
+  report, isDark, authorName, pendingSync, onDelete, onDuplicate, duplicating, onMark,
 }: {
   report: SurveyReport;
   isDark: boolean;
@@ -28,6 +29,8 @@ export function ReportRow({
   onDuplicate?: (id: string) => void;
   /** True while this report's copy is being made. */
   duplicating?: boolean;
+  /** Pressing the mark asks for the next one; undefined hides the control. */
+  onMark?: (id: string, mark: SurveyReport["mark"]) => void;
 }) {
   const config = getSurveyType(report.surveyType);
   const color = surveyColor(report.surveyType, isDark);
@@ -84,7 +87,10 @@ export function ReportRow({
         </span>
       </Link>
 
-      <RowMenu reportId={report.id} onDelete={onDelete} onDuplicate={onDuplicate} duplicating={duplicating} />
+      <span className="flex shrink-0 flex-col items-center justify-center gap-0.5 pe-0.5">
+        {onMark && <MarkButton report={report} isDark={isDark} onMark={onMark} />}
+        <RowMenu reportId={report.id} onDelete={onDelete} onDuplicate={onDuplicate} duplicating={duplicating} />
+      </span>
     </li>
   );
 }
@@ -137,7 +143,7 @@ function RowMenu({
     <DropdownMenu>
       <DropdownMenuTrigger
         className={cn(
-          "grid w-10 shrink-0 place-items-center rounded-2xl text-[var(--home-muted)] transition-colors",
+          "grid h-8 w-9 shrink-0 place-items-center rounded-xl text-[var(--home-muted)] transition-colors",
           "hover:bg-[var(--home-field)] hover:text-foreground",
           "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--home-cta-top)]",
         )}
@@ -175,6 +181,48 @@ function RowMenu({
         )}
       </DropdownMenuContent>
     </DropdownMenu>
+  );
+}
+
+/**
+ * The mark, as a dot that can be pressed.
+ *
+ * Green, red, or nothing at all, and what the two colours mean is the
+ * consultant's own business — done and not done, approved and rejected,
+ * paid and unpaid. One press moves to the next, and round again, so there
+ * is nothing to learn and nothing to undo but another press.
+ *
+ * It sits beside the three-dot menu rather than inside it: the menu is
+ * three entries and stays three, and a mark that takes two taps and a
+ * reading step is a mark nobody keeps up to date.
+ */
+function MarkButton({
+  report, isDark, onMark,
+}: {
+  report: SurveyReport;
+  isDark: boolean;
+  onMark: (id: string, mark: SurveyReport["mark"]) => void;
+}) {
+  const mark = report.mark;
+  const color = mark ? markColor(mark, isDark) : undefined;
+  return (
+    <button
+      type="button"
+      onClick={() => onMark(report.id, nextMark(mark))}
+      aria-label={`${markLabel(mark)} — לחיצה משנה`}
+      title={markLabel(mark)}
+      className={cn(
+        "grid h-8 w-9 shrink-0 place-items-center rounded-xl transition-colors",
+        "hover:bg-[var(--home-field)]",
+        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--home-cta-top)]",
+      )}
+    >
+      {mark ? (
+        <span className="h-[14px] w-[14px] rounded-full" style={{ background: color }} />
+      ) : (
+        <Circle className="h-[14px] w-[14px] text-[var(--home-surface-border)]" strokeWidth={2.5} />
+      )}
+    </button>
   );
 }
 
