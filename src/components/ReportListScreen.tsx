@@ -6,10 +6,10 @@ import { ReportRow } from "@/components/ReportRow";
 import { useResolvedTheme } from "@/hooks/use-theme";
 import { useAuth } from "@/contexts/AuthContext";
 import { isDirty } from "@/lib/offline-db";
-import { cachedReports, deleteReport, listReportAuthors, refreshReports } from "@/lib/storage";
+import { cachedReports, listReportAuthors, refreshReports } from "@/lib/storage";
+import { useReportActions } from "@/hooks/use-report-actions";
 import { subscribeSyncStatus } from "@/lib/sync-engine";
 import { getSurveyType, SurveyReport } from "@/lib/types";
-import { toast } from "sonner";
 
 /**
  * The full list, used by both "הדוחות שלי" and "דוחות החברה". One screen with
@@ -38,6 +38,7 @@ export function ReportListScreen({
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(true);
   const [query, setQuery] = useState(params.get("q") ?? "");
+  const { duplicate, remove, duplicatingId, hiddenIds } = useReportActions(setReports);
 
   useEffect(() => {
     let cancelled = false;
@@ -69,9 +70,10 @@ export function ReportListScreen({
   }, [authors, user?.id]);
 
   const visible = useMemo(() => {
+    const live = reports.filter((r) => !hiddenIds.has(r.id));
     const scoped = scope === "mine"
-      ? reports.filter((r) => !r.ownerId || r.ownerId === user?.id)
-      : reports;
+      ? live.filter((r) => !r.ownerId || r.ownerId === user?.id)
+      : live;
     const q = query.trim().toLowerCase();
     if (!q) return scoped;
     return scoped.filter((r) => {
@@ -80,18 +82,7 @@ export function ReportListScreen({
       if (showAuthor) fields.push(authorName(r));
       return fields.some((value) => (value ?? "").toLowerCase().includes(q));
     });
-  }, [reports, scope, query, user?.id, showAuthor, authorName]);
-
-  async function remove(id: string) {
-    if (!confirm("למחוק את הדוח?")) return;
-    try {
-      await deleteReport(id);
-      setReports((prev) => prev.filter((r) => r.id !== id));
-      toast.success("הדוח נמחק");
-    } catch {
-      toast.error("שגיאה במחיקת הדוח");
-    }
-  }
+  }, [reports, scope, query, user?.id, showAuthor, authorName, hiddenIds]);
 
   function onQuery(next: string) {
     setQuery(next);
@@ -157,6 +148,8 @@ export function ReportListScreen({
                   authorName={showAuthor ? authorName(r) : undefined}
                   pendingSync={dirtyIds.has(r.id)}
                   onDelete={remove}
+                  onDuplicate={duplicate}
+                  duplicating={duplicatingId === r.id}
                 />
               ))}
             </ul>
