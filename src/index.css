@@ -554,7 +554,32 @@ button:active, a:active { opacity: 0.85; }
    of these tokens, so a generated PDF is the same either way.
    ============================================================ */
 
+/* Shape, not colour: the same in either theme. */
 html.eng-ui {
+  --radius: 4px;
+  --r-sm: 2px;
+  --r-md: 3px;
+  --r-lg: 4px;
+  --r-xl: 4px;
+  --r-2xl: 4px;
+  --r-3xl: 6px;
+
+  --shadow-sm: none;
+  --shadow-md: 0 1px 2px hsl(222 24% 11% / 0.08);
+  --shadow-lg: 0 4px 14px -4px hsl(222 24% 11% / 0.28);
+  --shadow-glow: none;
+}
+
+/*
+ * The colours, and only in the light theme.
+ *
+ * `html.eng-ui` outranks `.dark`, so while these sat in the block above
+ * they won in dark mode too: --foreground became near-black and the two
+ * preview accounts read black text on a black screen — the greeting and
+ * "דוחות אחרונים" vanished. Dark mode now keeps the dark palette, and
+ * these apply where they were meant to.
+ */
+html.eng-ui:not(.dark) {
   --background: 220 14% 94%;
   --foreground: 222 24% 11%;
   --card: 0 0% 100%;
@@ -582,23 +607,10 @@ html.eng-ui {
   --input: 220 12% 74%;
   --ring: 211 100% 42%;
 
-  --radius: 4px;
-  --r-sm: 2px;
-  --r-md: 3px;
-  --r-lg: 4px;
-  --r-xl: 4px;
-  --r-2xl: 4px;
-  --r-3xl: 6px;
-
   --header-bg: 220 16% 13%;
   --gradient-primary: hsl(var(--header-bg));
   --gradient-hero: hsl(var(--header-bg));
   --gradient-soft: hsl(var(--background));
-
-  --shadow-sm: none;
-  --shadow-md: 0 1px 2px hsl(222 24% 11% / 0.08);
-  --shadow-lg: 0 4px 14px -4px hsl(222 24% 11% / 0.28);
-  --shadow-glow: none;
 }
 
 /* Figures line up in columns: costs, counts, dates, IDs. */
@@ -657,7 +669,8 @@ html.eng-ui {
 }
 
 /* ── Surfaces: borders carry the structure, not shadows ──────────────── */
-.eng-ui body { background: hsl(var(--background)); }
+/* Light only: in dark mode the page keeps the gradient every screen uses. */
+.eng-ui:not(.dark) body { background: hsl(var(--background)); }
 
 /* Section headings inside the report editor read as drawing-sheet labels. */
 .eng-ui h3.text-xs.text-primary {

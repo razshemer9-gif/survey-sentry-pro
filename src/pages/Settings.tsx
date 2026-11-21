@@ -41,6 +41,10 @@ export default function Settings() {
   const { user, isAdmin } = useAuth();
   const [s, setS] = useState<ConsultantSettings | null>(null);
   const [savingType, setSavingType] = useState<SurveyType | null>(null);
+  const [savingAccount, setSavingAccount] = useState(false);
+  /** What the display name was when it last reached the server, so the
+   *  button beside it is live only when there is something to save. */
+  const [savedDisplayName, setSavedDisplayName] = useState("");
   const canPreview = useCanPreviewEngUi();
   const eng = useEngUi();
   // New design: reopen on the tab used last time — most consultants work in
@@ -59,7 +63,10 @@ export default function Settings() {
 
   useEffect(() => {
     if (!user) return;
-    loadUserSettings(user.id).then(setS);
+    loadUserSettings(user.id).then((loaded) => {
+      setS(loaded);
+      setSavedDisplayName(loaded.displayName ?? "");
+    });
   }, [user]);
 
   if (!s) return null;
@@ -92,6 +99,20 @@ export default function Settings() {
       toast.error("שגיאה בשמירת ההגדרות");
     } finally {
       setSavingType(null);
+    }
+  };
+
+  const handleSaveAccount = async () => {
+    if (!user || !s) return;
+    setSavingAccount(true);
+    try {
+      await saveUserSettings(user.id, s);
+      setSavedDisplayName(s.displayName ?? "");
+      toast.success("השם נשמר");
+    } catch {
+      toast.error("שגיאה בשמירת השם");
+    } finally {
+      setSavingAccount(false);
     }
   };
 
@@ -230,18 +251,6 @@ export default function Settings() {
                     below instead of the generic professional fields. ── */}
                 {id !== "accessibility_form_8" && (
                 <>
-                <Field label="שם לתצוגה">
-                  <Input
-                    placeholder="איך לפנות אליך במסך הבית"
-                    value={s.displayName ?? ""}
-                    onChange={(e) =>
-                      setS((prev) =>
-                        prev ? { ...prev, displayName: e.target.value || undefined } : prev,
-                      )
-                    }
-                  />
-                </Field>
-
                 <Field label="שם בעל המקצוע">
                   <Input
                     placeholder="שם מלא"
@@ -602,22 +611,55 @@ export default function Settings() {
           })}
         </Tabs>
 
-        <div className="mt-6 flex items-center justify-between gap-3 rounded-2xl border border-border bg-card px-4 py-3">
-          <span className="text-sm font-semibold">מצב תצוגה</span>
-          <ThemeToggle />
-        </div>
+        {/* Yours, not a report's.
+            The display name sat inside the survey-type tabs, among the
+            fields that are printed on a דוח, which read as though each
+            survey type could be greeted differently. It belongs here, with
+            the other two things that are about you and not about a report:
+            which theme you see, and the way out. */}
+        <section className="mt-6 space-y-3 rounded-2xl border border-border bg-card p-4">
+          <h2 className="text-sm font-bold">החשבון שלך</h2>
 
-        {/* Signing out used to sit in the bar at the bottom of every screen,
-            one slip away from the button beside it. It belongs here. */}
-        <Button
-          onClick={handleSignOut}
-          variant="outline"
-          size="lg"
-          className="mt-3 w-full gap-2 rounded-2xl text-destructive hover:bg-destructive/10 hover:text-destructive"
-        >
-          <LogOut className="h-5 w-5" />
-          יציאה מהחשבון
-        </Button>
+          <Field label="שם לתצוגה">
+            <div className="flex gap-2">
+              <Input
+                className="flex-1"
+                placeholder="איך לפנות אליך במסך הבית"
+                value={s.displayName ?? ""}
+                onChange={(e) =>
+                  setS((prev) =>
+                    prev ? { ...prev, displayName: e.target.value || undefined } : prev,
+                  )
+                }
+              />
+              <Button
+                onClick={handleSaveAccount}
+                disabled={savingAccount || (s.displayName ?? "") === savedDisplayName}
+                className="shrink-0 gap-2 rounded-xl"
+              >
+                <Save className="h-4 w-4" />
+                {savingAccount ? "שומר..." : "שמירה"}
+              </Button>
+            </div>
+          </Field>
+
+          <div className="flex items-center justify-between gap-3 pt-1">
+            <span className="text-sm font-semibold">מצב תצוגה</span>
+            <ThemeToggle />
+          </div>
+
+          {/* Signing out used to sit in the bar at the bottom of every
+              screen, one slip away from the button beside it. */}
+          <Button
+            onClick={handleSignOut}
+            variant="outline"
+            size="lg"
+            className="w-full gap-2 rounded-2xl text-destructive hover:bg-destructive/10 hover:text-destructive"
+          >
+            <LogOut className="h-5 w-5" />
+            יציאה מהחשבון
+          </Button>
+        </section>
 
         <p className="pb-2 pt-4 text-center text-xs text-muted-foreground">
           ההגדרות נשמרות בענן ומשויכות לחשבונך
