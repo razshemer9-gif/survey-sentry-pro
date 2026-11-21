@@ -14,6 +14,7 @@ import { PhotoPicker } from "@/components/PhotoPicker";
 import { ConsultantSettings, SurveyReportFormat, SurveyType, SURVEY_TYPES } from "@/lib/types";
 import { ELEMENT_STABILITY_DEFAULT_TERMS } from "@/lib/element-stability";
 import { loadUserSettings, saveUserSettings } from "@/lib/storage";
+import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
 import { Switch } from "@/components/ui/switch";
 import { useCanPreviewEngUi, useEngUi } from "@/hooks/use-eng-ui";
@@ -501,6 +502,57 @@ export default function Settings() {
 
                     <p className="text-xs text-muted-foreground">
                       הפרטים האלה יועתקו אוטומטית לכל טופס 8 חדש שתיצור. שינוי כאן לא ישפיע על טפסים שכבר נוצרו.
+                    </p>
+                  </div>
+                )}
+
+                {/* ── Welfare inspection: the inspector's own details, entered
+                    once and filled into every new report of this type. ── */}
+                {id === "welfare_inspection" && (
+                  <div className="space-y-5 rounded-2xl border-2 border-primary/20 bg-card p-4">
+                    <div>
+                      <h3 className="font-bold text-sm text-primary">פרטי עורך המבדק</h3>
+                      <p className="mt-1 text-xs text-muted-foreground">
+                        השם, הטלפון והדוא״ל נלקחים מפרטי החשבון שלמעלה. כאן רק מה שמיוחד למבדק הרווחה.
+                      </p>
+                      <div className="mt-3 space-y-4">
+                        <Field label="מספר תעודת זהות">
+                          <Input value={fmt.welfareInspectorId ?? ""} onChange={(e) => upd({ welfareInspectorId: e.target.value || undefined })} dir="ltr" inputMode="numeric" />
+                        </Field>
+                        <Field label="מספר תעודת רישום">
+                          <Input value={fmt.welfareRegistrationNum ?? ""} onChange={(e) => upd({ welfareRegistrationNum: e.target.value || undefined })} dir="ltr" />
+                        </Field>
+                        <Field label="שנות ותק">
+                          <Input value={fmt.welfareInspectorYearsExperience ?? ""} onChange={(e) => upd({ welfareInspectorYearsExperience: e.target.value || undefined })} dir="ltr" inputMode="numeric" placeholder="למשל: 10" />
+                        </Field>
+                        <Field label="הגדרת הכשירות">
+                          <div className="flex flex-col gap-2">
+                            {([
+                              { v: "safety_engineer", label: "מהנדס בטיחות רשום" },
+                              { v: "safety_officer", label: "ממונה על הבטיחות (יש לצרף אישור כשירות בתוקף)" },
+                              { v: "school_safety_inspector", label: "עורך מבדקי בטיחות של מוסדות חינוך" },
+                            ] as const).map(({ v, label }) => (
+                              <button
+                                key={v}
+                                type="button"
+                                onClick={() => upd({ welfareQualification: fmt.welfareQualification === v ? undefined : v })}
+                                className={cn(
+                                  "rounded-lg border py-2 px-3 text-xs font-semibold text-right transition-colors",
+                                  fmt.welfareQualification === v
+                                    ? "bg-primary text-primary-foreground border-primary"
+                                    : "bg-background text-muted-foreground border-border hover:border-primary/50"
+                                )}
+                              >
+                                {label}
+                              </button>
+                            ))}
+                          </div>
+                        </Field>
+                      </div>
+                    </div>
+
+                    <p className="text-xs text-muted-foreground">
+                      הפרטים האלה ימולאו אוטומטית בכל מבדק רווחה חדש, וניתן לשנות אותם בתוך הדוח. שינוי כאן לא ישפיע על דוחות שכבר נוצרו.
                     </p>
                   </div>
                 )}

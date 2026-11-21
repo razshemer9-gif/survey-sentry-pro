@@ -314,6 +314,14 @@ export interface SurveyReportFormat {
   accessibilityServiceRegistrationNumber?: string;
   accessibilityServiceRegistryName?: string;
   accessibilityExpertSignature?: string; // dataURL, PNG עם רקע שקוף עדיף
+  // ── Welfare inspection (מבדק משרד הרווחה) — the inspector's own details,
+  // entered once and filled into each new report (see lib/welfare-prefill).
+  // Name, telephone and e-mail are not here: they are the account's own, up
+  // in ConsultantSettings, where every other report already reads them. ──
+  welfareInspectorId?: string;
+  welfareQualification?: "safety_engineer" | "safety_officer" | "school_safety_inspector";
+  welfareRegistrationNum?: string;
+  welfareInspectorYearsExperience?: string;
 }
 
 export interface ConsultantSettings {

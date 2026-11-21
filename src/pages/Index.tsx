@@ -9,6 +9,7 @@ import {
 import { accessibilityScopeLabel, scopeFromChecks } from "@/lib/accessibility-scope";
 import { deleteReport, getLastRefreshError, listReportAuthors, listReports, loadStartingItems, loadUserSettings, newReport, saveReport } from "@/lib/storage";
 import { isDirty } from "@/lib/offline-db";
+import { welfareInspectorPrefill } from "@/lib/welfare-prefill";
 import { subscribeSyncStatus } from "@/lib/sync-engine";
 import { getSurveyType, SURVEY_TYPES, SurveyReport, SurveyType } from "@/lib/types";
 import { formatHebrewDate } from "@/lib/image";
@@ -135,9 +136,26 @@ const Index = () => {
         return;
       }
 
-      // education_safety, welfare_inspection, element_stability and risk_survey
-      // start empty (no template needed)
-      if (selectedType === "education_safety" || selectedType === "welfare_inspection" || selectedType === "element_stability" || selectedType === "risk_survey") {
+      // A welfare inspection asks for the inspector's own details — name,
+      // identity number, qualification, registration number, telephone,
+      // e-mail, years of experience — and they are the same on every one.
+      // They come from the account; see lib/welfare-prefill for what the
+      // retyping had been costing.
+      if (selectedType === "welfare_inspection") {
+        const settings = user ? await loadUserSettings(user.id) : null;
+        const draft = {
+          ...newReport(selectedType),
+          ...(settings ? welfareInspectorPrefill(settings) : {}),
+        };
+        const r = await saveReport(draft);
+        setTypeDialogOpen(false);
+        navigate(`/report/${r.id}`);
+        return;
+      }
+
+      // education_safety, element_stability and risk_survey start empty
+      // (no template needed)
+      if (selectedType === "education_safety" || selectedType === "element_stability" || selectedType === "risk_survey") {
         const r = await saveReport(newReport(selectedType));
         setTypeDialogOpen(false);
         navigate(`/report/${r.id}`);
