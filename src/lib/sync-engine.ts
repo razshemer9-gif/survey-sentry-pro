@@ -3,9 +3,9 @@
 // (see storage.ts); this module is what eventually reconciles them with
 // the server.
 import { toast } from "sonner";
-import { getDirtyRows, markSynced, removeCachedReport } from "./offline-db";
+import { getDirtyRows, markSynced, putCachedReport, removeCachedReport } from "./offline-db";
 import { supabase } from "./supabase";
-import { remoteDeleteReport, remoteOldestOwnReports, remoteSaveReport } from "./reports-remote";
+import { remoteDeleteReport, remoteOldestOwnReports, remoteSaveReport, SaveOutcome } from "./reports-remote";
 import { isOutOfSpace, MAX_EVICTIONS_PER_SAVE, pickEviction } from "./storage-pressure";
 import { SurveyReport } from "./types";
 
@@ -56,8 +56,24 @@ export async function syncPendingReports(): Promise<void> {
             await remoteDeleteReport(row.id);
             await removeCachedReport(row.id);
           } else {
-            await saveMakingRoomIfNeeded(row.report, unsent);
-            await markSynced(row.id);
+            const outcome = await saveMakingRoomIfNeeded(row.report, unsent);
+            if (outcome.status === "stale") {
+              // Somebody saved this report after this device last had it.
+              // The newer one wins: the server's copy replaces what is held
+              // here, and the consultant is told rather than left to find out
+              // from a report that silently went backwards.
+              await putCachedReport(outcome.report, false, userId);
+              console.warn("[sync] a newer copy was on the server", row.id, {
+                here: row.report.updatedAt, server: outcome.report.updatedAt,
+              });
+              toast.warning(
+                `הדוח "${outcome.report.placeName?.trim() || "ללא שם"}" נערך במקום אחר אחרי העותק שבמכשיר הזה. ` +
+                `נטענה הגרסה העדכנית, והשינויים שנעשו כאן מאז לא נשמרו.`,
+                { duration: 12_000 },
+              );
+            } else {
+              await markSynced(row.id);
+            }
           }
         } catch {
           // stays dirty — will retry on the next trigger
@@ -82,11 +98,10 @@ export async function syncPendingReports(): Promise<void> {
  * only ever runs on an error that means "no room"; see ./storage-pressure
  * for how narrowly that is read, and why.
  */
-async function saveMakingRoomIfNeeded(report: SurveyReport, unsent: Set<string>): Promise<void> {
+async function saveMakingRoomIfNeeded(report: SurveyReport, unsent: Set<string>): Promise<SaveOutcome> {
   for (let attempt = 0; ; attempt++) {
     try {
-      await remoteSaveReport(report);
-      return;
+      return await remoteSaveReport(report);
     } catch (err) {
       if (!isOutOfSpace(err) || attempt >= MAX_EVICTIONS_PER_SAVE) throw err;
 
