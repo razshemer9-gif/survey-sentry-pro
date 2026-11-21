@@ -1,0 +1,1 @@
+import{n}from"./index-BdQAJ2Cr.js";async function o(a,s){const{data:r,error:t}=await n.auth.signInWithPassword({email:a,password:s});if(t)throw t;return r}async function u(){const{error:a}=await n.auth.signOut();if(a)throw a}export{o as a,u as s};
