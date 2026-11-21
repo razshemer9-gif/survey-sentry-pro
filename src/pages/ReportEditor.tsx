@@ -508,13 +508,13 @@ export default function ReportEditor() {
       {/* In the new design this is a pinned toolbar: back, save and the
           save state stay in reach while scrolling a long report. */}
       <header className={cn(
-        "brand-gradient text-primary-foreground px-4 pb-5 pt-4 safe-top shadow-elev",
+        "brand-gradient text-white px-4 pb-5 pt-4 safe-top shadow-elev",
         eng && "editor-toolbar sticky top-0 z-20 px-3 pb-2.5 pt-2.5",
       )}>
         <div className={cn("flex items-center justify-between", eng && "gap-2")}>
           <button
             onClick={handleExit}
-            className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-white/15 hover:bg-white/25"
+            className="toolbar-action grid h-10 w-10 shrink-0 place-items-center rounded-full transition-colors"
             aria-label="חזור"
           >
             <ArrowRight className="h-5 w-5" />
@@ -531,7 +531,7 @@ export default function ReportEditor() {
           </div>
           <button
             onClick={handleSave}
-            className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-white/15 hover:bg-white/25"
+            className="toolbar-action toolbar-action-primary grid h-10 w-10 shrink-0 place-items-center rounded-full transition-colors active:scale-95"
             aria-label="שמור"
           >
             <Save className="h-5 w-5" />
@@ -2098,7 +2098,7 @@ export default function ReportEditor() {
             <button
               type="button"
               onClick={() => setViewerOpen(false)}
-              className="grid h-10 w-10 place-items-center rounded-full bg-white/15 active:bg-white/25"
+              className="toolbar-action grid h-10 w-10 place-items-center rounded-full transition-colors"
               aria-label="סגור"
             >
               <X className="h-5 w-5" />
