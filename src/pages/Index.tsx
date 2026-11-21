@@ -1,24 +1,78 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Plus, FileText, Trash2, Calendar, MapPin, User, Calculator, ExternalLink, Search, X, ChevronLeft } from "lucide-react";
+import { Plus, Calculator, ExternalLink, Search, X, ChevronLeft, Settings as SettingsIcon } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
 import { Button } from "@/components/ui/button";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle,
 } from "@/components/ui/dialog";
 import { accessibilityScopeLabel, scopeFromChecks } from "@/lib/accessibility-scope";
-import { deleteReport, getLastRefreshError, listReportAuthors, listReports, loadStartingItems, loadUserSettings, newReport, saveReport } from "@/lib/storage";
+import { cachedReports, deleteReport, getLastRefreshError, listReportAuthors, loadStartingItems, loadUserSettings, newReport, refreshReports, saveReport } from "@/lib/storage";
 import { isDirty } from "@/lib/offline-db";
 import { welfareInspectorPrefill } from "@/lib/welfare-prefill";
 import { subscribeSyncStatus } from "@/lib/sync-engine";
 import { getSurveyType, SURVEY_TYPES, SurveyReport, SurveyType } from "@/lib/types";
-import { formatHebrewDate } from "@/lib/image";
 import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
 import { canUseStaticCalc, STATIC_CALC_URL } from "@/lib/static-calc-access";
 import { useEngUi } from "@/hooks/use-eng-ui";
+import { useResolvedTheme } from "@/hooks/use-theme";
+import { ThemeToggle } from "@/components/ThemeToggle";
+import { ReportRow } from "@/components/ReportRow";
+import { greeting } from "@/lib/display-name";
+import { ConsultantSettings } from "@/lib/types";
+import logoDark from "@/assets/logo-shemer-dark.webp";
+import logoLight from "@/assets/logo-shemer-light.webp";
+
+/** How many of the consultant's own reports Home shows before "הצג הכל". */
+const HOME_ROWS = 5;
+
+/** Shapes of the rows that are coming, so the list does not jump when it lands. */
+function RowSkeletons() {
+  return (
+    <ul className="space-y-2.5" aria-hidden>
+      {Array.from({ length: 3 }).map((_, i) => (
+        <li
+          key={i}
+          className="h-[76px] animate-pulse rounded-2xl border border-[var(--home-surface-border)] bg-[var(--home-surface)]"
+        />
+      ))}
+    </ul>
+  );
+}
+
+/** An empty screen is an invitation to act, not an apology. */
+function EmptyState({ searching, refreshing, onNew }: { searching: boolean; refreshing: boolean; onNew: () => void }) {
+  if (searching) {
+    return (
+      <p className="rounded-2xl border border-dashed border-[var(--home-surface-border)] px-5 py-8 text-center text-sm text-[var(--home-muted)]">
+        אין דוח בשם הזה.
+      </p>
+    );
+  }
+  if (refreshing) {
+    return (
+      <p className="flex items-center justify-center gap-2 rounded-2xl border border-dashed border-[var(--home-surface-border)] px-5 py-8 text-center text-sm text-[var(--home-muted)]">
+        <Loader2 className="h-4 w-4 animate-spin" />
+        טוען את הדוחות שלך…
+      </p>
+    );
+  }
+  return (
+    <div className="rounded-2xl border border-dashed border-[var(--home-surface-border)] px-5 py-8 text-center">
+      <p className="text-sm text-[var(--home-muted)]">עוד לא יצרת דוחות.</p>
+      <button
+        type="button"
+        onClick={onNew}
+        className="mt-3 text-sm font-bold text-[var(--home-cta-top)] underline-offset-4 hover:underline"
+      >
+        התחל את הדוח הראשון
+      </button>
+    </div>
+  );
+}
 
 const Index = () => {
   const navigate = useNavigate();
@@ -41,17 +95,34 @@ const Index = () => {
   // list, dense rows, and survey types that open with a single tap.
   const eng = useEngUi();
   const [query, setQuery] = useState("");
+  const theme = useResolvedTheme();
+  const isDark = theme === "dark";
+  const [settings, setSettings] = useState<ConsultantSettings | null>(null);
+  // True only while the first refresh is still in flight, so an empty cache
+  // says "loading" rather than "you have no reports".
+  const [refreshing, setRefreshing] = useState(true);
 
-  // ProtectedRoute (App.tsx) already gates this page on a logged-in user —
-  // no need to re-check the session here. listReports() itself is
-  // local-first: it serves the IndexedDB cache even if the network is down.
+  // ProtectedRoute (App.tsx) already gates this page on a logged-in user.
+  //
+  // The device answers first. The screen is drawn, and the New Report button
+  // is usable, from the IndexedDB cache alone — no network in that path at
+  // all. The refresh then runs behind it and updates the list twice: once
+  // when the names arrive, once when the recent reports have been pulled
+  // down in full for offline use. See lib/storage.
   useEffect(() => {
-    listReports()
-      .then((rs) => {
-        setReports(rs);
+    let cancelled = false;
+
+    cachedReports()
+      .then((rs) => { if (!cancelled) setReports(rs); })
+      .catch((err) => console.warn("[home] cache read failed", err))
+      .finally(() => { if (!cancelled) setLoading(false); });
+
+    refreshReports((rs) => { if (!cancelled) setReports(rs); })
+      .then(() => {
+        if (cancelled) return;
         // A refresh that quietly failed leaves stale data on screen — say so,
-        // otherwise "I can't see the other users' reports" looks like a bug in
-        // permissions rather than a connection problem.
+        // otherwise "I can't see the other users' reports" looks like a bug
+        // in permissions rather than a connection problem.
         const refreshErr = getLastRefreshError();
         if (refreshErr) toast.warning(refreshErr, { duration: 8000 });
       })
@@ -59,13 +130,25 @@ const Index = () => {
         const detail = err instanceof Error
           ? err.message
           : (err as { message?: string })?.message ?? JSON.stringify(err);
-        console.error("listReports error:", err);
+        console.error("refreshReports error:", err);
         toast.error(`שגיאה בטעינת הדוחות: ${detail}`);
       })
-      .finally(() => setLoading(false));
-    // Best-effort: a failure here only means no author badges.
+      .finally(() => { if (!cancelled) setRefreshing(false); });
+
+    // Best-effort: a failure here only means no author names.
     listReportAuthors().then(setAuthors).catch(() => setAuthors({}));
+    return () => { cancelled = true; };
   }, []);
+
+  // The greeting's name, and nothing else from settings.
+  useEffect(() => {
+    if (!user?.id) return;
+    let cancelled = false;
+    loadUserSettings(user.id)
+      .then((s) => { if (!cancelled) setSettings(s); })
+      .catch(() => {});
+    return () => { cancelled = true; };
+  }, [user?.id]);
 
   // Show a "pending sync" badge on reports that are saved locally but
   // haven't reached Supabase yet; re-checked whenever the sync engine runs.
@@ -192,265 +275,111 @@ const Index = () => {
     }
   }
 
+  // Home lists this account's own work. Reports written by colleagues are a
+  // screen of their own — see pages/CompanyReports.
+  const mine = reports.filter((r) => !r.ownerId || r.ownerId === user?.id);
   const q = query.trim().toLowerCase();
-  const visibleReports = eng && q
-    ? reports.filter((r) => {
-        const cfg = getSurveyType(r.surveyType);
-        const author = r.ownerId ? authors[r.ownerId] ?? "" : "";
-        return [r.placeName, r.address, cfg.label, cfg.shortLabel, author]
-          .some((v) => (v ?? "").toLowerCase().includes(q));
-      })
-    : reports;
-
-  const authorName = (r: SurveyReport) =>
-    r.ownerId ? (authors[r.ownerId] || (r.ownerId === user?.id ? "אני" : "משתמש אחר")) : "אני";
+  const matching = q
+    ? mine.filter((r) => (r.placeName ?? "").toLowerCase().includes(q))
+    : mine;
+  const recent = matching.slice(0, HOME_ROWS);
+  const hasMore = matching.length > recent.length;
 
   return (
     <AppShell>
-      {eng ? (
-      <header className="hero-gradient text-primary-foreground px-4 pb-3 pt-4 safe-top">
-        <div className="flex items-center justify-between gap-3">
-          <div className="min-w-0">
-            <div className="font-mono text-[10px] tracking-[0.25em] opacity-55">ANS · SURVEYS</div>
-            <h1 className="mt-0.5 text-[17px] font-bold leading-tight">מערכת ניהול סקרים</h1>
-          </div>
-          <Button
-            onClick={openNewDialog}
-            size="sm"
-            className="shrink-0 gap-1.5 bg-primary-glow text-white hover:bg-primary-glow/90"
+      <div className="home-surface px-4 pb-4 safe-top">
+        <header className="flex items-center justify-between gap-3 pt-3">
+          <Link
+            to="/settings"
+            aria-label="הגדרות"
+            className="grid h-10 w-10 place-items-center rounded-2xl border border-[var(--home-surface-border)] bg-[var(--home-field)] text-foreground transition-colors hover:bg-[var(--home-nav-active)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--home-cta-top)]"
           >
-            <Plus className="h-4 w-4" />
-            סקר חדש
-          </Button>
-        </div>
-      </header>
-      ) : (
-      <header className="hero-gradient text-primary-foreground rounded-b-[2rem] px-5 pb-8 pt-10 safe-top shadow-pop">
-        <div className="text-xs tracking-[0.3em] opacity-80">ANS · SURVEYS</div>
-        <h1 className="mt-2 text-2xl font-extrabold leading-tight">מערכת ניהול סקרים מקצועית</h1>
-        <p className="mt-1 text-sm opacity-90">צור, נהל והפק דוחות מקצועיים ישירות מהטלפון</p>
+            <SettingsIcon className="h-5 w-5" />
+          </Link>
 
-        <Button
+          <img
+            src={isDark ? logoDark : logoLight}
+            alt="שמר בטיחות יועצים"
+            width={168}
+            height={85}
+            decoding="async"
+            className="h-[62px] w-auto select-none object-contain"
+          />
+
+          <ThemeToggle />
+        </header>
+
+        <h1 className="mt-4 text-center text-[32px] font-extrabold leading-none tracking-[-0.02em]">
+          {greeting(settings)}
+        </h1>
+
+        <button
+          type="button"
           onClick={openNewDialog}
-          size="lg"
-          variant="secondary"
-          className="mt-6 w-full gap-2 rounded-2xl bg-card text-foreground shadow-elev hover:bg-card/90"
+          className="home-cta mt-6 flex h-16 w-full items-center justify-center gap-3 rounded-[28px] text-[21px] font-extrabold text-white transition-[transform,filter] active:scale-[0.99] active:brightness-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-[var(--home-cta-top)] focus-visible:ring-offset-[hsl(var(--home-bg-top))]"
         >
-          <Plus className="h-5 w-5" />
-          סקר חדש
-        </Button>
-      </header>
-      )}
+          <span aria-hidden className="grid h-9 w-9 place-items-center rounded-xl bg-white/15">
+            <Plus className="h-5 w-5" />
+          </span>
+          יצירת דוח חדש
+        </button>
 
-      {eng ? (
-      <section className="px-3 pt-3">
-        <div className="mb-2 flex items-center gap-2">
-          <div className="relative flex-1">
-            <Search className="pointer-events-none absolute right-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+        <section className="pt-7">
+          <h2 className="text-[17px] font-bold">דוחות אחרונים</h2>
+
+          <div className="relative mt-3">
+            <Search aria-hidden className="pointer-events-none absolute end-4 top-1/2 h-[18px] w-[18px] -translate-y-1/2 text-[var(--home-muted)]" />
             <input
               type="search"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              placeholder="חיפוש: שם, כתובת, סוג סקר, כותב"
-              className="h-9 w-full rounded-md border border-input bg-card pr-8 pl-8 text-sm placeholder:text-muted-foreground focus-visible:outline-none [&::-webkit-search-cancel-button]:hidden"
+              placeholder="חיפוש דוח לפי שם"
+              aria-label="חיפוש דוח לפי שם"
+              className="h-12 w-full rounded-2xl border border-[var(--home-surface-border)] bg-[var(--home-field)] pe-12 ps-10 text-[15px] placeholder:text-[var(--home-muted)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--home-cta-top)] [&::-webkit-search-cancel-button]:hidden"
             />
             {query && (
               <button
                 type="button"
                 onClick={() => setQuery("")}
-                className="absolute left-1.5 top-1/2 grid h-6 w-6 -translate-y-1/2 place-items-center rounded text-muted-foreground hover:bg-muted hover:text-foreground"
                 aria-label="נקה חיפוש"
+                className="absolute start-3 top-1/2 grid h-7 w-7 -translate-y-1/2 place-items-center rounded-full text-[var(--home-muted)] hover:bg-[var(--home-surface)] hover:text-foreground"
               >
-                <X className="h-3.5 w-3.5" />
+                <X className="h-4 w-4" />
               </button>
             )}
           </div>
-          <span className="shrink-0 rounded-sm border border-border bg-card px-2 py-1.5 font-mono text-[11px] text-muted-foreground">
-            {q ? `${visibleReports.length}/${reports.length}` : reports.length}
-          </span>
-        </div>
 
-        {loading ? (
-          <div className="grid place-items-center py-14">
-            <Loader2 className="h-6 w-6 animate-spin text-primary" />
+          <div className="mt-3">
+            {loading ? (
+              <RowSkeletons />
+            ) : recent.length === 0 ? (
+              <EmptyState searching={!!q} refreshing={refreshing} onNew={openNewDialog} />
+            ) : (
+              <ul className="home-enter space-y-2.5">
+                {recent.map((r) => (
+                  <ReportRow
+                    key={r.id}
+                    report={r}
+                    isDark={isDark}
+                    pendingSync={dirtyIds.has(r.id)}
+                    onDelete={remove}
+                  />
+                ))}
+              </ul>
+            )}
           </div>
-        ) : reports.length === 0 ? (
-          <div className="rounded-md border border-dashed border-border bg-card px-6 py-10 text-center text-sm text-muted-foreground">
-            אין דוחות שמורים. לחץ על "סקר חדש" כדי להתחיל.
-          </div>
-        ) : visibleReports.length === 0 ? (
-          <p className="py-10 text-center text-sm text-muted-foreground">אין דוחות התואמים לחיפוש.</p>
-        ) : (
-          <ul className="divide-y divide-border overflow-hidden rounded-md border border-border bg-card">
-            {visibleReports.map((r) => {
-              const cfg = getSurveyType(r.surveyType);
-              const total = r.items.length;
-              const ok = r.items.filter((i) => i.status === "compliant").length;
-              const bad = r.items.filter((i) => i.status === "non_compliant").length;
-              return (
-                <li key={r.id}>
-                  <Link
-                    to={`/report/${r.id}`}
-                    className="relative flex items-stretch gap-3 py-2.5 pe-1.5 ps-3 transition-colors hover:bg-accent/60 active:bg-accent"
-                  >
-                    {/* Survey type: a colour rule down the leading edge. */}
-                    <span className="absolute inset-y-0 start-0 w-[3px]" style={{ background: cfg.color }} />
-                    {r.coverPhoto ? (
-                      <img src={r.coverPhoto} alt="" className="h-12 w-12 flex-shrink-0 rounded-sm border border-border object-cover" />
-                    ) : (
-                      <div className="grid h-12 w-12 flex-shrink-0 place-items-center rounded-sm border border-border bg-muted" style={{ color: cfg.color }}>
-                        <FileText className="h-5 w-5" />
-                      </div>
-                    )}
-                    <div className="min-w-0 flex-1">
-                      <div className="flex items-baseline gap-2">
-                        <span className="truncate text-sm font-bold">{r.placeName || "ללא שם"}</span>
-                        <span className="shrink-0 text-[10px] font-semibold" style={{ color: cfg.color }}>{cfg.shortLabel}</span>
-                      </div>
-                      <div className="mt-0.5 flex items-center gap-x-3 text-[11px] text-muted-foreground">
-                        <span className="tabular shrink-0 font-mono">{formatHebrewDate(r.surveyDate)}</span>
-                        {r.address && <span className="truncate">{r.address}</span>}
-                      </div>
-                      <div className="mt-1 flex items-center gap-2 font-mono text-[10px]">
-                        <span className="text-success">✓{ok}</span>
-                        {bad > 0 && <span className="text-destructive">✕{bad}</span>}
-                        {total > 0 && (
-                          <span className="flex h-1 w-16 overflow-hidden rounded-sm bg-border/60">
-                            <span className="bg-success/70" style={{ width: `${(ok / total) * 100}%` }} />
-                            <span className="bg-destructive/60" style={{ width: `${(bad / total) * 100}%` }} />
-                          </span>
-                        )}
-                        {dirtyIds.has(r.id) && <span className="text-amber-600">⏳ ממתין לסנכרון</span>}
-                        <span className="ms-auto inline-flex items-center gap-1 font-sans text-muted-foreground">
-                          <User className="h-3 w-3" />
-                          {authorName(r)}
-                        </span>
-                      </div>
-                    </div>
-                    <button
-                      onClick={(e) => { e.preventDefault(); remove(r.id); }}
-                      className="grid w-8 flex-shrink-0 place-items-center self-center rounded-sm py-2 text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive"
-                      aria-label="מחק"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </button>
-                  </Link>
-                </li>
-              );
-            })}
-          </ul>
-        )}
-      </section>
-      ) : (
-      <section className="px-5 pt-6">
-        <div className="mb-3 flex items-center justify-between">
-          <h2 className="text-lg font-bold">דוחות אחרונים</h2>
-          <span className="text-xs text-muted-foreground">{reports.length} סה״כ</span>
-        </div>
 
-        {loading ? (
-          <div className="grid place-items-center py-14">
-            <Loader2 className="h-8 w-8 animate-spin text-primary" />
-          </div>
-        ) : reports.length === 0 ? (
-          <div className="grid place-items-center rounded-3xl border-2 border-dashed border-border bg-card/60 px-6 py-14 text-center">
-            <FileText className="mb-3 h-10 w-10 text-muted-foreground/70" />
-            <p className="text-sm text-muted-foreground">אין דוחות שמורים. לחץ על "סקר חדש" כדי להתחיל.</p>
-          </div>
-        ) : (
-          <ul className="space-y-3">
-            {reports.map((r) => {
-              const cfg = getSurveyType(r.surveyType);
-              return (
-                <li key={r.id} className="animate-fade-in">
-                  <Link
-                    to={`/report/${r.id}`}
-                    className="block rounded-2xl border border-border bg-card shadow-soft transition-all duration-200 hover:shadow-elev hover:-translate-y-0.5 active:scale-[0.99] active:shadow-soft overflow-hidden"
-                  >
-                    <div className="flex items-start gap-3 p-4">
-                      {r.coverPhoto ? (
-                        <img src={r.coverPhoto} alt="" className="h-16 w-16 flex-shrink-0 rounded-xl object-cover" />
-                      ) : (
-                        <div
-                          className="grid h-16 w-16 flex-shrink-0 place-items-center rounded-xl text-white"
-                          style={{ background: cfg.color }}
-                        >
-                          <FileText className="h-7 w-7" />
-                        </div>
-                      )}
-                      <div className="min-w-0 flex-1">
-                        <div className="truncate text-base font-bold">{r.placeName || "ללא שם"}</div>
-                        <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
-                          {r.address && (
-                            <span className="inline-flex items-center gap-1">
-                              <MapPin className="h-3 w-3" />
-                              {r.address}
-                            </span>
-                          )}
-                          <span className="inline-flex items-center gap-1">
-                            <Calendar className="h-3 w-3" />
-                            {formatHebrewDate(r.surveyDate)}
-                          </span>
-                        </div>
-                        <div className="mt-2 flex flex-wrap items-center gap-2">
-                          <span
-                            className="inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-semibold text-white"
-                            style={{ background: cfg.color }}
-                          >
-                            {cfg.shortLabel}
-                          </span>
-                          {dirtyIds.has(r.id) && (
-                            <span className="inline-flex items-center gap-1 rounded-full bg-amber-500/10 px-2 py-0.5 text-[10px] font-semibold text-amber-600">
-                              ⏳ ממתין לסנכרון
-                            </span>
-                          )}
-                          <span className="inline-flex items-center gap-1 rounded-full bg-success/10 px-2 py-0.5 text-[10px] font-semibold text-success">
-                            ✓ {r.items.filter((i) => i.status === "compliant").length} תקין
-                          </span>
-                          {r.items.filter((i) => i.status === "non_compliant").length > 0 && (
-                            <span className="inline-flex items-center gap-1 rounded-full bg-destructive/10 px-2 py-0.5 text-[10px] font-semibold text-destructive">
-                              ✕ {r.items.filter((i) => i.status === "non_compliant").length} לא תקין
-                            </span>
-                          )}
-                          {/* Who wrote the report. Shown on every card — including
-                              your own — so the list reads consistently. me-auto
-                              pushes it to the far end of the row (left, in RTL). */}
-                          <span className="me-auto inline-flex items-center gap-1 text-[10px] text-muted-foreground">
-                            <User className="h-3 w-3" />
-                            {r.ownerId
-                              ? (authors[r.ownerId] || (r.ownerId === user?.id ? "אני" : "משתמש אחר"))
-                              : "אני"}
-                          </span>
-                        </div>
-                      </div>
-                      <button
-                        onClick={(e) => { e.preventDefault(); remove(r.id); }}
-                        className="grid h-8 w-8 place-items-center rounded-full text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive"
-                        aria-label="מחק"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </button>
-                    </div>
-                    {r.items.length > 0 && (() => {
-                      const total = r.items.length;
-                      const ok = r.items.filter(i => i.status === "compliant").length;
-                      const bad = r.items.filter(i => i.status === "non_compliant").length;
-                      return (
-                        <div className="flex h-1 w-full overflow-hidden">
-                          <div className="bg-success/60 transition-all" style={{ width: `${(ok / total) * 100}%` }} />
-                          <div className="bg-destructive/50 transition-all" style={{ width: `${(bad / total) * 100}%` }} />
-                          <div className="flex-1 bg-border/40" />
-                        </div>
-                      );
-                    })()}
-                  </Link>
-                </li>
-              );
-            })}
-          </ul>
-        )}
-      </section>
-      )}
+          {hasMore && (
+            <Link
+              to={q ? `/my-reports?q=${encodeURIComponent(query.trim())}` : "/my-reports"}
+              className="mt-3 flex h-12 w-full items-center justify-center gap-1.5 rounded-2xl border border-[var(--home-surface-border)] bg-[var(--home-surface)] text-[15px] font-semibold transition-colors hover:bg-[var(--home-field)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--home-cta-top)]"
+            >
+              הצג הכל
+              <ChevronLeft className="h-4 w-4" aria-hidden />
+            </Link>
+          )}
+        </section>
+      </div>
 
       {/* Survey type selection dialog */}
       <Dialog open={typeDialogOpen} onOpenChange={(o) => { if (!creating) setTypeDialogOpen(o); }}>

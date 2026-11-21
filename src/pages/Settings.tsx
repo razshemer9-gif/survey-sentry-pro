@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowRight, BookOpen, Save, Users } from "lucide-react";
+import { ArrowRight, BookOpen, LogOut, Save, Users } from "lucide-react";
 import { toast } from "sonner";
 
 import { AppShell } from "@/components/AppShell";
@@ -15,6 +15,10 @@ import { ConsultantSettings, SurveyReportFormat, SurveyType, SURVEY_TYPES } from
 import { ELEMENT_STABILITY_DEFAULT_TERMS } from "@/lib/element-stability";
 import { loadUserSettings, saveUserSettings } from "@/lib/storage";
 import { cn } from "@/lib/utils";
+import { signOut } from "@/lib/auth";
+import { supabase } from "@/lib/supabase";
+import { clearCacheFor } from "@/lib/offline-db";
+import { ThemeToggle } from "@/components/ThemeToggle";
 import { useAuth } from "@/contexts/AuthContext";
 import { Switch } from "@/components/ui/switch";
 import { useCanPreviewEngUi, useEngUi } from "@/hooks/use-eng-ui";
@@ -92,6 +96,20 @@ export default function Settings() {
   };
 
   const headerTitle   = isAdmin ? "הגדרות מערכת" : "הגדרות אישיות";
+  async function handleSignOut() {
+    // Drop this account's cached reports before letting go of the session:
+    // the next person to sign in on this phone must not find them. Anything
+    // still waiting to be sent is left alone, and goes up on the next sign-in.
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session?.user?.id) await clearCacheFor(session.user.id);
+    } catch (err) {
+      console.warn("[sign-out] could not clear the cached reports", err);
+    }
+    await signOut();
+    navigate("/auth");
+  }
+
   const headerSubtitle = isAdmin
     ? "בחר סוג סקר וערוך את ההגדרות שלו"
     : "עדכן את הפרטים האישיים שלך";
@@ -212,6 +230,18 @@ export default function Settings() {
                     below instead of the generic professional fields. ── */}
                 {id !== "accessibility_form_8" && (
                 <>
+                <Field label="שם לתצוגה">
+                  <Input
+                    placeholder="איך לפנות אליך במסך הבית"
+                    value={s.displayName ?? ""}
+                    onChange={(e) =>
+                      setS((prev) =>
+                        prev ? { ...prev, displayName: e.target.value || undefined } : prev,
+                      )
+                    }
+                  />
+                </Field>
+
                 <Field label="שם בעל המקצוע">
                   <Input
                     placeholder="שם מלא"
@@ -572,7 +602,24 @@ export default function Settings() {
           })}
         </Tabs>
 
-        <p className="pb-2 pt-3 text-center text-xs text-muted-foreground">
+        <div className="mt-6 flex items-center justify-between gap-3 rounded-2xl border border-border bg-card px-4 py-3">
+          <span className="text-sm font-semibold">מצב תצוגה</span>
+          <ThemeToggle />
+        </div>
+
+        {/* Signing out used to sit in the bar at the bottom of every screen,
+            one slip away from the button beside it. It belongs here. */}
+        <Button
+          onClick={handleSignOut}
+          variant="outline"
+          size="lg"
+          className="mt-3 w-full gap-2 rounded-2xl text-destructive hover:bg-destructive/10 hover:text-destructive"
+        >
+          <LogOut className="h-5 w-5" />
+          יציאה מהחשבון
+        </Button>
+
+        <p className="pb-2 pt-4 text-center text-xs text-muted-foreground">
           ההגדרות נשמרות בענן ומשויכות לחשבונך
         </p>
       </div>

@@ -75,6 +75,81 @@ export function getLastRefreshError(): string | null {
 // and is far too tight for that on a mobile connection.
 const LIST_TIMEOUT_MS = 30_000;
 
+/**
+ * Everything this device already holds, with no network at all.
+ *
+ * This is what the screen should draw first. listReports() below waits on two
+ * remote calls before it returns anything — the list of names, then every
+ * recent report in full, megabytes of photographs — so on a slow connection
+ * the consultant watched a spinner for up to a minute with a cache sitting
+ * on the device that could have answered at once.
+ *
+ * The sync engine is started here too, so work queued offline goes up whether
+ * or not anybody waits for the refresh.
+ */
+export async function cachedReports(): Promise<SurveyReport[]> {
+  startSyncEngine();
+  const userId = await currentUserId();
+  const cached = await getAllCachedReports(userId);
+  return cached.sort((a, b) => (b.updatedAt ?? 0) - (a.updatedAt ?? 0));
+}
+
+/**
+ * The same refresh listReports() does, but in two steps, each handed to the
+ * caller as soon as it is ready.
+ *
+ * The names arrive first and complete the list; the full reports follow and
+ * only add offline reach. Nothing here is awaited by the screen — it draws
+ * from the cache and takes these as they come.
+ */
+export async function refreshReports(
+  onReady?: (reports: SurveyReport[]) => void,
+): Promise<SurveyReport[]> {
+  lastRefreshError = null;
+  const userId = await currentUserId();
+
+  const merge = async (summaries: SurveyReport[]) => {
+    const cached = await getAllCachedReports(userId);
+    const byId = new Set(cached.map((r) => r.id));
+    return [...cached, ...summaries.filter((r) => !byId.has(r.id))]
+      .sort((a, b) => (b.updatedAt ?? 0) - (a.updatedAt ?? 0));
+  };
+
+  let summaries: SurveyReport[] = [];
+  try {
+    summaries = await withTimeout(remoteListReportSummaries(), LIST_TIMEOUT_MS, [] as SurveyReport[]);
+    onReady?.(await merge(summaries));
+  } catch (err) {
+    const detail = err instanceof Error ? err.message : String((err as { message?: string })?.message ?? err);
+    lastRefreshError = `שגיאה בטעינת רשימת הדוחות: ${detail}`;
+    console.error("[refreshReports] summary fetch failed:", err);
+  }
+
+  // Best-effort, and deliberately second: this is the heavy one. Failing here
+  // costs offline access to the newest reports, nothing more.
+  try {
+    const TIMED_OUT = Symbol("timeout");
+    const remote = await withTimeout<SurveyReport[] | typeof TIMED_OUT>(
+      remoteListReports(),
+      LIST_TIMEOUT_MS,
+      TIMED_OUT,
+    );
+    if (remote !== TIMED_OUT) {
+      const dirty = await getDirtyRows(userId);
+      const dirtyIds = new Set(dirty.map((r) => r.id));
+      for (const r of remote) {
+        if (!dirtyIds.has(r.id)) await putCachedReport(r, false, userId);
+      }
+    }
+  } catch (err) {
+    console.warn("[refreshReports] offline prefetch failed:", err);
+  }
+
+  const final = await merge(summaries);
+  onReady?.(final);
+  return final;
+}
+
 export async function listReports(): Promise<SurveyReport[]> {
   startSyncEngine();
   lastRefreshError = null;

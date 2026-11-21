@@ -327,6 +327,9 @@ export interface SurveyReportFormat {
 export interface ConsultantSettings {
   companyName: string;
   consultantName: string;
+  /** What the app calls this person on screen. Falls back to consultantName;
+   *  never an e-mail address — see lib/display-name. */
+  displayName?: string;
   license: string; // מספר רישוי שירות (מורשה נגישות)
   phone: string;
   email: string;

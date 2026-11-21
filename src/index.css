@@ -66,6 +66,21 @@
     --shadow-glow: 0 8px 28px -6px hsl(213 94% 56% / 0.45);
 
     --transition-base: all 0.22s cubic-bezier(0.4, 0, 0.2, 1);
+
+    /* ── Home, My Reports, Company Reports ──────────────────────────────
+       Named for what they are rather than for a colour, so the same class
+       serves both themes. The dark values are sampled from the approved
+       design; the light ones are the app's existing surfaces. */
+    --home-bg-top: 0 0% 100%;
+    --home-bg-bottom: 214 100% 98%;
+    --home-surface: #ffffff;
+    --home-surface-border: hsl(214 32% 89%);
+    --home-field: hsl(210 40% 96%);
+    --home-nav: rgba(255, 255, 255, 0.96);
+    --home-nav-active: hsl(214 95% 93%);
+    --home-cta-top: #1D7AE8;
+    --home-cta-bottom: #0B4FBF;
+    --home-muted: hsl(215 18% 42%);
   }
 
   .dark {
@@ -87,6 +102,21 @@
     --border: 217 33% 20%;
     --input: 217 33% 20%;
     --ring: 213 94% 56%;
+    /* Every screen's page background. Defined only in :root before, so in
+       dark mode the body kept a pale blue wash under dark cards. */
+    --gradient-soft: linear-gradient(180deg, hsl(var(--home-bg-top)) 0%, hsl(var(--home-bg-bottom)) 100%);
+
+    /* Sampled from the approved design. */
+    --home-bg-top: 210 72% 7%;
+    --home-bg-bottom: 210 72% 5%;
+    --home-surface: #182939;
+    --home-surface-border: #23384D;
+    --home-field: #182635;
+    --home-nav: rgba(21, 33, 46, 0.96);
+    --home-nav-active: #17385D;
+    --home-cta-top: #0D6DDC;
+    --home-cta-bottom: #00348A;
+    --home-muted: #93A7BD;
   }
 }
 
@@ -712,4 +742,28 @@ html.eng-ui {
 .eng-ui .editor-total strong {
   font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
   font-size: 1.125rem;
+}
+
+
+/* ── The Home surface ───────────────────────────────────────────────────
+   One gradient on the page itself rather than a panel behind the content,
+   so nothing has a visible edge the content has to sit inside. */
+.home-surface {
+  background: linear-gradient(180deg, hsl(var(--home-bg-top)) 0%, hsl(var(--home-bg-bottom)) 100%);
+  min-height: 100vh;
+  min-height: 100dvh;
+}
+
+.home-cta {
+  background: linear-gradient(180deg, var(--home-cta-top) 0%, var(--home-cta-bottom) 100%);
+}
+
+/* The one moment of motion on the screen, and only when the list has
+   actually been fetched. Respects a phone asked to keep still. */
+@media (prefers-reduced-motion: no-preference) {
+  .home-enter { animation: home-enter 220ms cubic-bezier(0.22, 1, 0.36, 1) both; }
+}
+@keyframes home-enter {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: none; }
 }

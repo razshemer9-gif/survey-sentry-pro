@@ -2168,7 +2168,9 @@ export default function ReportEditor() {
             <div className="space-y-4">
               <div className="rounded-xl border border-border bg-white p-3 text-center">
                 <img src={report.signatureDataUrl} alt="חתימה" className="mx-auto max-h-24 object-contain" />
-                <p className="mt-1 text-xs text-muted-foreground">{report.signatureConsultantName} • {report.signatureDate}</p>
+                {/* The box stays white because signature ink is black, so the
+                    caption needs its own dark colour in either theme. */}
+                <p className="mt-1 text-xs text-slate-600">{report.signatureConsultantName} • {report.signatureDate}</p>
               </div>
               <div className="flex gap-2">
                 <Button variant="outline" className="flex-1 gap-2 text-destructive hover:bg-destructive/10" onClick={() => update({ signatureDataUrl: undefined, signatureDate: undefined, signatureConsultantName: undefined })}>
