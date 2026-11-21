@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { nextPreference, readPreference, resolveTheme, savePreference } from "./theme";
-import { resolveDisplayName, greeting, greetingName } from "./display-name";
+import { resolveDisplayName, greeting, greetingName, nameForAccount } from "./display-name";
 import { SURVEY_COLOR_ON_DARK, surveyColor } from "./survey-colors";
 import { SURVEY_TYPES } from "./types";
 
@@ -74,6 +74,50 @@ describe("what to call the person", () => {
   it("says hello on its own when there is no name anywhere", () => {
     expect(greeting(null)).toBe("שלום");
     expect(greeting({ displayName: "   ", consultantName: "" }, "  ")).toBe("שלום");
+  });
+});
+
+/**
+ * The three people who use the app, named by the owner. An account is
+ * greeted properly on its first launch, before anyone has been to הגדרות.
+ */
+describe("the names recorded for the accounts", () => {
+  it("knows each of the three", () => {
+    expect(nameForAccount("ziv@example.com")).toBe("זיו");
+    expect(nameForAccount("shemerziv@example.com")).toBe("זיו");
+    expect(nameForAccount("info@example.com")).toBe("מריס");
+    expect(nameForAccount("raz@example.com")).toBe("רז");
+  });
+
+  it("reads the address whatever its case, and ignores the domain", () => {
+    expect(nameForAccount("RAZ@Example.COM")).toBe("רז");
+    expect(nameForAccount("  Info@somewhere.else  ")).toBe("מריס");
+  });
+
+  it("has nothing to say about an account it was not told about", () => {
+    expect(nameForAccount("someone@example.com")).toBe("");
+    expect(nameForAccount(undefined)).toBe("");
+    expect(nameForAccount("")).toBe("");
+  });
+
+  it("greets each account by name with nothing in settings", () => {
+    expect(greeting(null, null, "ziv@example.com")).toBe("שלום זיו");
+    expect(greeting(null, null, "info@example.com")).toBe("שלום מריס");
+    expect(greeting({}, null, "raz@example.com")).toBe("שלום רז");
+  });
+
+  it("is beaten by a display name the person chose", () => {
+    expect(greeting({ displayName: "זיוי" }, null, "ziv@example.com")).toBe("שלום זיוי");
+  });
+
+  // An employee who signs reports on behalf of the office must not be
+  // greeted by the office's name.
+  it("beats the professional name a report is signed with", () => {
+    expect(greeting({ consultantName: "רז שמר" }, null, "info@example.com")).toBe("שלום מריס");
+  });
+
+  it("still never puts an address on screen", () => {
+    expect(greeting(null, null, "unknown@example.com")).toBe("שלום");
   });
 });
 

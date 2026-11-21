@@ -310,7 +310,7 @@ const Index = () => {
         </header>
 
         <h1 className="mt-4 text-center text-[32px] font-extrabold leading-none tracking-[-0.02em]">
-          {greeting(settings)}
+          {greeting(settings, null, user?.email)}
         </h1>
 
         <button
