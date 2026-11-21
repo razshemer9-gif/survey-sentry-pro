@@ -7,7 +7,7 @@ import {
   Dialog, DialogContent, DialogHeader, DialogTitle,
 } from "@/components/ui/dialog";
 import { accessibilityScopeLabel, scopeFromChecks } from "@/lib/accessibility-scope";
-import { cachedReports, deleteReport, getLastRefreshError, listReportAuthors, loadStartingItems, loadUserSettings, newReport, refreshReports, saveReport } from "@/lib/storage";
+import { cachedReports, getLastRefreshError, listReportAuthors, loadStartingItems, loadUserSettings, newReport, refreshReports, saveReport } from "@/lib/storage";
 import { isDirty } from "@/lib/offline-db";
 import { welfareInspectorPrefill } from "@/lib/welfare-prefill";
 import { subscribeSyncStatus } from "@/lib/sync-engine";
@@ -19,6 +19,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { canUseStaticCalc, STATIC_CALC_URL } from "@/lib/static-calc-access";
 import { useEngUi } from "@/hooks/use-eng-ui";
 import { useResolvedTheme } from "@/hooks/use-theme";
+import { useReportActions } from "@/hooks/use-report-actions";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { ReportRow } from "@/components/ReportRow";
 import { greeting } from "@/lib/display-name";
@@ -101,6 +102,7 @@ const Index = () => {
   // True only while the first refresh is still in flight, so an empty cache
   // says "loading" rather than "you have no reports".
   const [refreshing, setRefreshing] = useState(true);
+  const { duplicate, remove, duplicatingId, hiddenIds } = useReportActions(setReports);
 
   // ProtectedRoute (App.tsx) already gates this page on a logged-in user.
   //
@@ -264,20 +266,11 @@ const Index = () => {
     }
   }
 
-  async function remove(id: string) {
-    if (!confirm("למחוק את הדוח?")) return;
-    try {
-      await deleteReport(id);
-      setReports((prev) => prev.filter((r) => r.id !== id));
-      toast.success("הדוח נמחק");
-    } catch {
-      toast.error("שגיאה במחיקת הדוח");
-    }
-  }
-
   // Home lists this account's own work. Reports written by colleagues are a
   // screen of their own — see pages/CompanyReports.
-  const mine = reports.filter((r) => !r.ownerId || r.ownerId === user?.id);
+  const mine = reports
+    .filter((r) => !hiddenIds.has(r.id))
+    .filter((r) => !r.ownerId || r.ownerId === user?.id);
   const q = query.trim().toLowerCase();
   const matching = q
     ? mine.filter((r) => (r.placeName ?? "").toLowerCase().includes(q))
@@ -289,12 +282,16 @@ const Index = () => {
     <AppShell>
       <div className="home-surface px-4 pb-4 safe-top">
         <header className="flex items-center justify-between gap-3 pt-3">
+          {/* Settings is where the consultant's name, stamp and report text
+              live, and it was a grey square that read as part of the frame.
+              It carries the app's own blue now, so it is found at a glance
+              on a bright screen held at arm's length. */}
           <Link
             to="/settings"
             aria-label="הגדרות"
-            className="grid h-10 w-10 place-items-center rounded-2xl border border-[var(--home-surface-border)] bg-[var(--home-field)] text-foreground transition-colors hover:bg-[var(--home-nav-active)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--home-cta-top)]"
+            className="home-cta grid h-11 w-11 place-items-center rounded-2xl text-white shadow-md transition-transform active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--home-cta-top)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--home-bg-top)]"
           >
-            <SettingsIcon className="h-5 w-5" />
+            <SettingsIcon className="h-[22px] w-[22px]" />
           </Link>
 
           <img
@@ -363,6 +360,8 @@ const Index = () => {
                     isDark={isDark}
                     pendingSync={dirtyIds.has(r.id)}
                     onDelete={remove}
+                    onDuplicate={duplicate}
+                    duplicating={duplicatingId === r.id}
                   />
                 ))}
               </ul>

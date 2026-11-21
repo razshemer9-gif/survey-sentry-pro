@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { FileText, MoreHorizontal, Pencil, Trash2, User } from "lucide-react";
+import { Copy, FileText, Loader2, MoreHorizontal, Pencil, Trash2, User } from "lucide-react";
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
@@ -17,7 +17,7 @@ import { getSurveyType, SurveyReport } from "@/lib/types";
  * colour-coded signal in the list would only make the type colour mean less.
  */
 export function ReportRow({
-  report, isDark, authorName, pendingSync, onDelete,
+  report, isDark, authorName, pendingSync, onDelete, onDuplicate, duplicating,
 }: {
   report: SurveyReport;
   isDark: boolean;
@@ -25,6 +25,9 @@ export function ReportRow({
   authorName?: string;
   pendingSync?: boolean;
   onDelete?: (id: string) => void;
+  onDuplicate?: (id: string) => void;
+  /** True while this report's copy is being made. */
+  duplicating?: boolean;
 }) {
   const config = getSurveyType(report.surveyType);
   const color = surveyColor(report.surveyType, isDark);
@@ -81,7 +84,7 @@ export function ReportRow({
         </span>
       </Link>
 
-      <RowMenu reportId={report.id} onDelete={onDelete} />
+      <RowMenu reportId={report.id} onDelete={onDelete} onDuplicate={onDuplicate} duplicating={duplicating} />
     </li>
   );
 }
@@ -116,19 +119,20 @@ function Thumbnail({ report, color }: { report: SurveyReport; color: string }) {
 }
 
 /**
- * Opening and deleting are what this screen can really do to a report today.
+ * Three entries, and no more: open it, copy it, throw it away.
  *
- * The menu is meant to end up with three entries and no more: עריכה,
- * שכפול (a full, independent copy — photographs, findings, signatures and
- * approvals alike) and מחיקה (a confirmation, then six seconds in which it
- * can be taken back). The last two are Phase 2 work and are not here yet,
- * because a menu entry that does nothing is worse than no menu entry.
- *
- * There is deliberately no report status, now or later. The statuses that
- * exist belong to the findings inside a report, and they stay there.
+ * There is deliberately no report status. The statuses that exist belong to
+ * the findings inside a report, and they stay there.
  */
-function RowMenu({ reportId, onDelete }: { reportId: string; onDelete?: (id: string) => void }) {
-  if (!onDelete) return null;
+function RowMenu({
+  reportId, onDelete, onDuplicate, duplicating,
+}: {
+  reportId: string;
+  onDelete?: (id: string) => void;
+  onDuplicate?: (id: string) => void;
+  duplicating?: boolean;
+}) {
+  if (!onDelete && !onDuplicate) return null;
   return (
     <DropdownMenu>
       <DropdownMenuTrigger
@@ -139,7 +143,9 @@ function RowMenu({ reportId, onDelete }: { reportId: string; onDelete?: (id: str
         )}
         aria-label="פעולות על הדוח"
       >
-        <MoreHorizontal className="h-5 w-5" />
+        {duplicating
+          ? <Loader2 className="h-5 w-5 animate-spin" aria-label="משכפל" />
+          : <MoreHorizontal className="h-5 w-5" />}
       </DropdownMenuTrigger>
       <DropdownMenuContent align="start" className="min-w-40">
         <DropdownMenuItem asChild>
@@ -148,13 +154,25 @@ function RowMenu({ reportId, onDelete }: { reportId: string; onDelete?: (id: str
             עריכה
           </Link>
         </DropdownMenuItem>
-        <DropdownMenuItem
-          onSelect={() => onDelete(reportId)}
-          className="gap-2 text-destructive focus:text-destructive"
-        >
-          <Trash2 className="h-4 w-4" />
-          מחיקה
-        </DropdownMenuItem>
+        {onDuplicate && (
+          <DropdownMenuItem
+            onSelect={() => onDuplicate(reportId)}
+            disabled={duplicating}
+            className="gap-2"
+          >
+            <Copy className="h-4 w-4" />
+            שכפול
+          </DropdownMenuItem>
+        )}
+        {onDelete && (
+          <DropdownMenuItem
+            onSelect={() => onDelete(reportId)}
+            className="gap-2 text-destructive focus:text-destructive"
+          >
+            <Trash2 className="h-4 w-4" />
+            מחיקה
+          </DropdownMenuItem>
+        )}
       </DropdownMenuContent>
     </DropdownMenu>
   );

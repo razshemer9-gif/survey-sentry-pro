@@ -24,6 +24,7 @@ async function currentUserId(): Promise<string | null> {
 import { RISK_SURVEY_DEFAULT_FENCING_NOTE } from "./risk-survey";
 import { FORM8_REQUIREMENTS } from "./form8-data";
 import { withTimeout } from "./async";
+import { copyOfReport } from "./duplicate-report";
 import { cacheSettings, cachedSettings, resolveSettings } from "./settings-cache";
 import {
   getAllCachedReports,
@@ -237,6 +238,28 @@ export async function saveReport(report: SurveyReport): Promise<SurveyReport> {
   await putCachedReport(updated, true, await currentUserId());
   void syncPendingReports();
   return updated;
+}
+
+/**
+ * A second report that begins where this one ended — a full copy, down to
+ * the photographs and the signature, and independent of the original from
+ * the moment it is made. See ./duplicate-report for what "independent"
+ * costs and why.
+ *
+ * The original is fetched in full first: a list screen may be holding only
+ * a summary of it, with the photographs stripped out, and copying that
+ * would produce a report whose pictures had quietly vanished.
+ */
+export async function duplicateReport(id: string): Promise<SurveyReport> {
+  const original = await getReport(id);
+  if (!original) throw new Error("הדוח לא נמצא");
+  const copy = copyOfReport(original, {
+    id: uuid(),
+    itemId: uuid,
+    ownerId: (await currentUserId()) ?? undefined,
+    now: Date.now(),
+  });
+  return saveReport(copy);
 }
 
 export async function deleteReport(id: string): Promise<void> {
