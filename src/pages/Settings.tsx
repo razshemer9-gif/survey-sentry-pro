@@ -137,11 +137,12 @@ export default function Settings() {
 
   return (
     <AppShell>
-      <header className="brand-gradient text-primary-foreground px-5 pb-5 pt-4 safe-top rounded-b-3xl shadow-elev">
+      <header className="brand-gradient text-white px-5 pb-5 pt-4 safe-top rounded-b-3xl shadow-elev">
         <div className="flex items-center justify-between">
           <button
             onClick={() => navigate("/")}
-            className="grid h-10 w-10 place-items-center rounded-full bg-white/15"
+            aria-label="חזרה למסך הבית"
+            className="toolbar-action grid h-10 w-10 place-items-center rounded-full transition-colors"
           >
             <ArrowRight className="h-5 w-5" />
           </button>
