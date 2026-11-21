@@ -1,4 +1,4 @@
-import{c as he,y as z,k as me,j as ge,P as pe}from"./index-BdQAJ2Cr.js";import{r as c}from"./vendor-react-Fwto6RMk.js";import{_ as k,a as oe,b as ye}from"./vendor-supabase-GlODc1dO.js";/**
+import{c as he,y as z,k as me,j as ge,P as pe}from"./index-BCuIsXwJ.js";import{r as c}from"./vendor-react-Fwto6RMk.js";import{_ as k,a as oe,b as ye}from"./vendor-supabase-GlODc1dO.js";/**
  * @license lucide-react v0.462.0 - ISC
  *
  * This source code is licensed under the ISC license.
