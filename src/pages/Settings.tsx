@@ -22,6 +22,7 @@ import { ThemeToggle } from "@/components/ThemeToggle";
 import { useAuth } from "@/contexts/AuthContext";
 import { Switch } from "@/components/ui/switch";
 import { useCanPreviewEngUi, useEngUi } from "@/hooks/use-eng-ui";
+import { buildLabel } from "@/lib/build-version";
 import { setEngUiPreferred } from "@/lib/eng-ui";
 
 const SETTINGS_TAB_KEY = "settings:lastTab";
@@ -662,8 +663,13 @@ export default function Settings() {
           </Button>
         </section>
 
-        <p className="pb-2 pt-4 text-center text-xs text-muted-foreground">
+        <p className="pt-4 text-center text-xs text-muted-foreground">
           ההגדרות נשמרות בענן ומשויכות לחשבונך
+        </p>
+        {/* So "which version am I on?" has an answer, instead of being
+            guessed at from what is or is not on screen. */}
+        <p className="pb-2 pt-1 text-center text-[11px] text-muted-foreground/70">
+          {buildLabel()}
         </p>
       </div>
     </AppShell>
