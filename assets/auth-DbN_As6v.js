@@ -1,1 +1,0 @@
-import{o as s}from"./index-BOVBFp42.js";async function i(a,n){const{data:r,error:t}=await s.auth.signInWithPassword({email:a,password:n});if(t)throw t;return r}async function u(){const{error:a}=await s.auth.signOut();if(a)throw a}export{i as a,u as s};
