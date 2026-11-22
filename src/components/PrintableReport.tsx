@@ -15,6 +15,7 @@ import {
 } from "@/lib/element-stability";
 import { ELEMENT_STABILITY_HEADER_BANNER_APPROVAL, ELEMENT_STABILITY_HEADER_BANNER_SURVEY } from "@/lib/element-stability-banner";
 import { GENERAL_SAFETY_HEADER_BANNER_APPROVAL, GENERAL_SAFETY_HEADER_BANNER_SURVEY } from "@/lib/general-safety-banner";
+import { formatValidUntil, safetyClauses, splitItems } from "@/lib/general-safety";
 import { RISK_SURVEY_DEFAULT_FENCING_NOTE, RISK_SURVEY_SUBTITLE } from "@/lib/risk-survey";
 import { RISK_SURVEY_HEADER_BANNER } from "@/lib/risk-survey-banner";
 import React, { forwardRef } from "react";
@@ -66,14 +67,10 @@ export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, sett
   // stamp seven times. See ./lib/report-signature.
   const settingsSignature = fmt.signatureImage || anySignature(settings);
 
-  const SAFETY_CLAUSES_FIXED = [
-    "המקום נבדק באזורים המיועדים להימצאות קהל בלבד.",
-    "מובהר בזאת כי האישור שנמסר הינו עבור השירות שהתקבל ונכון לרגע הבדיקה בלבד.",
-    "במידה ובוצע כל שינוי במקום לאחר הבדיקה, יש לעצור את הפעילות ולזמן בדיקה מחודשת.",
-    "במידה וקיימות מערכות חשמל ו/או גז, מחובת המזמין לזמן בדיקה.",
-    "אין לעשות כל שינוי במבנים אלא בידיעת הבודק ובאישורו. כל שינוי/שימוש שיעשה ללא אישור יהיה באחריות המזמין בלבד ותוקף האישור יבוטל.",
-  ];
-  const SAFETY_CLAUSE_6 = "אין האישור מתייחס לבטיחות המשתמשים אלא לבטיחות הסביבה.";
+  // The closing clauses, as this report prints them — see lib/general-safety.
+  const safetyClauseList = safetyClauses(report);
+  // Faults on one side, photographs that describe the place on the other.
+  const { findings: reportFindings, documentation: reportDocumentation } = splitItems(report);
 
   const itemTotal = (i: typeof report.items[0]) => (Number(i.estimatedCost) || 0) * (i.quantity ?? 1);
   const totalCost = report.items
@@ -103,6 +100,46 @@ export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, sett
     { priority: undefined, label: "ממצאים נוספים", color: "#64748b", bg: "#f8fafc", border: "#e2e8f0" },
   ];
   const PRIORITY_BADGE_LABEL = ["דחוף", "גבוה", "רגיל"] as const;
+
+  /**
+   * A photograph that documents the place or the event rather than reporting
+   * a fault: a stage as it was built, the layout of a yard, a door that is
+   * perfectly in order. No number, no status, no cost — those belong to
+   * findings, and calling this one would misread the report.
+   */
+  const renderDocumentation = (item: typeof report.items[0], idx: number) => {
+    const photos = itemPhotos(item);
+    const text = [item.fieldNotes, item.notes].filter((t) => t && t.trim()).join("\n");
+    return (
+      <div
+        key={item.id}
+        data-pdf-no-break=""
+        style={{ border: "1px solid #e2e8f0", borderRadius: 14, overflow: "hidden", background: "#fff", pageBreakInside: "avoid" }}
+      >
+        <div data-pdf-no-break="" style={{ padding: "14px 20px 12px", background: "#f8fafc", borderBottom: "1px solid #e2e8f0" }}>
+          <div style={{ fontSize: 13, color: "#64748b", marginBottom: 3 }}>תיעוד {idx + 1}</div>
+          <div style={{ fontSize: 18, fontWeight: 700, color: "#0f172a" }}>{item.title}</div>
+          {text && text.split("\n").map((line, li) => (
+            <div key={li} data-pdf-no-break="" style={{ marginTop: li === 0 ? 8 : 0, fontSize: 15, color: "#334155", lineHeight: 1.7, whiteSpace: "pre-wrap" }}>
+              {line}
+            </div>
+          ))}
+        </div>
+        {photos.length > 0 && (
+          <div data-pdf-no-break="" style={{ padding: 14, display: "grid", gridTemplateColumns: photos.length > 1 ? "1fr 1fr" : "1fr", gap: 10 }}>
+            {photos.map((src, i) => (
+              <img
+                key={i}
+                src={src}
+                alt={item.title || `תיעוד ${idx + 1}`}
+                style={{ width: "100%", height: "auto", display: "block", borderRadius: 10, border: "1px solid #e2e8f0" }}
+              />
+            ))}
+          </div>
+        )}
+      </div>
+    );
+  };
 
   const renderItem = (item: typeof report.items[0], globalIdx: number) => {
     const refPhotos = item.referencePhotos && item.referencePhotos.length > 0
@@ -1636,7 +1673,7 @@ export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, sett
               style={{ width: "100%", height: 400, display: "block" }}
             />
           )}
-          <div style={{
+          <div data-pdf-no-break="" style={{
             padding: "24px 28px",
             display: "grid",
             gridTemplateColumns: "1fr 1fr",
@@ -1652,6 +1689,9 @@ export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, sett
             )}
             <Field label="כתובת" value={report.address} />
             <Field label="תאריך הסקר" value={formatHebrewDate(report.surveyDate)} />
+            {report.surveyType === "general_safety" && report.safetyValidUntil && (
+              <Field label="תוקף האישור" value={formatValidUntil(report.safetyValidUntil)} />
+            )}
             {report.surveyType !== "general_safety" && report.buildingType && (
               <Field
                 label="סוג הבניין"
@@ -1713,7 +1753,7 @@ export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, sett
         <div style={{ marginTop: 24, display: "flex", flexDirection: "column", gap: 14 }}>
           {hasPriorities
             ? PRIORITY_GROUPS.flatMap(({ priority, label, color, bg, border }) => {
-                const groupItems = report.items.filter(i => i.priority === priority);
+                const groupItems = reportFindings.filter(i => i.priority === priority);
                 if (groupItems.length === 0) return [];
                 return [
                   <div
@@ -1724,30 +1764,34 @@ export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, sett
                     <span style={{ fontSize: 16, fontWeight: 800, color }}>{label}</span>
                     <span style={{ fontSize: 13, color: "#64748b", marginRight: "auto" }}>({groupItems.length} ממצאים)</span>
                   </div>,
-                  ...groupItems.map(item => renderItem(item, report.items.indexOf(item))),
+                  ...groupItems.map(item => renderItem(item, reportFindings.indexOf(item))),
                 ];
               })
-            : report.items.map((item, idx) => renderItem(item, idx))
+            : reportFindings.map((item, idx) => renderItem(item, idx))
           }
         </div>
 
+        {/* What was photographed to describe the place, not to report a fault. */}
+        {reportDocumentation.length > 0 && (
+          <div style={{ marginTop: 32 }}>
+            <PageHeader title="תיעוד המקום" company={settings.companyName} accentColor={surveyConfig.color} />
+            <div style={{ marginTop: 20, display: "flex", flexDirection: "column", gap: 14 }}>
+              {reportDocumentation.map((item, idx) => renderDocumentation(item, idx))}
+            </div>
+          </div>
+        )}
+
         {/* Disclaimer clauses — general_safety: 1-5 always, 6 conditional */}
-        {report.surveyType === "general_safety" && (
-          <div data-pdf-page-break="" style={{ marginTop: 32, border: "2px solid #1e3a8a", borderRadius: 14, padding: "20px 24px", backgroundColor: "#f0f4ff" }}>
-            <h3 style={{ margin: "0 0 14px", fontSize: 17, fontWeight: 800, color: "#1e3a8a" }}>הערות וסייגים</h3>
+        {report.surveyType === "general_safety" && safetyClauseList.length > 0 && (
+          <div style={{ marginTop: 32, border: "2px solid #1e3a8a", borderRadius: 14, padding: "20px 24px", backgroundColor: "#f0f4ff" }}>
+            <h3 data-pdf-no-break="" style={{ margin: "0 0 14px", fontSize: 17, fontWeight: 800, color: "#1e3a8a" }}>הערות וסייגים</h3>
             <div style={{ direction: "rtl" }}>
-              {SAFETY_CLAUSES_FIXED.map((clause, idx) => (
-                <div key={idx} style={{ display: "flex", alignItems: "flex-start", marginBottom: 6, gap: 8 }}>
+              {safetyClauseList.map((clause, idx) => (
+                <div key={idx} data-pdf-no-break="" style={{ display: "flex", alignItems: "flex-start", marginBottom: 6, gap: 8 }}>
                   <span style={{ flexShrink: 0, fontWeight: 700, minWidth: 22, textAlign: "right", fontSize: 13, color: "#1e293b" }}>{idx + 1}.</span>
                   <span style={{ flex: 1, fontSize: 13, lineHeight: 1.8, color: "#1e293b" }}>{clause}</span>
                 </div>
               ))}
-              {(report.selectedClauses === undefined || report.selectedClauses.includes(5)) && (
-                <div style={{ display: "flex", alignItems: "flex-start", marginBottom: 6, gap: 8 }}>
-                  <span style={{ flexShrink: 0, fontWeight: 700, minWidth: 22, textAlign: "right", fontSize: 13, color: "#1e293b" }}>6.</span>
-                  <span style={{ flex: 1, fontSize: 13, lineHeight: 1.8, color: "#1e293b" }}>{SAFETY_CLAUSE_6}</span>
-                </div>
-              )}
             </div>
           </div>
         )}
@@ -1930,9 +1974,16 @@ function Field({ label, value, dark }: { label: string; value?: string; dark?: b
   );
 }
 
+/**
+ * A section heading in the printed report.
+ *
+ * data-pdf-no-break, because without it a page boundary could land inside
+ * the heading itself: "חוות דעת מקצועית" came out with its top half on one
+ * page and its underline on the next.
+ */
 function PageHeader({ title, company, accentColor }: { title: string; company: string; accentColor?: string }) {
   return (
-    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: `3px solid ${accentColor ?? "#2563eb"}`, paddingBottom: 12 }}>
+    <div data-pdf-no-break="" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: `3px solid ${accentColor ?? "#2563eb"}`, paddingBottom: 12 }}>
       <h2 style={{ margin: 0, fontSize: 28, color: "#1e3a8a", fontWeight: 800 }}>{title}</h2>
       <div style={{ fontSize: 13, color: "#64748b" }}>{company}</div>
     </div>
