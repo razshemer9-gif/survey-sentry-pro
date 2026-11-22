@@ -63,10 +63,12 @@ describe("asking the server which build is current", () => {
   });
 
   it("asks in a way that cannot be served from a cache", async () => {
-    const spy = vi.fn(async () => ({ ok: true, json: async () => ({ build: "x" }) }));
+    const spy = vi.fn(async (_url: unknown, _init?: unknown) => ({
+      ok: true, json: async () => ({ build: "x" }),
+    }));
     await currentServerBuild(spy as unknown as typeof fetch);
-    const [url, init] = spy.mock.calls[0];
-    expect(String(url)).toContain("version.json?t=");
-    expect((init as RequestInit).cache).toBe("no-store");
+    const call = spy.mock.calls[0];
+    expect(String(call[0])).toContain("version.json?t=");
+    expect((call[1] as RequestInit).cache).toBe("no-store");
   });
 });
