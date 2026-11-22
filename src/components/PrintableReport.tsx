@@ -126,10 +126,14 @@ export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, sett
           ))}
         </div>
         {photos.length > 0 && (
-          <div data-pdf-no-break="" style={{ padding: 14, display: "grid", gridTemplateColumns: photos.length > 1 ? "1fr 1fr" : "1fr", gap: 10 }}>
+          // One under the other, each the full width of the card. Two to a
+          // row meant a portrait photograph beside a landscape one, each a
+          // different height, with the third left hanging on its own.
+          <div style={{ padding: 14, display: "flex", flexDirection: "column", gap: 10 }}>
             {photos.map((src, i) => (
               <img
                 key={i}
+                data-pdf-no-break=""
                 src={src}
                 alt={item.title || `תיעוד ${idx + 1}`}
                 style={{ width: "100%", height: "auto", display: "block", borderRadius: 10, border: "1px solid #e2e8f0" }}

@@ -8,6 +8,7 @@ import { toast } from "sonner";
 import { AppShell } from "@/components/AppShell";
 import { Field } from "@/components/Field";
 import { PhotoPicker } from "@/components/PhotoPicker";
+import { PdfPageStack } from "@/components/PdfPageStack";
 import { PrintableReport } from "@/components/PrintableReport";
 import { ReferencePhotoPicker } from "@/components/ReferencePhotoPicker";
 import { Button } from "@/components/ui/button";
@@ -2187,16 +2188,7 @@ export default function ReportEditor() {
             </Button>
           </div>
           <div className="flex-1 overflow-auto px-3 pb-3">
-            <div className="mx-auto flex max-w-2xl flex-col gap-3">
-              {pdfPages.map((p, i) => (
-                <img
-                  key={i}
-                  src={p}
-                  alt={`עמוד ${i + 1}`}
-                  className="w-full rounded-lg bg-white shadow-pop"
-                />
-              ))}
-            </div>
+            <PdfPageStack pages={pdfPages} />
           </div>
         </div>
       )}
