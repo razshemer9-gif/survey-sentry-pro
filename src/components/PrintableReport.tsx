@@ -110,6 +110,9 @@ export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, sett
   const renderDocumentation = (item: typeof report.items[0], idx: number) => {
     const photos = itemPhotos(item);
     const text = [item.fieldNotes, item.notes].filter((t) => t && t.trim()).join("\n");
+    // One photograph gets room to be read; three share the row.
+    const perRow = Math.min(photos.length, 3) || 1;
+    const tileHeight = perRow === 1 ? 280 : perRow === 2 ? 210 : 150;
     return (
       <div
         key={item.id}
@@ -126,33 +129,43 @@ export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, sett
           ))}
         </div>
         {photos.length > 0 && (
-          // One under the other, and capped in height.
+          // Side by side, in equal-height tiles.
           //
-          // Two to a row meant a portrait photograph beside a landscape one,
-          // each a different height, with the third left hanging on its own.
-          // But full width meant a portrait photograph filled four fifths of
-          // a page on its own, and three of them buried the report they were
-          // meant to illustrate. Capped, each one is a picture in a document
-          // rather than a page of its own, and anyone who wants to look
-          // closer can zoom — a PDF is read on a screen.
-          <div style={{ padding: 14, display: "flex", flexDirection: "column", gap: 10 }}>
+          // Laying three photographs out two to a row once left a portrait
+          // one beside a landscape one at different heights, with the third
+          // hanging alone; stacking them instead gave each a third of a page.
+          // So: a row of tiles of one height, each photograph centred inside
+          // its own tile at its own shape. Heights line up whatever the
+          // orientation, nothing is cropped, and the whole row costs about a
+          // sixth of a page instead of three times that. Anyone who wants a
+          // closer look zooms, which is what a PDF on a screen is for.
+          <div style={{ padding: 14, display: "flex", flexWrap: "wrap", justifyContent: "center", gap: 10 }}>
             {photos.map((src, i) => (
-              <img
+              <div
                 key={i}
                 data-pdf-no-break=""
-                src={src}
-                alt={item.title || `תיעוד ${idx + 1}`}
                 style={{
-                  display: "block",
-                  maxWidth: "100%",
-                  maxHeight: 420,
-                  width: "auto",
-                  height: "auto",
-                  margin: "0 auto",
-                  borderRadius: 10,
-                  border: "1px solid #e2e8f0",
+                  flex: `0 0 calc(${100 / perRow}% - ${((perRow - 1) * 10) / perRow}px)`,
+                  height: tileHeight,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
                 }}
-              />
+              >
+                <img
+                  src={src}
+                  alt={item.title || `תיעוד ${idx + 1}`}
+                  style={{
+                    display: "block",
+                    maxWidth: "100%",
+                    maxHeight: "100%",
+                    width: "auto",
+                    height: "auto",
+                    borderRadius: 10,
+                    border: "1px solid #e2e8f0",
+                  }}
+                />
+              </div>
             ))}
           </div>
         )}
