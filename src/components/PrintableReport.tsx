@@ -126,9 +126,15 @@ export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, sett
           ))}
         </div>
         {photos.length > 0 && (
-          // One under the other, each the full width of the card. Two to a
-          // row meant a portrait photograph beside a landscape one, each a
-          // different height, with the third left hanging on its own.
+          // One under the other, and capped in height.
+          //
+          // Two to a row meant a portrait photograph beside a landscape one,
+          // each a different height, with the third left hanging on its own.
+          // But full width meant a portrait photograph filled four fifths of
+          // a page on its own, and three of them buried the report they were
+          // meant to illustrate. Capped, each one is a picture in a document
+          // rather than a page of its own, and anyone who wants to look
+          // closer can zoom — a PDF is read on a screen.
           <div style={{ padding: 14, display: "flex", flexDirection: "column", gap: 10 }}>
             {photos.map((src, i) => (
               <img
@@ -136,7 +142,16 @@ export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, sett
                 data-pdf-no-break=""
                 src={src}
                 alt={item.title || `תיעוד ${idx + 1}`}
-                style={{ width: "100%", height: "auto", display: "block", borderRadius: 10, border: "1px solid #e2e8f0" }}
+                style={{
+                  display: "block",
+                  maxWidth: "100%",
+                  maxHeight: 420,
+                  width: "auto",
+                  height: "auto",
+                  margin: "0 auto",
+                  borderRadius: 10,
+                  border: "1px solid #e2e8f0",
+                }}
               />
             ))}
           </div>
@@ -1923,7 +1938,7 @@ export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, sett
               </div>
             )}
 
-            <h3 style={{ margin: "0 0 12px", fontSize: 18, color: "#1e3a8a" }}>פרטי עורך הדוח</h3>
+            <h3 data-pdf-no-break="" style={{ margin: "0 0 12px", fontSize: 18, color: "#1e3a8a" }}>פרטי עורך הדוח</h3>
             <div style={{ fontSize: 14, color: "#334155", lineHeight: 2 }}>
               {(fmt.professionalName || settings.consultantName) && (
                 <div><strong>שם:</strong> {fmt.professionalName || settings.consultantName}</div>
