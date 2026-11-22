@@ -95,6 +95,10 @@ export interface ChecklistItem {
   quantity?: number;     // units (default 1); total = estimatedCost × quantity
   includeInCost?: boolean;
   priority?: 0 | 1 | 2; // קדימות לתיקון (0=דחוף, 1=גבוה, 2=רגיל)
+  /** Not a fault: a photograph and a line describing the place or the event
+   *  itself. Printed in its own section, counted in no total, given no
+   *  status. See lib/general-safety. */
+  documentation?: boolean;
   // One item can carry several photos: the first lives in `photo` and the
   // rest in `photos`, so a report written before that still opens correctly.
   // Read and write them through ./item-photos, never directly.
@@ -173,8 +177,17 @@ export interface SurveyReport {
   reportMode?: "survey" | "approval";
   // Required approvals (general_safety only)
   requiredApprovals?: string[];
-  // Predefined disclaimer clauses (general_safety only) — indices of selected clauses
+  // Predefined disclaimer clauses (general_safety only) — indices of selected
+  // clauses. Superseded by safetyClauses below, and kept because reports
+  // written before the list could be edited still print from it.
   selectedClauses?: number[];
+  /** general_safety: the closing clauses as this report prints them, once
+   *  the consultant has edited the list. See lib/general-safety. */
+  safetyClauses?: string[];
+  /** general_safety: how long the approval holds — "YYYY-MM-DD" or
+   *  "YYYY-MM-DDTHH:mm". An approval for one evening is as common as one
+   *  for a year. */
+  safetyValidUntil?: string;
   // Education-safety inspection table — selected row numbers (1..20) that appear in PDF
   eduInspectionRows?: number[];
   // Education-safety free-text notes (appears above the inspection table in PDF)

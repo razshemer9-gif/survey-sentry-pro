@@ -31,6 +31,7 @@ import {
 
 import { ChecklistItem, ConsultantSettings, DEFAULT_CHECKLIST, DEFAULT_SETTINGS, ReferencePhotoEntry, SurveyReport } from "@/lib/types";
 import { EDU_INSPECTION_TABLE } from "@/lib/edu-inspection-table";
+import { safetyClauseDrafts } from "@/lib/general-safety";
 import { ELEMENT_STABILITY_DEFAULT_TERMS, ELEMENT_STABILITY_STABLE_ONLY_INDICES } from "@/lib/element-stability";
 import { FORM8_REQUIREMENTS } from "@/lib/form8-data";
 import { derivedRowText, viewingPositionsFromText } from "@/lib/form8-derived";
@@ -1229,14 +1230,43 @@ export default function ReportEditor() {
                   </div>
 
                   <div>
-                    <Label className="mb-1 block text-xs font-semibold text-foreground">פירוט מצב קיים</Label>
+                    <Label className="mb-1 block text-xs font-semibold text-foreground">
+                      {item.documentation ? "תיאור" : "פירוט מצב קיים"}
+                    </Label>
                     <Textarea
                       value={item.fieldNotes || ""}
                       onChange={(e) => updateItem(item.id, { fieldNotes: e.target.value })}
-                      placeholder="תאר את הממצא שנצפה בשטח..."
+                      placeholder={item.documentation
+                        ? "תאר את המקום או האירוע שבתמונה..."
+                        : "תאר את הממצא שנצפה בשטח..."}
                       rows={2}
                     />
                   </div>
+
+                  {/* Not everything photographed on site is a fault. A stage as
+                      it was built, the layout of a yard, a door that is in
+                      order — they describe what was inspected. Marked this way
+                      they print in their own section, with no number, no
+                      status and no cost. */}
+                  {report.surveyType === "general_safety" && (
+                    <label className="flex cursor-pointer select-none items-start gap-2.5 rounded-xl border border-border bg-muted/40 px-3 py-2.5">
+                      <input
+                        type="checkbox"
+                        checked={!!item.documentation}
+                        onChange={(e) => updateItem(item.id, {
+                          documentation: e.target.checked ? true : undefined,
+                          ...(e.target.checked ? { includeInCost: false, priority: undefined } : {}),
+                        })}
+                        className="mt-0.5 h-4 w-4 shrink-0 accent-primary"
+                      />
+                      <span className="text-xs leading-relaxed">
+                        <span className="font-semibold text-foreground">תיעוד, לא ליקוי</span>
+                        <span className="block text-muted-foreground">
+                          תמונה שמתארת את המקום או האירוע. תודפס בנפרד, בלי מספור ממצא ובלי עלות.
+                        </span>
+                      </span>
+                    </label>
+                  )}
 
                   {report.surveyType && report.surveyType !== "accessibility" && (
                   <div className="flex items-center gap-2">
@@ -1711,33 +1741,78 @@ export default function ReportEditor() {
             )}
           </div>
           )}
-          {/* Disclaimer clauses — general_safety only */}
+          {/* How long it holds, and the closing clauses — general_safety only */}
           {report.surveyType === "general_safety" && (
-            <div dir="rtl" className="rounded-2xl border-2 border-primary/20 bg-card p-4 space-y-2">
-              <h3 className="font-bold text-sm text-primary">הערות וסייגים לדוח</h3>
-              {[
-                "המקום נבדק באזורים המיועדים להימצאות קהל בלבד.",
-                "מובהר בזאת כי האישור שנמסר הינו עבור השירות שהתקבל ונכון לרגע הבדיקה בלבד.",
-                "במידה ובוצע כל שינוי במקום לאחר הבדיקה, יש לעצור את הפעילות ולזמן בדיקה מחודשת.",
-                "במידה וקיימות מערכות חשמל ו/או גז, מחובת המזמין לזמן בדיקה.",
-                "אין לעשות כל שינוי במבנים אלא בידיעת הבודק ובאישורו. כל שינוי/שימוש שיעשה ללא אישור יהיה באחריות המזמין בלבד ותוקף האישור יבוטל.",
-              ].map((clause, idx) => (
-                <div key={idx} className="flex items-start gap-2 text-sm text-muted-foreground">
-                  <span className="shrink-0 font-semibold">{idx + 1}.</span>
-                  <span className="leading-relaxed">{clause}</span>
-                </div>
-              ))}
-              <label className="flex items-start gap-2.5 cursor-pointer select-none pt-1 border-t border-border mt-1">
-                <input
-                  type="checkbox"
-                  checked={report.selectedClauses === undefined || report.selectedClauses.includes(5)}
-                  onChange={(e) => {
-                    update({ selectedClauses: e.target.checked ? [5] : [] });
-                  }}
-                  className="mt-0.5 h-4 w-4 shrink-0 accent-primary"
+            <div dir="rtl" className="rounded-2xl border-2 border-primary/20 bg-card p-4 space-y-4">
+              <div>
+                <Label className="text-sm font-bold text-primary">תוקף האישור</Label>
+                <p className="mt-0.5 text-xs text-muted-foreground">
+                  אישור לאירוע אחד ניתן לערב אחד. השאר ריק אם האישור אינו מוגבל בזמן.
+                </p>
+                <Input
+                  type="datetime-local"
+                  className="mt-2"
+                  value={report.safetyValidUntil ?? ""}
+                  onChange={(e) => update({ safetyValidUntil: e.target.value || undefined })}
                 />
-                <span className="text-sm leading-relaxed">אין האישור מתייחס לבטיחות המשתמשים אלא לבטיחות הסביבה.</span>
-              </label>
+              </div>
+
+              <div className="border-t border-border pt-3">
+                <div className="flex items-baseline justify-between">
+                  <Label className="text-sm font-bold text-primary">הערות וסייגים לדוח</Label>
+                  {report.safetyClauses && (
+                    <button
+                      type="button"
+                      onClick={() => update({ safetyClauses: undefined, selectedClauses: undefined })}
+                      className="text-xs font-semibold text-muted-foreground underline-offset-4 hover:underline"
+                    >
+                      החזרת הנוסח המקורי
+                    </button>
+                  )}
+                </div>
+                <p className="mt-0.5 text-xs text-muted-foreground">
+                  אפשר לערוך כל סעיף, למחוק סעיף או להוסיף אחד משלך.
+                </p>
+
+                <ul className="mt-3 space-y-2">
+                  {safetyClauseDrafts(report).map((clause, idx) => (
+                    <li key={idx} className="flex items-start gap-2">
+                      <span className="mt-2.5 shrink-0 text-sm font-semibold text-muted-foreground">{idx + 1}.</span>
+                      <Textarea
+                        rows={2}
+                        value={clause}
+                        onChange={(e) => {
+                          const next = safetyClauseDrafts(report).slice();
+                          next[idx] = e.target.value;
+                          update({ safetyClauses: next });
+                        }}
+                        className="flex-1 text-sm leading-relaxed"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const next = safetyClauseDrafts(report).filter((_, i) => i !== idx);
+                          update({ safetyClauses: next });
+                        }}
+                        aria-label={`מחיקת סעיף ${idx + 1}`}
+                        className="mt-1.5 grid h-9 w-9 shrink-0 place-items-center rounded-xl text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
+                      >
+                        <X className="h-4 w-4" />
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="mt-2 w-full gap-2 rounded-2xl"
+                  onClick={() => update({ safetyClauses: [...safetyClauseDrafts(report), ""] })}
+                >
+                  <Plus className="h-4 w-4" />
+                  הוספת סעיף
+                </Button>
+              </div>
             </div>
           )}
 
