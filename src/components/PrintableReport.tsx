@@ -1783,7 +1783,7 @@ export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, sett
 
         {/* Disclaimer clauses — general_safety: 1-5 always, 6 conditional */}
         {report.surveyType === "general_safety" && safetyClauseList.length > 0 && (
-          <div style={{ marginTop: 32, border: "2px solid #1e3a8a", borderRadius: 14, padding: "20px 24px", backgroundColor: "#f0f4ff" }}>
+          <div data-pdf-no-break="" style={{ marginTop: 32, border: "2px solid #1e3a8a", borderRadius: 14, padding: "20px 24px", backgroundColor: "#f0f4ff", pageBreakInside: "avoid" }}>
             <h3 data-pdf-no-break="" style={{ margin: "0 0 14px", fontSize: 17, fontWeight: 800, color: "#1e3a8a" }}>הערות וסייגים</h3>
             <div style={{ direction: "rtl" }}>
               {safetyClauseList.map((clause, idx) => (
@@ -1798,7 +1798,7 @@ export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, sett
 
         {/* Required approvals — general_safety only */}
         {report.surveyType === "general_safety" && (report.requiredApprovals?.length ?? 0) > 0 && (
-          <div data-pdf-page-break="" style={{ marginTop: 32, border: "2px solid #1e3a8a", borderRadius: 14, padding: "20px 24px", backgroundColor: "#f0f4ff" }}>
+          <div data-pdf-no-break="" style={{ marginTop: 32, border: "2px solid #1e3a8a", borderRadius: 14, padding: "20px 24px", backgroundColor: "#f0f4ff", pageBreakInside: "avoid" }}>
             <h3 style={{ margin: "0 0 12px", fontSize: 17, fontWeight: 800, color: "#1e3a8a" }}>אישורים נדרשים</h3>
             <div style={{ direction: "rtl", fontSize: 14, border: "1px solid #1e3a8a", borderRadius: 6, overflow: "hidden" }}>
               <div style={{ display: "flex", backgroundColor: "#1e3a8a", color: "#ffffff", fontWeight: 700 }}>
@@ -1819,7 +1819,7 @@ export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, sett
 
         {/* Opinion summary */}
         {report.accessibilityComplianceStatus && (
-          <div style={{ marginTop: 32, border: "2px solid #1e3a8a", borderRadius: 14, padding: "20px 24px", backgroundColor: "#f0f4ff", pageBreakInside: "avoid" }}>
+          <div data-pdf-no-break="" style={{ marginTop: 32, border: "2px solid #1e3a8a", borderRadius: 14, padding: "20px 24px", backgroundColor: "#f0f4ff", pageBreakInside: "avoid" }}>
             <h3 style={{ margin: "0 0 12px", fontSize: 17, fontWeight: 800, color: "#1e3a8a" }}>
               {report.surveyType === "general_safety" ? "סיכום ממצאי הבדיקה:" : "סיכום חוות הדעת:"}
             </h3>
@@ -1864,8 +1864,8 @@ export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, sett
           <div style={{ marginTop: 40, pageBreakInside: "avoid" }}>
             {report.generalNotes && (
               <>
-                <h3 style={{ margin: "0 0 8px", fontSize: 18, color: "#1e3a8a" }}>הערות כלליות</h3>
-                <div style={{ whiteSpace: "pre-wrap", lineHeight: 1.7, background: "#f8fafc", border: "1px solid #e2e8f0", borderRadius: 12, padding: 16, fontSize: 14, marginBottom: 32 }}>
+                <h3 data-pdf-no-break="" style={{ margin: "0 0 8px", fontSize: 18, color: "#1e3a8a" }}>הערות כלליות</h3>
+                <div data-pdf-no-break="" style={{ whiteSpace: "pre-wrap", lineHeight: 1.7, background: "#f8fafc", border: "1px solid #e2e8f0", borderRadius: 12, padding: 16, fontSize: 14, marginBottom: 32 }}>
                   {report.generalNotes}
                 </div>
               </>
