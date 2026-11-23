@@ -1,30 +1,50 @@
 /**
- * Overtime, as logged from the field.
+ * What an employee did in a day, and which part of it is paid by the hour.
  *
- * The point of this screen is not a number of hours — a number on its own
- * cannot be checked against anything. It is the afternoon it was made of:
- * which sites, and between which hours at each. That is what makes a claim
- * verifiable against the schedule, and it is why an entry with no visits
- * cannot be sent.
+ * Most work here is paid a fixed price for the job, so asking for start and
+ * end times would be asking for numbers nobody uses — and a field nobody
+ * uses is a field that gets filled in carelessly, which is worse than not
+ * having it. The exception is accompanying an event as its safety engineer:
+ * that is priced by the hour, so there the hours are mandatory and are
+ * checked.
  *
- * Everything here is pure, so the rules that decide whether an entry may be
+ * Hence a kind per job rather than per day: one afternoon can hold a fixed
+ * price survey and an evening event, and only the second adds to a salary.
+ *
+ * Everything here is pure, so the rules that decide whether a day may be
  * sent can be tested without a screen or a database.
  */
 
-export type Visit = {
+export type JobKind = "hourly" | "fixed";
+
+export const JOB_KIND_LABEL: Record<JobKind, string> = {
+  hourly: "ליווי אירוע — לפי שעה",
+  fixed: "עבודה במחיר קבוע",
+};
+
+export const JOB_KIND_SHORT: Record<JobKind, string> = {
+  hourly: "לפי שעה",
+  fixed: "מחיר קבוע",
+};
+
+export type WorkJob = {
   id: string;
-  /** Where the consultant was. */
-  place: string;
-  /** "HH:MM", 24-hour. */
-  from: string;
-  to: string;
+  /** The job as the schedule calls it, where there is a schedule. */
+  name: string;
+  kind: JobKind;
+  /** "HH:MM", 24-hour. Required for an hourly job, absent from a fixed one. */
+  from?: string;
+  to?: string;
+  place?: string;
+  /** The schedule row this was picked from, when it was picked and not typed. */
+  scheduleId?: string;
 };
 
 export type WorkHoursEntry = {
   id: string;
   /** "YYYY-MM-DD" — the day the work was done. */
   date: string;
-  visits: Visit[];
+  jobs: WorkJob[];
   note?: string;
   createdAt: number;
   updatedAt: number;
@@ -46,21 +66,32 @@ function toMinutes(time: string): number {
 }
 
 /**
- * How long a visit lasted, in minutes.
+ * How long an hourly job lasted, in minutes. A fixed-price job is zero,
+ * because it is not measured in time at all.
  *
- * A visit that ends earlier than it began ran past midnight — a safety
- * survey at a school finishing at 00:30 is an ordinary evening, not a typing
- * mistake — so it counts into the next day rather than coming out negative.
+ * A job that ends earlier than it began ran past midnight — an event
+ * finishing at 00:30 is an ordinary evening, not a typing mistake — so it
+ * counts into the next day rather than coming out negative.
  */
-export function visitMinutes(visit: Pick<Visit, "from" | "to">): number {
-  if (!isTime(visit.from) || !isTime(visit.to)) return 0;
-  const from = toMinutes(visit.from);
-  const to = toMinutes(visit.to);
+export function jobMinutes(job: Pick<WorkJob, "kind" | "from" | "to">): number {
+  if (job.kind !== "hourly") return 0;
+  if (!isTime(job.from) || !isTime(job.to)) return 0;
+  const from = toMinutes(job.from!);
+  const to = toMinutes(job.to!);
   return to >= from ? to - from : 24 * 60 - from + to;
 }
 
-export function entryMinutes(entry: Pick<WorkHoursEntry, "visits">): number {
-  return (entry.visits ?? []).reduce((sum, v) => sum + visitMinutes(v), 0);
+/** The hours in a day that are paid by the hour. */
+export function entryMinutes(entry: Pick<WorkHoursEntry, "jobs">): number {
+  return (entry.jobs ?? []).reduce((sum, j) => sum + jobMinutes(j), 0);
+}
+
+export function hourlyJobs(entry: Pick<WorkHoursEntry, "jobs">): WorkJob[] {
+  return (entry.jobs ?? []).filter((j) => j.kind === "hourly");
+}
+
+export function fixedJobs(entry: Pick<WorkHoursEntry, "jobs">): WorkJob[] {
+  return (entry.jobs ?? []).filter((j) => j.kind !== "hourly");
 }
 
 /** "3:45" — hours and minutes, the way a timesheet is read. */
@@ -72,7 +103,7 @@ export function formatMinutes(minutes: number): string {
 }
 
 /**
- * What is stopping this entry from being sent, in the order a person would
+ * What is stopping this day from being sent, in the order a person would
  * meet it. An empty list means it is ready.
  */
 export function problemsWith(entry: WorkHoursEntry): string[] {
@@ -82,24 +113,26 @@ export function problemsWith(entry: WorkHoursEntry): string[] {
     problems.push("חסר תאריך.");
   }
 
-  const visits = entry.visits ?? [];
-  if (visits.length === 0) {
-    problems.push("צריך לפרט לפחות מקום אחד שבו ביקרת.");
+  const jobs = entry.jobs ?? [];
+  if (jobs.length === 0) {
+    problems.push("צריך לפרט לפחות עבודה אחת.");
   }
 
-  visits.forEach((v, i) => {
-    const which = `ביקור ${i + 1}`;
-    if (!v.place?.trim()) problems.push(`${which}: חסר שם המקום.`);
-    if (!isTime(v.from) || !isTime(v.to)) {
-      problems.push(`${which}: חסרות שעות התחלה וסיום.`);
-    } else if (visitMinutes(v) === 0) {
+  jobs.forEach((job, i) => {
+    const which = `עבודה ${i + 1}`;
+    if (!job.name?.trim()) problems.push(`${which}: חסר שם העבודה.`);
+    if (job.kind !== "hourly") return;
+    // Only here, because only here do the hours decide what is paid.
+    if (!isTime(job.from) || !isTime(job.to)) {
+      problems.push(`${which}: ליווי אירוע מחייב שעת התחלה וסיום.`);
+    } else if (jobMinutes(job) === 0) {
       problems.push(`${which}: שעת ההתחלה והסיום זהות.`);
     }
   });
 
   // Being in two places at once is the one thing a schedule cannot match.
-  for (const [a, b] of overlappingPairs(visits)) {
-    problems.push(`ביקור ${a + 1} וביקור ${b + 1} חופפים בשעות.`);
+  for (const [a, b] of overlappingPairs(jobs)) {
+    problems.push(`עבודה ${a + 1} ועבודה ${b + 1} חופפות בשעות.`);
   }
 
   return problems;
@@ -109,11 +142,11 @@ export function canSend(entry: WorkHoursEntry): boolean {
   return problemsWith(entry).length === 0;
 }
 
-/** Indexes of visits whose hours run over each other, each pair once. */
-function overlappingPairs(visits: Visit[]): [number, number][] {
-  const spans = visits.map((v) =>
-    isTime(v.from) && isTime(v.to)
-      ? { from: toMinutes(v.from), to: toMinutes(v.from) + visitMinutes(v) }
+/** Indexes of hourly jobs whose hours run over each other, each pair once. */
+function overlappingPairs(jobs: WorkJob[]): [number, number][] {
+  const spans = jobs.map((j) =>
+    j.kind === "hourly" && isTime(j.from) && isTime(j.to)
+      ? { from: toMinutes(j.from!), to: toMinutes(j.from!) + jobMinutes(j) }
       : null,
   );
   const pairs: [number, number][] = [];
@@ -137,26 +170,45 @@ export function formatDate(date: string): string {
 
 export function emailSubject(entry: WorkHoursEntry, consultantName: string): string {
   const who = consultantName.trim();
-  return `שעות נוספות ${formatDate(entry.date)}${who ? ` — ${who}` : ""}`;
+  return `דיווח עבודה ${formatDate(entry.date)}${who ? ` — ${who}` : ""}`;
 }
 
 /**
  * The message itself: plain text, because it is read on a phone, forwarded,
- * and sometimes printed. Every visit on its own line, the total at the end,
- * and nothing that needs the app to make sense of it.
+ * and sometimes printed. The hourly work and the fixed-price work are listed
+ * apart, and only the hourly total is added up — that total is the number
+ * the month's salary is adjusted by, and putting anything else beside it
+ * would invite the two to be added together.
  */
 export function emailBody(entry: WorkHoursEntry, consultantName: string): string {
   const lines: string[] = [];
   const who = consultantName.trim();
   if (who) lines.push(`שם: ${who}`);
   lines.push(`תאריך: ${formatDate(entry.date)}`);
-  lines.push("");
-  lines.push("מקומות ושעות:");
-  entry.visits.forEach((v, i) => {
-    lines.push(`${i + 1}. ${v.place.trim()} — ${v.from}–${v.to} (${formatMinutes(visitMinutes(v))})`);
-  });
-  lines.push("");
-  lines.push(`סה"כ שעות נוספות: ${formatMinutes(entryMinutes(entry))}`);
+
+  const hourly = hourlyJobs(entry);
+  const fixed = fixedJobs(entry);
+
+  if (hourly.length) {
+    lines.push("");
+    lines.push("ליווי אירועים (לפי שעה):");
+    hourly.forEach((j, i) => {
+      const where = j.place?.trim() ? `, ${j.place.trim()}` : "";
+      lines.push(`${i + 1}. ${j.name.trim()}${where} — ${j.from}–${j.to} (${formatMinutes(jobMinutes(j))})`);
+    });
+    lines.push("");
+    lines.push(`סה"כ שעות לתשלום: ${formatMinutes(entryMinutes(entry))}`);
+  }
+
+  if (fixed.length) {
+    lines.push("");
+    lines.push("עבודות במחיר קבוע:");
+    fixed.forEach((j, i) => {
+      const where = j.place?.trim() ? ` — ${j.place.trim()}` : "";
+      lines.push(`${i + 1}. ${j.name.trim()}${where}`);
+    });
+  }
+
   if (entry.note?.trim()) {
     lines.push("");
     lines.push(`הערות: ${entry.note.trim()}`);
@@ -204,14 +256,24 @@ export function newEntry(id: string, now: number = Date.now()): WorkHoursEntry {
   return {
     id,
     date: todayISO(new Date(now)),
-    visits: [],
+    jobs: [],
     createdAt: now,
     updatedAt: now,
   };
 }
 
-export function newVisit(id: string): Visit {
-  return { id, place: "", from: "", to: "" };
+/**
+ * A new line on the form.
+ *
+ * Fixed price by default, because that is most of the work. An employee who
+ * accompanied an event says so deliberately, and is then asked for hours —
+ * rather than everyone being asked for hours and most people leaving them
+ * blank or, worse, inventing them.
+ */
+export function newJob(id: string, kind: JobKind = "fixed"): WorkJob {
+  return kind === "hourly"
+    ? { id, name: "", kind, from: "", to: "" }
+    : { id, name: "", kind };
 }
 
 /** Newest day first; two entries on one day keep the later edit on top. */
@@ -222,9 +284,26 @@ export function sortEntries(entries: WorkHoursEntry[]): WorkHoursEntry[] {
   });
 }
 
-/** The hours in a month, for the line that says how the month is going. */
+/** The payable hours in a month, for the line that says how the month is going. */
 export function minutesInMonth(entries: WorkHoursEntry[], monthISO: string): number {
   return entries
     .filter((e) => (e.date ?? "").startsWith(monthISO))
     .reduce((sum, e) => sum + entryMinutes(e), 0);
+}
+
+/** "2026-11" — the month a date falls in. */
+export function monthOf(date: string): string {
+  return (date ?? "").slice(0, 7);
+}
+
+/** "נובמבר 2026", for a heading. */
+export function formatMonth(monthISO: string): string {
+  const months = [
+    "ינואר", "פברואר", "מרץ", "אפריל", "מאי", "יוני",
+    "יולי", "אוגוסט", "ספטמבר", "אוקטובר", "נובמבר", "דצמבר",
+  ];
+  const [y, m] = (monthISO ?? "").split("-");
+  const i = Number(m) - 1;
+  if (!y || i < 0 || i > 11) return monthISO ?? "";
+  return `${months[i]} ${y}`;
 }
