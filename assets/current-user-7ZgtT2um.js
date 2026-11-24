@@ -1,1 +1,0 @@
-import{J as t,L as a,H as i}from"./index-BcLsS3L6.js";const o=5e3;async function u(){var s;return t(i.auth.getSession().then(n=>{var r,e;return((e=(r=n.data.session)==null?void 0:r.user)==null?void 0:e.id)??null}),o,((s=a())==null?void 0:s.id)??null)}async function d(){const s=await u();if(!s)throw new Error("משתמש לא מחובר");return s}export{u as c,d as r};
