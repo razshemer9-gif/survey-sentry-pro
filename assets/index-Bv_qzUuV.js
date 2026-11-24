@@ -1,0 +1,1 @@
+import{r as o,c as s}from"./vendor-react-Fwto6RMk.js";import{L as u}from"./index-DOQkZriu.js";var i=s[" useId ".trim().toString()]||(()=>{}),c=0;function f(r){const[t,e]=o.useState(i());return u(()=>{e(a=>a??String(c++))},[r]),t?`radix-${t}`:""}export{f as u};
