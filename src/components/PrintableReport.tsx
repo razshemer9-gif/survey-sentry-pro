@@ -921,7 +921,6 @@ export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, sett
             </div>
           )}
 
-          {/* Photo cards — 2 per row; image + caption never split across pages */}
           {/* The hazards, as a table rather than a grid of cards.
               Cards put a photograph beside a line of text and let the page
               decide how they lined up, so a survey with photographs of
