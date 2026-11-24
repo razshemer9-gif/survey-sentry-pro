@@ -1,6 +1,6 @@
 import { createContext, useContext, useEffect, useRef, useState, ReactNode } from "react";
 import { User } from "@supabase/supabase-js";
-import { supabase } from "@/lib/supabase";
+import { storedSessionUser, supabase } from "@/lib/supabase";
 import { withTimeout } from "@/lib/async";
 import { cacheRole, clearCachedRole, readCachedRole } from "@/lib/role-cache";
 
@@ -92,18 +92,29 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     mounted.current = true;
 
     const init = async () => {
+      // A session the device already holds, in case the server cannot be
+      // reached. Taken before the call, so the answer to "did it come back
+      // in time" is never confused with "is anybody signed in".
+      const known = storedSessionUser();
       try {
-        const result = await withTimeout(
-          supabase.auth.getSession(),
+        // The fallback is what this device already knows, so a call that
+        // does not come back leaves the person exactly as signed in as they
+        // were. It used to be "no session", which is why a server that went
+        // quiet signed everybody out — and sent them to a login screen that
+        // could not let them back in, being served by the same server.
+        const u = await withTimeout(
+          supabase.auth.getSession().then((r) => r.data.session?.user ?? null),
           8000,
-          { data: { session: null }, error: null }
+          known,
         );
         if (!mounted.current) return;
-        const u = result.data.session?.user ?? null;
         setUser(u);
         await loadRole(u);
       } catch {
-        // network error — show app as logged out
+        // Unreachable is not signed out.
+        if (!mounted.current) return;
+        setUser(known);
+        await loadRole(known);
       } finally {
         if (mounted.current) setLoading(false);
       }
