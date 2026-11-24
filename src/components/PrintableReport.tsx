@@ -16,7 +16,7 @@ import {
 import { ELEMENT_STABILITY_HEADER_BANNER_APPROVAL, ELEMENT_STABILITY_HEADER_BANNER_SURVEY } from "@/lib/element-stability-banner";
 import { GENERAL_SAFETY_HEADER_BANNER_APPROVAL, GENERAL_SAFETY_HEADER_BANNER_SURVEY } from "@/lib/general-safety-banner";
 import { formatValidUntil, safetyClauses, splitItems } from "@/lib/general-safety";
-import { RISK_SURVEY_DEFAULT_FENCING_NOTE, RISK_SURVEY_SUBTITLE } from "@/lib/risk-survey";
+import { printableHazards, RISK_SURVEY_DEFAULT_FENCING_NOTE, RISK_SURVEY_SUBTITLE } from "@/lib/risk-survey";
 import { RISK_SURVEY_HEADER_BANNER } from "@/lib/risk-survey-banner";
 import React, { forwardRef } from "react";
 
@@ -885,6 +885,7 @@ export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, sett
     const accent = "#1e3a8a";
     const fencingNote = report.riskFencingNote ?? RISK_SURVEY_DEFAULT_FENCING_NOTE;
     const showFencingNote = report.riskFencingNoteEnabled !== false && fencingNote.trim().length > 0;
+    const riskHazards = printableHazards(report.items);
 
     return (
       // data-pdf-page-numbers: opt-in digits-only "1 / N" page indicator
@@ -920,9 +921,13 @@ export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, sett
           )}
 
           {/* Photo cards — 2 per row; image + caption never split across pages */}
-          {report.items.length > 0 ? (
+          {/* A hazard can now be added before it has a photograph or a word
+              of description. One still being filled in is not a card: an
+              empty bordered box in a PDF reads as something that went
+              wrong. */}
+          {riskHazards.length > 0 ? (
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
-              {report.items.map((item) => (
+              {riskHazards.map((item) => (
                 <div key={item.id} data-pdf-no-break="" style={{ border: "1px solid #e2e8f0", borderRadius: 12, overflow: "hidden", background: "#fff" }}>
                   {item.photo && (
                     <div style={{ width: "100%", height: 210, background: "#f8fafc", display: "flex", alignItems: "center", justifyContent: "center" }}>
@@ -938,7 +943,7 @@ export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, sett
               ))}
             </div>
           ) : (
-            <div style={{ fontSize: 14, color: "#94a3b8", textAlign: "center", padding: "40px 0" }}>לא נוספו תמונות</div>
+            <div style={{ fontSize: 14, color: "#94a3b8", textAlign: "center", padding: "40px 0" }}>לא נוספו מפגעים</div>
           )}
 
           {/* Fencing note — appears once, at the very end, framed across the page width */}
