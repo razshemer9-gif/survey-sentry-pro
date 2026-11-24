@@ -47,7 +47,7 @@ import { buildPdfFileName, isMobileDevice, sanitizeFileNamePart } from "@/lib/pd
 import { cropImageDataUrl, fileToCompressedDataUrl, formatCurrency, rotateImageDataUrl } from "@/lib/image";
 import { itemPhotos, itemPhotosPatch } from "@/lib/item-photos";
 import { AutoTextarea } from "@/components/AutoTextarea";
-import { RISK_SURVEY_DEFAULT_FENCING_NOTE } from "@/lib/risk-survey";
+import { RISK_APPROVALS_DEFAULT, RISK_SURVEY_DEFAULT_FENCING_NOTE, riskApprovals } from "@/lib/risk-survey";
 import { cn } from "@/lib/utils";
 import { SignaturePad } from "@/components/SignaturePad";
 import { useEngUi } from "@/hooks/use-eng-ui";
@@ -1619,10 +1619,19 @@ export default function ReportEditor() {
             );
           })()}
 
-          {/* Required approvals — general_safety only */}
-          {report.surveyType === "general_safety" && (() => {
-            const PREDEFINED = ["אישור חשמלאי בודק", "אגרונום", "קונסטרוקטור"];
-            const selected = report.requiredApprovals ?? [];
+          {/* Required approvals — general_safety and risk_survey.
+              The two differ in more than their list. A general safety
+              approval is opt-in: nothing is required until it is ticked. A
+              risk survey's are opt-out, all five on from the start, because
+              there the danger is the approval nobody remembered to ask for.
+              That difference is the whole reason riskApprovals exists
+              instead of a second literal here. */}
+          {(report.surveyType === "general_safety" || report.surveyType === "risk_survey") && (() => {
+            const isRisk = report.surveyType === "risk_survey";
+            const PREDEFINED = isRisk
+              ? [...RISK_APPROVALS_DEFAULT]
+              : ["אישור חשמלאי בודק", "אגרונום", "קונסטרוקטור"];
+            const selected = isRisk ? riskApprovals(report) : (report.requiredApprovals ?? []);
             const custom = selected.filter((a) => !PREDEFINED.includes(a));
             return (
               <div dir="rtl" className="rounded-2xl border-2 border-primary/20 bg-card p-4 space-y-3">
