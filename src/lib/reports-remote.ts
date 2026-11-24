@@ -11,14 +11,11 @@
 // If the admin migration has not been run, admins simply get their own reports
 // back and the feature stays dormant.
 import { SurveyReport } from "./types";
+import { requireUserId as getUserId } from "./current-user";
 import { supabase } from "./supabase";
 import { nameForAccount } from "./display-name";
 
-async function getUserId(): Promise<string> {
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) throw new Error("משתמש לא מחובר");
-  return user.id;
-}
+
 
 /** Stamp the owning account onto the report payload — see SurveyReport.ownerId. */
 function withOwner(data: SurveyReport, deviceId: string): SurveyReport {

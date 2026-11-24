@@ -4,6 +4,7 @@
 // the server.
 import { toast } from "sonner";
 import { getDirtyRows, markSynced, putCachedReport, removeCachedReport } from "./offline-db";
+import { currentUserId } from "./current-user";
 import { supabase } from "./supabase";
 import { remoteDeleteReport, remoteOldestOwnReports, remoteSaveReport, SaveOutcome } from "./reports-remote";
 import { isOutOfSpace, MAX_EVICTIONS_PER_SAVE, pickEviction } from "./storage-pressure";
@@ -42,8 +43,11 @@ export async function syncPendingReports(): Promise<void> {
       // Only this account's work is pushed. Another account's unsent rows
       // wait on the device until they sign back in — pushing them now would
       // either be refused, or, for an owner, file them under the wrong name.
-      const { data: { session } } = await supabase.auth.getSession();
-      const userId = session?.user?.id ?? null;
+      // Bounded, because this is the one loop that has to survive a bad
+      // network to be worth having. Waiting here with no end meant the
+      // mechanism built to carry work up when the connection returns was
+      // itself stopped by the connection being away.
+      const userId = await currentUserId();
       const dirty = await getDirtyRows(userId);
       setStatus({ pendingCount: dirty.length });
       // Everything still waiting to be sent is off limits when room has to

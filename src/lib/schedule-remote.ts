@@ -10,6 +10,7 @@
  * added rows would leave the cancelled afternoon job sitting there looking
  * current, which is the one thing a schedule must never do.
  */
+import { requireUserId } from "./current-user";
 import { supabase } from "./supabase";
 import type { ScheduleRow } from "./schedule";
 
@@ -48,8 +49,7 @@ export async function remoteScheduleForDate(date: string): Promise<ScheduleRow[]
  */
 export async function remoteReplaceSchedule(rows: ScheduleRow[]): Promise<number> {
   if (rows.length === 0) return 0;
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) throw new Error("משתמש לא מחובר");
+  const userId = await requireUserId();
 
   const dates = [...new Set(rows.map((r) => r.date))];
   const { error: wipeError } = await supabase
@@ -63,7 +63,7 @@ export async function remoteReplaceSchedule(rows: ScheduleRow[]): Promise<number
   const { error } = await supabase.from("work_schedule").insert(
     [...unique.values()].map((r) => ({
       id: r.id, date: r.date, data: r,
-      uploaded_by: user.id, uploaded_at: now,
+      uploaded_by: userId, uploaded_at: now,
     })),
   );
   if (error) throw error;

@@ -1,5 +1,7 @@
 import { User } from "@supabase/supabase-js";
 import { clearCachedRole } from "./role-cache";
+import { withTimeout } from "./async";
+import { storedSessionUser } from "./stored-session";
 import { supabase } from "./supabase";
 
 export async function signIn(email: string, password: string) {
@@ -23,7 +25,16 @@ export function onAuthChange(cb: (user: User | null) => void): () => void {
   return () => subscription.unsubscribe();
 }
 
+/**
+ * Bounded, and from the device when the server will not say.
+ *
+ * getUser always goes to the network, so an unreachable server did not
+ * mean "I could not check" — it meant waiting with no end.
+ */
 export async function getCurrentUser(): Promise<User | null> {
-  const { data: { user } } = await supabase.auth.getUser();
-  return user;
+  return withTimeout(
+    supabase.auth.getUser().then((r) => r.data.user),
+    5000,
+    storedSessionUser(),
+  );
 }

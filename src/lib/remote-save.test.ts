@@ -19,7 +19,10 @@ let script: Script = {};
 
 vi.mock("./supabase", () => ({
   supabase: {
-    auth: { getUser: async () => ({ data: { user: { id: "me" } } }) },
+    auth: {
+      getUser: async () => ({ data: { user: { id: "me" } } }),
+      getSession: async () => ({ data: { session: { user: { id: "me" } } } }),
+    },
     from: () => {
       const builder: Record<string, unknown> = {};
       const chain = () => builder;
