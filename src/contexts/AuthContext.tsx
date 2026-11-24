@@ -2,7 +2,7 @@ import { createContext, useContext, useEffect, useRef, useState, ReactNode } fro
 import { User } from "@supabase/supabase-js";
 import { storedSessionUser, supabase } from "@/lib/supabase";
 import { withTimeout } from "@/lib/async";
-import { cacheRole, clearCachedRole, readCachedRole } from "@/lib/role-cache";
+import { cacheRole, readCachedRole } from "@/lib/role-cache";
 
 export type UserRole = "owner" | "admin" | "employee";
 
@@ -61,7 +61,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   async function loadRole(u: User | null) {
     if (!u) {
-      clearCachedRole();
+      // The remembered role is deliberately NOT cleared here. This runs
+      // whenever the app does not know who is signed in, and during an
+      // outage that is a passing state, not a decision — clearing it is how
+      // an owner came back from a dropped connection as an employee, with
+      // דוחות החברה gone and no server to ask. It is keyed by account, so
+      // keeping it offers nothing to anyone else, and what the account may
+      // actually read stays with RLS either way. signOut clears it, because
+      // that is the moment somebody meant it.
       if (mounted.current) setRole(null);
       return;
     }

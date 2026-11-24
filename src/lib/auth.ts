@@ -1,4 +1,5 @@
 import { User } from "@supabase/supabase-js";
+import { clearCachedRole } from "./role-cache";
 import { supabase } from "./supabase";
 
 export async function signIn(email: string, password: string) {
@@ -10,6 +11,9 @@ export async function signIn(email: string, password: string) {
 export async function signOut() {
   const { error } = await supabase.auth.signOut();
   if (error) throw error;
+  // Here, and not wherever the app merely fails to find out who is signed
+  // in: this is the one moment a person said to forget them.
+  clearCachedRole();
 }
 
 export function onAuthChange(cb: (user: User | null) => void): () => void {
