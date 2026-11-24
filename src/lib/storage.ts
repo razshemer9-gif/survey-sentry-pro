@@ -10,7 +10,6 @@ import {
 } from "./types";
 import { pickSavedList, SavedListRow, savedListToItems, TYPES_WITH_SAVED_START } from "./starting-items";
 import { AccessibilityRequirement } from "./standards-types";
-import { storedSessionUser } from "./stored-session";
 import { supabase } from "./supabase";
 
 /**
@@ -18,31 +17,10 @@ import { supabase } from "./supabase";
  * device — never a network call, because every cache read waits on it.
  * Null when nobody is signed in, which shows nothing rather than everything.
  */
-/**
- * Who is signed in, answered within five seconds, always.
- *
- * This sits inside saveReport, which every autosave goes through, and it
- * used to wait on the network with no bound at all. While Supabase was
- * down that meant tapping a survey type spun for ever and no report could
- * be created or saved — the app, in the words of the person using it, just
- * did not work.
- *
- * The device already knows the answer. getSession is still asked first,
- * because it is the authority when it can be reached; when it cannot, the
- * stored session stands in rather than nothing at all. Nothing here grants
- * access: this id only decides which account's drawer a report is filed
- * in on this phone.
- */
-async function currentUserId(): Promise<string | null> {
-  return withTimeout(
-    supabase.auth.getSession().then((r) => r.data.session?.user?.id ?? null),
-    5000,
-    storedSessionUser()?.id ?? null,
-  );
-}
 import { RISK_SURVEY_DEFAULT_FENCING_NOTE } from "./risk-survey";
 import { FORM8_REQUIREMENTS } from "./form8-data";
 import { withDeadline, withTimeout } from "./async";
+import { currentUserId, requireUserId as getUserId } from "./current-user";
 import { copyOfReport } from "./duplicate-report";
 import { cacheSettings, cachedSettings, resolveSettings } from "./settings-cache";
 import {
@@ -58,19 +36,6 @@ import { startSyncEngine, syncPendingReports } from "./sync-engine";
 
 const K_TEMPLATES = "ans.templates.v1";
 
-/**
- * The same question, for the callers that cannot proceed without a name.
- *
- * It used to call getUser, which always goes to the network — so an
- * unreachable server did not mean "I could not check", it meant waiting for
- * ever. Routed through currentUserId it is bounded, and falls back to what
- * the device holds.
- */
-async function getUserId(): Promise<string> {
-  const id = await currentUserId();
-  if (!id) throw new Error("משתמש לא מחובר");
-  return id;
-}
 
 function read<T>(key: string, fallback: T): T {
   try {

@@ -14,6 +14,7 @@ import { PhotoPicker } from "@/components/PhotoPicker";
 import { ConsultantSettings, SurveyReportFormat, SurveyType, SURVEY_TYPES } from "@/lib/types";
 import { ELEMENT_STABILITY_DEFAULT_TERMS } from "@/lib/element-stability";
 import { TimeoutError } from "@/lib/async";
+import { currentUserId } from "@/lib/current-user";
 import { loadUserSettings, publishDisplayName, saveUserSettings } from "@/lib/storage";
 import { cn } from "@/lib/utils";
 import { signOut } from "@/lib/auth";
@@ -145,8 +146,11 @@ export default function Settings() {
     // the next person to sign in on this phone must not find them. Anything
     // still waiting to be sent is left alone, and goes up on the next sign-in.
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (session?.user?.id) await clearCacheFor(session.user.id);
+      // Bounded: signing out is the one thing that must always be possible,
+      // and it used to wait on a server that might never answer — the same
+      // stuck button, in the one place with no way around it.
+      const userId = await currentUserId();
+      if (userId) await clearCacheFor(userId);
     } catch (err) {
       console.warn("[sign-out] could not clear the cached reports", err);
     }

@@ -10,14 +10,11 @@
 // So these queries do not filter by device_id themselves. Doing so would
 // re-apply the employee rule to an owner and hide the very rows the screen
 // exists to show.
+import { requireUserId as getUserId } from "./current-user";
 import { supabase } from "./supabase";
 import { WorkHoursEntry } from "./work-hours";
 
-async function getUserId(): Promise<string> {
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) throw new Error("משתמש לא מחובר");
-  return user.id;
-}
+
 
 type Row = { id: string; device_id: string; data: WorkHoursEntry };
 
