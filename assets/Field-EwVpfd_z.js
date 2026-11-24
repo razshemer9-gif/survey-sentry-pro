@@ -1,1 +1,0 @@
-import{j as e}from"./index-DJ1iHDN8.js";import{L as r}from"./input-Dp4V5eXL.js";function i({label:s,children:t}){return e.jsxs("div",{className:"space-y-1.5",children:[e.jsx(r,{className:"field-label text-xs font-semibold text-muted-foreground",children:s}),t]})}export{i as F};

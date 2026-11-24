@@ -1,0 +1,1 @@
+import{H as t,N as o}from"./index-Dru2Eemg.js";async function c(a,n){const{data:r,error:s}=await t.auth.signInWithPassword({email:a,password:n});if(s)throw s;return r}async function e(){const{error:a}=await t.auth.signOut();if(a)throw a;o()}export{c as a,e as s};
