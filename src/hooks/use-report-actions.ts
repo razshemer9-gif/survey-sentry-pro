@@ -41,9 +41,18 @@ export function useReportActions(
     }
   }, [duplicatingId, navigate, setReports]);
 
+  /**
+   * Delete, and offer it back.
+   *
+   * There is no "are you sure" here on purpose. A question asked before
+   * every delete is answered without being read by the third time, which
+   * means it stops being a safeguard and becomes a tap — and the real
+   * safeguard is below: the row goes at once, the delete itself waits, and
+   * the toast that follows takes it back for six seconds. A consultant
+   * deleting the wrong line gets it back either way, and nobody has to
+   * confirm the right one.
+   */
   const remove = useCallback((id: string) => {
-    if (!confirm("למחוק את הדוח?")) return;
-
     const unhide = () => setHiddenIds((prev) => {
       const next = new Set(prev);
       next.delete(id);
