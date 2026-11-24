@@ -1848,6 +1848,13 @@ export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, sett
 
       {/* CHECKLIST PAGE(S) */}
       <section style={{ padding: "48px", background: "#fff" }}>
+        {/* The heading only when there is something under it.
+            A survey whose items are all documentation has no findings, and
+            this printed as a title, a rule and then a gap — which to a
+            client reads as a section that went missing, not as one that was
+            never needed. */}
+        {reportFindings.length > 0 && (
+        <>
         <PageHeader title="חוות דעת מקצועית" company={settings.companyName} accentColor={surveyConfig.color} />
 
         <div style={{ marginTop: 24, display: "flex", flexDirection: "column", gap: 14 }}>
@@ -1870,6 +1877,8 @@ export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, sett
             : reportFindings.map((item, idx) => renderItem(item, idx))
           }
         </div>
+        </>
+        )}
 
         {/* What was photographed to describe the place, not to report a fault. */}
         {reportDocumentation.length > 0 && (
