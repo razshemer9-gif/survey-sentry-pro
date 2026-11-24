@@ -13,6 +13,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { PhotoPicker } from "@/components/PhotoPicker";
 import { ConsultantSettings, SurveyReportFormat, SurveyType, SURVEY_TYPES } from "@/lib/types";
 import { ELEMENT_STABILITY_DEFAULT_TERMS } from "@/lib/element-stability";
+import { TimeoutError } from "@/lib/async";
 import { loadUserSettings, publishDisplayName, saveUserSettings } from "@/lib/storage";
 import { cn } from "@/lib/utils";
 import { signOut } from "@/lib/auth";
@@ -90,14 +91,32 @@ export default function Settings() {
     );
   };
 
+  /**
+   * Say which kind of failure this was.
+   *
+   * "שגיאה בשמירת ההגדרות" is true of every one of them and useful for
+   * none: it does not say whether to try again in a second or to stop and
+   * ring somebody. A save that ran out of time is almost always the
+   * connection, and the one thing worth saying is that nothing was lost —
+   * the form is still filled in, and pressing save again is the whole fix.
+   */
+  const reportSaveFailure = (err: unknown, what: string) => {
+    const timedOut = err instanceof TimeoutError;
+    toast.error(timedOut ? `${what} — השרת לא השיב` : what, {
+      description: timedOut
+        ? "מה שמילאת עדיין כאן. נסה לשמור שוב, או מאוחר יותר אם אין חיבור."
+        : "מה שמילאת עדיין כאן. אפשר לנסות שוב.",
+    });
+  };
+
   const handleSave = async (type: SurveyType) => {
     if (!user || !s) return;
     setSavingType(type);
     try {
       await saveUserSettings(user.id, s);
       toast.success("ההגדרות נשמרו");
-    } catch {
-      toast.error("שגיאה בשמירת ההגדרות");
+    } catch (err) {
+      reportSaveFailure(err, "ההגדרות לא נשמרו");
     } finally {
       setSavingType(null);
     }
@@ -113,8 +132,8 @@ export default function Settings() {
       await publishDisplayName(user.id, s.displayName ?? "");
       setSavedDisplayName(s.displayName ?? "");
       toast.success("השם נשמר");
-    } catch {
-      toast.error("שגיאה בשמירת השם");
+    } catch (err) {
+      reportSaveFailure(err, "השם לא נשמר");
     } finally {
       setSavingAccount(false);
     }

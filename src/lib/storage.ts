@@ -23,7 +23,7 @@ async function currentUserId(): Promise<string | null> {
 }
 import { RISK_SURVEY_DEFAULT_FENCING_NOTE } from "./risk-survey";
 import { FORM8_REQUIREMENTS } from "./form8-data";
-import { withTimeout } from "./async";
+import { withDeadline, withTimeout } from "./async";
 import { copyOfReport } from "./duplicate-report";
 import { cacheSettings, cachedSettings, resolveSettings } from "./settings-cache";
 import {
@@ -459,10 +459,27 @@ export async function loadUserSettings(userId: string): Promise<ConsultantSettin
   return resolveSettings(null, cachedSettings(userId));
 }
 
+/**
+ * Thirty seconds to store the settings, then it has failed.
+ *
+ * Generous, because the settings carry a stamp and a signature and the phone
+ * is often on mobile data at a site. But bounded, because the alternative is
+ * what it was: a request that never settles, and a button that says
+ * "שומר..." until the screen is closed — neither done nor failed, with
+ * nothing the person can do about it. A save has to end in an answer.
+ */
+const SETTINGS_SAVE_DEADLINE_MS = 30_000;
+
 export async function saveUserSettings(userId: string, s: ConsultantSettings): Promise<void> {
-  const { error } = await supabase
-    .from("user_settings")
-    .upsert({ user_id: userId, settings: s, updated_at: Date.now() });
+  // Promise.resolve, because a Supabase query builder is a thenable rather
+  // than a real promise and cannot be raced against a timer as it stands.
+  const { error } = await withDeadline(
+    Promise.resolve(
+      supabase.from("user_settings").upsert({ user_id: userId, settings: s, updated_at: Date.now() }),
+    ),
+    SETTINGS_SAVE_DEADLINE_MS,
+    "השרת לא השיב",
+  );
   if (error) throw error;
   // Only once the server has it, so the local copy never gets ahead of it.
   cacheSettings(userId, s);
