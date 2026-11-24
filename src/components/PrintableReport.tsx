@@ -941,7 +941,7 @@ export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, sett
                 <div style={{ padding: "8px 6px", textAlign: "center" }}>תיאור המפגע</div>
               </div>
               {riskHazards.map((item, i) => (
-                <div key={item.id} data-pdf-no-break="" style={{ display: "grid", gridTemplateColumns: "56px 1fr 1fr", borderTop: `1px solid ${accent}`, alignItems: "start" }}>
+                <div key={item.id} data-pdf-no-break="" style={{ display: "grid", gridTemplateColumns: "56px 1fr 1fr", borderTop: `1px solid ${accent}` }}>
                   <div style={{ padding: "10px 6px", borderLeft: `1px solid ${accent}`, textAlign: "center", fontWeight: 700, color: accent }}>{i + 1}</div>
                   <div style={{ padding: 10, borderLeft: `1px solid ${accent}` }}>
                     {item.photo && (
