@@ -921,29 +921,42 @@ export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, sett
             </div>
           )}
 
-          {/* Photo cards — 2 per row; image + caption never split across pages */}
-          {/* A hazard can now be added before it has a photograph or a word
-              of description. One still being filled in is not a card: an
-              empty bordered box in a PDF reads as something that went
-              wrong. */}
+          {/* The hazards, as a table rather than a grid of cards.
+              Cards put a photograph beside a line of text and let the page
+              decide how they lined up, so a survey with photographs of
+              different shapes came out as a ragged patchwork. A table gives
+              every hazard the same three columns in the same order — the
+              same shape the element-stability report uses, which is the one
+              the office already reads.
+
+              A hazard with no photograph or no words still occupies its row:
+              the number column is what makes the list countable, and a gap
+              in it would be read as a hazard that went missing. One with
+              neither is left out before it gets here, by printableHazards. */}
           {riskHazards.length > 0 ? (
-            /* alignItems start: a hazard with words but no photograph is a
-               short card, and without this the grid stretches it to match
-               the photograph beside it — a tall box mostly full of nothing,
-               which reads as a picture that failed to load. */
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, alignItems: "start" }}>
-              {riskHazards.map((item) => (
-                <div key={item.id} data-pdf-no-break="" style={{ border: "1px solid #e2e8f0", borderRadius: 12, overflow: "hidden", background: "#fff" }}>
-                  {item.photo && (
-                    <div style={{ width: "100%", height: 210, background: "#f8fafc", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                      <img src={item.photo} alt="" crossOrigin="anonymous" style={{ maxWidth: "100%", maxHeight: "100%", objectFit: "contain", display: "block" }} />
-                    </div>
-                  )}
-                  {item.fieldNotes && (
-                    <div style={{ padding: "10px 14px", fontSize: 13, lineHeight: 1.65, color: "#1e293b", textAlign: "center" }}>
-                      {item.fieldNotes}
-                    </div>
-                  )}
+            <div style={{ marginTop: 4, border: `1px solid ${accent}`, direction: "rtl", fontSize: 13 }}>
+              <div data-pdf-no-break="" style={{ display: "grid", gridTemplateColumns: "56px 1fr 1fr", background: "#eff6ff", fontWeight: 800 }}>
+                <div style={{ padding: "8px 6px", borderLeft: `1px solid ${accent}`, textAlign: "center" }}>מס׳</div>
+                <div style={{ padding: "8px 6px", borderLeft: `1px solid ${accent}`, textAlign: "center" }}>תמונה</div>
+                <div style={{ padding: "8px 6px", textAlign: "center" }}>תיאור המפגע</div>
+              </div>
+              {riskHazards.map((item, i) => (
+                <div key={item.id} data-pdf-no-break="" style={{ display: "grid", gridTemplateColumns: "56px 1fr 1fr", borderTop: `1px solid ${accent}`, alignItems: "start" }}>
+                  <div style={{ padding: "10px 6px", borderLeft: `1px solid ${accent}`, textAlign: "center", fontWeight: 700, color: accent }}>{i + 1}</div>
+                  <div style={{ padding: 10, borderLeft: `1px solid ${accent}` }}>
+                    {item.photo && (
+                      /* Capped, and keeping its own shape. At the full width
+                         of the column a portrait photograph came out some
+                         510 points tall — most of a page for one hazard,
+                         which is the table turning back into a column of
+                         cards. Anyone who wants a closer look zooms. */
+                      <img src={item.photo} alt={`מפגע ${i + 1}`} crossOrigin="anonymous"
+                        style={{ maxWidth: "100%", maxHeight: 220, width: "auto", height: "auto", display: "block", margin: "0 auto", borderRadius: 6, border: "1px solid #e2e8f0" }} />
+                    )}
+                  </div>
+                  <div style={{ padding: 10, fontSize: 13, lineHeight: 1.7, color: "#1e293b", whiteSpace: "pre-wrap", textAlign: "right", unicodeBidi: "plaintext" }}>
+                    {item.fieldNotes}
+                  </div>
                 </div>
               ))}
             </div>
