@@ -12,6 +12,7 @@
 // back and the feature stays dormant.
 import { SurveyReport } from "./types";
 import { supabase } from "./supabase";
+import { nameForAccount } from "./display-name";
 
 async function getUserId(): Promise<string> {
   const { data: { user } } = await supabase.auth.getUser();
@@ -220,14 +221,33 @@ export async function remoteDeleteReport(id: string): Promise<void> {
  * Display name per account id, for showing who wrote a report.
  * Only owners/admins can read other people's profiles (RLS), so for an
  * employee this resolves to just themselves — which is all they ever need.
- * profiles.full_name is frequently empty, hence the email fallback.
+ * In order: the name the person saved for themselves, the name the owner
+ * recorded for that account, and only then the address — which identifies an
+ * account nobody has named yet, on screens where that matters more than
+ * politeness. Without the middle step every one of these lists showed raw
+ * e-mail addresses, because profiles.full_name starts empty on every
+ * account.
  */
+/**
+ * Record this account's name on its own profile row.
+ *
+ * Only on its own: the policy that permits this is "a user may update their
+ * own profile", so an account cannot rename anyone else by calling it.
+ */
+export async function remoteSetProfileName(userId: string, fullName: string): Promise<void> {
+  const { error } = await supabase
+    .from("profiles").update({ full_name: fullName }).eq("user_id", userId);
+  if (error) throw error;
+}
+
 export async function remoteListReportAuthors(): Promise<Record<string, string>> {
   const { data, error } = await supabase.from("profiles").select("user_id, full_name, email");
   if (error) return {};
   const map: Record<string, string> = {};
   for (const row of (data ?? []) as { user_id: string; full_name: string | null; email: string | null }[]) {
-    const name = (row.full_name || "").trim() || (row.email || "").trim();
+    const name = (row.full_name || "").trim()
+      || nameForAccount(row.email)
+      || (row.email || "").trim();
     if (name) map[row.user_id] = name;
   }
   return map;

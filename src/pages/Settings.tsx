@@ -13,7 +13,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { PhotoPicker } from "@/components/PhotoPicker";
 import { ConsultantSettings, SurveyReportFormat, SurveyType, SURVEY_TYPES } from "@/lib/types";
 import { ELEMENT_STABILITY_DEFAULT_TERMS } from "@/lib/element-stability";
-import { loadUserSettings, saveUserSettings } from "@/lib/storage";
+import { loadUserSettings, publishDisplayName, saveUserSettings } from "@/lib/storage";
 import { cn } from "@/lib/utils";
 import { signOut } from "@/lib/auth";
 import { supabase } from "@/lib/supabase";
@@ -108,6 +108,9 @@ export default function Settings() {
     setSavingAccount(true);
     try {
       await saveUserSettings(user.id, s);
+      // Also where everyone else's screens can read it — the monthly hours
+      // summary and the company report list name people from the profile.
+      await publishDisplayName(user.id, s.displayName ?? "");
       setSavedDisplayName(s.displayName ?? "");
       toast.success("השם נשמר");
     } catch {

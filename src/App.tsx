@@ -20,6 +20,9 @@ const Settings       = lazy(() => importWithReload(() => import("./pages/Setting
 const MyReports      = lazy(() => importWithReload(() => import("./pages/MyReports.tsx")));
 const CompanyReports = lazy(() => importWithReload(() => import("./pages/CompanyReports.tsx")));
 const Standards      = lazy(() => importWithReload(() => import("./pages/Standards.tsx")));
+const WorkHours      = lazy(() => importWithReload(() => import("./pages/WorkHours.tsx")));
+const ScheduleUpload = lazy(() => importWithReload(() => import("./pages/ScheduleUpload.tsx")));
+const HoursSummary   = lazy(() => importWithReload(() => import("./pages/HoursSummary.tsx")));
 const UserManagement = lazy(() => importWithReload(() => import("./pages/UserManagement.tsx")));
 const AuthPage       = lazy(() => importWithReload(() => import("./pages/AuthPage.tsx")));
 
@@ -63,6 +66,9 @@ const App = () => (
               <Route path="/report/:id" element={<ProtectedRoute><ReportEditor /></ProtectedRoute>} />
               <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
               <Route path="/my-reports" element={<ProtectedRoute><MyReports /></ProtectedRoute>} />
+              <Route path="/hours" element={<ProtectedRoute><WorkHours /></ProtectedRoute>} />
+              <Route path="/hours/schedule" element={<ProtectedRoute><ScheduleUpload /></ProtectedRoute>} />
+              <Route path="/hours/summary" element={<ProtectedRoute><HoursSummary /></ProtectedRoute>} />
               <Route path="/company-reports" element={<AdminRoute><CompanyReports /></AdminRoute>} />
               <Route path="/standards" element={<AdminRoute><Standards /></AdminRoute>} />
               <Route path="/admin/users" element={<AdminRoute><UserManagement /></AdminRoute>} />

@@ -34,7 +34,7 @@ import {
   markDeletedLocally,
   putCachedReport,
 } from "./offline-db";
-import { remoteGetReport, remoteListReports, remoteListReportAuthors, remoteListReportSummaries } from "./reports-remote";
+import { remoteGetReport, remoteListReports, remoteListReportAuthors, remoteListReportSummaries, remoteSetProfileName } from "./reports-remote";
 import { startSyncEngine, syncPendingReports } from "./sync-engine";
 
 const K_TEMPLATES = "ans.templates.v1";
@@ -206,6 +206,25 @@ export async function listReports(): Promise<SurveyReport[]> {
  * Returns {} when offline or when the profiles table is unreachable; callers
  * treat a missing name as "no badge" rather than an error.
  */
+/**
+ * Put this account's chosen name where other people's screens can read it.
+ *
+ * The name lives in the person's own settings, which only they can load, so
+ * until it is copied here the monthly summary and the company report list
+ * have nothing to show but an e-mail address. Failing is not worth a
+ * message: the name is saved either way, and this is the part that can be
+ * done again simply by saving again.
+ */
+export async function publishDisplayName(userId: string, name: string): Promise<void> {
+  const trimmed = name.trim();
+  if (!trimmed) return;
+  try {
+    await withTimeout(remoteSetProfileName(userId, trimmed), 6000, undefined);
+  } catch {
+    /* offline, or the row is not ours — the name is still saved locally */
+  }
+}
+
 export async function listReportAuthors(): Promise<Record<string, string>> {
   try {
     return await withTimeout(remoteListReportAuthors(), 6000, {} as Record<string, string>);
