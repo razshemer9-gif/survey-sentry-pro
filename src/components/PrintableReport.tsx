@@ -16,7 +16,7 @@ import {
 import { ELEMENT_STABILITY_HEADER_BANNER_APPROVAL, ELEMENT_STABILITY_HEADER_BANNER_SURVEY } from "@/lib/element-stability-banner";
 import { GENERAL_SAFETY_HEADER_BANNER_APPROVAL, GENERAL_SAFETY_HEADER_BANNER_SURVEY } from "@/lib/general-safety-banner";
 import { formatValidUntil, safetyClauses, splitItems } from "@/lib/general-safety";
-import { printableHazards, RISK_SURVEY_DEFAULT_FENCING_NOTE, RISK_SURVEY_SUBTITLE } from "@/lib/risk-survey";
+import { printableHazards, RISK_SURVEY_DEFAULT_FENCING_NOTE, RISK_SURVEY_SUBTITLE, riskApprovals } from "@/lib/risk-survey";
 import { RISK_SURVEY_HEADER_BANNER } from "@/lib/risk-survey-banner";
 import React, { forwardRef } from "react";
 
@@ -886,6 +886,7 @@ export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, sett
     const fencingNote = report.riskFencingNote ?? RISK_SURVEY_DEFAULT_FENCING_NOTE;
     const showFencingNote = report.riskFencingNoteEnabled !== false && fencingNote.trim().length > 0;
     const riskHazards = printableHazards(report.items);
+    const riskApprovalList = riskApprovals(report);
 
     return (
       // data-pdf-page-numbers: opt-in digits-only "1 / N" page indicator
@@ -926,7 +927,11 @@ export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, sett
               empty bordered box in a PDF reads as something that went
               wrong. */}
           {riskHazards.length > 0 ? (
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+            /* alignItems start: a hazard with words but no photograph is a
+               short card, and without this the grid stretches it to match
+               the photograph beside it — a tall box mostly full of nothing,
+               which reads as a picture that failed to load. */
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, alignItems: "start" }}>
               {riskHazards.map((item) => (
                 <div key={item.id} data-pdf-no-break="" style={{ border: "1px solid #e2e8f0", borderRadius: 12, overflow: "hidden", background: "#fff" }}>
                   {item.photo && (
@@ -951,6 +956,30 @@ export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, sett
             <div data-pdf-no-break="" style={{ marginTop: 28, border: `2px solid ${accent}`, borderRadius: 12, padding: "16px 20px", background: "#f0f4ff" }}>
               <div style={{ fontWeight: 800, color: accent, fontSize: 14, marginBottom: 6 }}>הנחיה לעניין הגדרות</div>
               <div style={{ fontSize: 13, lineHeight: 1.7, color: "#1e293b", whiteSpace: "pre-wrap" }}>{fencingNote}</div>
+            </div>
+          )}
+
+          {/* Required approvals.
+              Opt-out, so an untouched report prints all five: see
+              riskApprovals. A report whose list was deliberately emptied
+              prints no table at all rather than an empty one. */}
+          {riskApprovalList.length > 0 && (
+            <div data-pdf-no-break="" style={{ marginTop: 28, border: `2px solid ${accent}`, borderRadius: 12, padding: "16px 20px", background: "#f0f4ff", pageBreakInside: "avoid" }}>
+              <div style={{ fontWeight: 800, color: accent, fontSize: 14, marginBottom: 10 }}>אישורים נדרשים</div>
+              <div style={{ direction: "rtl", fontSize: 13, border: `1px solid ${accent}`, borderRadius: 6, overflow: "hidden" }}>
+                <div style={{ display: "flex", background: accent, color: "#ffffff", fontWeight: 700 }}>
+                  <div style={{ flex: 1, padding: "7px 12px", textAlign: "right" }} />
+                  <div style={{ width: 72, padding: "7px 12px", textAlign: "center", borderRight: "1px solid rgba(255,255,255,0.3)" }}>נדרש</div>
+                </div>
+                {riskApprovalList.map((approval, i) => (
+                  <div key={approval} style={{ display: "flex", background: i % 2 === 0 ? "#ffffff" : "#f8fafc", borderTop: "1px solid #cbd5e1" }}>
+                    <div style={{ flex: 1, padding: "8px 12px" }}>{approval}</div>
+                    <div style={{ width: 72, padding: "8px 12px", textAlign: "center", borderRight: "1px solid #cbd5e1" }}>
+                      <span style={{ display: "inline-block", width: 13, height: 13, background: accent, borderRadius: 3 }} />
+                    </div>
+                  </div>
+                ))}
+              </div>
             </div>
           )}
 

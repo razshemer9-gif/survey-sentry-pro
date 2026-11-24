@@ -20,3 +20,35 @@ export function printableHazards<T extends { photo?: string; fieldNotes?: string
 ): T[] {
   return items.filter((item) => item.photo || (item.fieldNotes ?? "").trim());
 }
+
+/**
+ * The approvals a risk survey asks for.
+ *
+ * All five are required unless somebody says otherwise, which is the way
+ * round that matches the work: an event is assumed to need its structure,
+ * its electrics, its gas and its trees signed off, and it is the surveyor
+ * who knows which of those does not apply here. Opt-out, not opt-in — the
+ * danger is the approval nobody remembered to tick.
+ */
+export const RISK_APPROVALS_DEFAULT: readonly string[] = [
+  "קונסטרוקציה",
+  "אישור חשמלאי בודק",
+  "אישור חשמלאי מוסמך",
+  "אישור טכנאי גז",
+  "אישור אגרונום",
+];
+
+/**
+ * The approvals this report carries.
+ *
+ * An unset list means the report has never been touched, and gets all five.
+ * An empty list means somebody cleared them on purpose and gets none — so
+ * `??` rather than `||`, because the two cases have to stay distinguishable
+ * and `[] || x` would quietly give back the defaults the surveyor had just
+ * finished removing.
+ */
+export function riskApprovals(
+  report: { requiredApprovals?: string[] },
+): string[] {
+  return report.requiredApprovals ?? [...RISK_APPROVALS_DEFAULT];
+}
