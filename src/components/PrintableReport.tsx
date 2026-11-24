@@ -16,7 +16,7 @@ import {
 import { ELEMENT_STABILITY_HEADER_BANNER_APPROVAL, ELEMENT_STABILITY_HEADER_BANNER_SURVEY } from "@/lib/element-stability-banner";
 import { GENERAL_SAFETY_HEADER_BANNER_APPROVAL, GENERAL_SAFETY_HEADER_BANNER_SURVEY } from "@/lib/general-safety-banner";
 import { formatValidUntil, safetyClauses, splitItems } from "@/lib/general-safety";
-import { RISK_SURVEY_DEFAULT_FENCING_NOTE, RISK_SURVEY_SUBTITLE } from "@/lib/risk-survey";
+import { printableHazards, RISK_SURVEY_DEFAULT_FENCING_NOTE, RISK_SURVEY_SUBTITLE, riskApprovals, riskDisclaimers } from "@/lib/risk-survey";
 import { RISK_SURVEY_HEADER_BANNER } from "@/lib/risk-survey-banner";
 import React, { forwardRef } from "react";
 
@@ -885,6 +885,9 @@ export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, sett
     const accent = "#1e3a8a";
     const fencingNote = report.riskFencingNote ?? RISK_SURVEY_DEFAULT_FENCING_NOTE;
     const showFencingNote = report.riskFencingNoteEnabled !== false && fencingNote.trim().length > 0;
+    const riskHazards = printableHazards(report.items);
+    const riskApprovalList = riskApprovals(report);
+    const riskDisclaimerList = riskDisclaimers(report);
 
     return (
       // data-pdf-page-numbers: opt-in digits-only "1 / N" page indicator
@@ -919,26 +922,47 @@ export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, sett
             </div>
           )}
 
-          {/* Photo cards — 2 per row; image + caption never split across pages */}
-          {report.items.length > 0 ? (
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
-              {report.items.map((item) => (
-                <div key={item.id} data-pdf-no-break="" style={{ border: "1px solid #e2e8f0", borderRadius: 12, overflow: "hidden", background: "#fff" }}>
-                  {item.photo && (
-                    <div style={{ width: "100%", height: 210, background: "#f8fafc", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                      <img src={item.photo} alt="" crossOrigin="anonymous" style={{ maxWidth: "100%", maxHeight: "100%", objectFit: "contain", display: "block" }} />
-                    </div>
-                  )}
-                  {item.fieldNotes && (
-                    <div style={{ padding: "10px 14px", fontSize: 13, lineHeight: 1.65, color: "#1e293b", textAlign: "center" }}>
-                      {item.fieldNotes}
-                    </div>
-                  )}
+          {/* The hazards, as a table rather than a grid of cards.
+              Cards put a photograph beside a line of text and let the page
+              decide how they lined up, so a survey with photographs of
+              different shapes came out as a ragged patchwork. A table gives
+              every hazard the same three columns in the same order — the
+              same shape the element-stability report uses, which is the one
+              the office already reads.
+
+              A hazard with no photograph or no words still occupies its row:
+              the number column is what makes the list countable, and a gap
+              in it would be read as a hazard that went missing. One with
+              neither is left out before it gets here, by printableHazards. */}
+          {riskHazards.length > 0 ? (
+            <div style={{ marginTop: 4, border: `1px solid ${accent}`, direction: "rtl", fontSize: 13 }}>
+              <div data-pdf-no-break="" style={{ display: "grid", gridTemplateColumns: "56px 1fr 1fr", background: "#eff6ff", fontWeight: 800 }}>
+                <div style={{ padding: "8px 6px", borderLeft: `1px solid ${accent}`, textAlign: "center" }}>מס׳</div>
+                <div style={{ padding: "8px 6px", borderLeft: `1px solid ${accent}`, textAlign: "center" }}>תמונה</div>
+                <div style={{ padding: "8px 6px", textAlign: "center" }}>תיאור המפגע</div>
+              </div>
+              {riskHazards.map((item, i) => (
+                <div key={item.id} data-pdf-no-break="" style={{ display: "grid", gridTemplateColumns: "56px 1fr 1fr", borderTop: `1px solid ${accent}` }}>
+                  <div style={{ padding: "10px 6px", borderLeft: `1px solid ${accent}`, textAlign: "center", fontWeight: 700, color: accent }}>{i + 1}</div>
+                  <div style={{ padding: 10, borderLeft: `1px solid ${accent}` }}>
+                    {item.photo && (
+                      /* Capped, and keeping its own shape. At the full width
+                         of the column a portrait photograph came out some
+                         510 points tall — most of a page for one hazard,
+                         which is the table turning back into a column of
+                         cards. Anyone who wants a closer look zooms. */
+                      <img src={item.photo} alt={`מפגע ${i + 1}`} crossOrigin="anonymous"
+                        style={{ maxWidth: "100%", maxHeight: 220, width: "auto", height: "auto", display: "block", margin: "0 auto", borderRadius: 6, border: "1px solid #e2e8f0" }} />
+                    )}
+                  </div>
+                  <div style={{ padding: 10, fontSize: 13, lineHeight: 1.7, color: "#1e293b", whiteSpace: "pre-wrap", textAlign: "right", unicodeBidi: "plaintext" }}>
+                    {item.fieldNotes}
+                  </div>
                 </div>
               ))}
             </div>
           ) : (
-            <div style={{ fontSize: 14, color: "#94a3b8", textAlign: "center", padding: "40px 0" }}>לא נוספו תמונות</div>
+            <div style={{ fontSize: 14, color: "#94a3b8", textAlign: "center", padding: "40px 0" }}>לא נוספו מפגעים</div>
           )}
 
           {/* Fencing note — appears once, at the very end, framed across the page width */}
@@ -946,6 +970,50 @@ export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, sett
             <div data-pdf-no-break="" style={{ marginTop: 28, border: `2px solid ${accent}`, borderRadius: 12, padding: "16px 20px", background: "#f0f4ff" }}>
               <div style={{ fontWeight: 800, color: accent, fontSize: 14, marginBottom: 6 }}>הנחיה לעניין הגדרות</div>
               <div style={{ fontSize: 13, lineHeight: 1.7, color: "#1e293b", whiteSpace: "pre-wrap" }}>{fencingNote}</div>
+            </div>
+          )}
+
+          {/* Required approvals.
+              Opt-out, so an untouched report prints all five: see
+              riskApprovals. A report whose list was deliberately emptied
+              prints no table at all rather than an empty one. */}
+          {riskApprovalList.length > 0 && (
+            <div data-pdf-no-break="" style={{ marginTop: 28, border: `2px solid ${accent}`, borderRadius: 12, padding: "16px 20px", background: "#f0f4ff", pageBreakInside: "avoid" }}>
+              <div style={{ fontWeight: 800, color: accent, fontSize: 14, marginBottom: 10 }}>אישורים נדרשים</div>
+              <div style={{ direction: "rtl", fontSize: 13, border: `1px solid ${accent}`, borderRadius: 6, overflow: "hidden" }}>
+                <div style={{ display: "flex", background: accent, color: "#ffffff", fontWeight: 700 }}>
+                  <div style={{ flex: 1, padding: "7px 12px", textAlign: "right" }} />
+                  <div style={{ width: 72, padding: "7px 12px", textAlign: "center", borderRight: "1px solid rgba(255,255,255,0.3)" }}>נדרש</div>
+                </div>
+                {riskApprovalList.map((approval, i) => (
+                  <div key={approval} style={{ display: "flex", background: i % 2 === 0 ? "#ffffff" : "#f8fafc", borderTop: "1px solid #cbd5e1" }}>
+                    <div style={{ flex: 1, padding: "8px 12px" }}>{approval}</div>
+                    <div style={{ width: 72, padding: "8px 12px", textAlign: "center", borderRight: "1px solid #cbd5e1" }}>
+                      <span style={{ display: "inline-block", width: 13, height: 13, background: accent, borderRadius: 3 }} />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Disclaimers — what the survey is, and what it is not.
+              Numbered, because they get referred to by number. Each clause
+              is marked rather than the block as a whole: nine of them will
+              not fit on the tail of a page, and a block that cannot fit
+              anywhere would be pushed to a page of its own with the rest of
+              the report left short. A clause, though, always fits. */}
+          {riskDisclaimerList.length > 0 && (
+            <div style={{ marginTop: 28, border: `1px solid ${accent}`, borderRadius: 12, padding: "16px 20px", background: "#f8fafc" }}>
+              <div data-pdf-no-break="" style={{ fontWeight: 800, color: accent, fontSize: 14, marginBottom: 10 }}>הערות וסייגים</div>
+              <div style={{ direction: "rtl" }}>
+                {riskDisclaimerList.map((line, i) => (
+                  <div key={i} data-pdf-no-break="" style={{ display: "flex", alignItems: "flex-start", gap: 8, marginBottom: 7 }}>
+                    <span style={{ flexShrink: 0, fontWeight: 700, minWidth: 20, textAlign: "right", fontSize: 12.5, color: accent }}>{i + 1}.</span>
+                    <span style={{ flex: 1, fontSize: 12.5, lineHeight: 1.75, color: "#1e293b", whiteSpace: "pre-wrap", unicodeBidi: "plaintext" }}>{line}</span>
+                  </div>
+                ))}
+              </div>
             </div>
           )}
 

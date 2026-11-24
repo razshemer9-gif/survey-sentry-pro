@@ -7,6 +7,7 @@ import { toast } from "sonner";
 
 import { AppShell } from "@/components/AppShell";
 import { Field } from "@/components/Field";
+import { GrowingTextarea } from "@/components/GrowingTextarea";
 import { PhotoPicker } from "@/components/PhotoPicker";
 import { PdfPageStack } from "@/components/PdfPageStack";
 import { PrintableReport } from "@/components/PrintableReport";
@@ -47,7 +48,7 @@ import { buildPdfFileName, isMobileDevice, sanitizeFileNamePart } from "@/lib/pd
 import { cropImageDataUrl, fileToCompressedDataUrl, formatCurrency, rotateImageDataUrl } from "@/lib/image";
 import { itemPhotos, itemPhotosPatch } from "@/lib/item-photos";
 import { AutoTextarea } from "@/components/AutoTextarea";
-import { RISK_SURVEY_DEFAULT_FENCING_NOTE } from "@/lib/risk-survey";
+import { RISK_APPROVALS_DEFAULT, RISK_SURVEY_DEFAULT_FENCING_NOTE, riskApprovals, riskDisclaimerDrafts } from "@/lib/risk-survey";
 import { cn } from "@/lib/utils";
 import { SignaturePad } from "@/components/SignaturePad";
 import { useEngUi } from "@/hooks/use-eng-ui";
@@ -273,7 +274,7 @@ export default function ReportEditor() {
             ...r,
             items: [
               ...r.items,
-              { id: uuid(), title: r.surveyType === "element_stability" ? "" : "ממצא חדש", status: "non_compliant", notes: "", estimatedCost: 0 },
+              { id: uuid(), title: r.surveyType === "element_stability" || r.surveyType === "risk_survey" ? "" : "ממצא חדש", status: "non_compliant", notes: "", estimatedCost: 0 },
             ],
           }
         : r,
@@ -989,7 +990,7 @@ export default function ReportEditor() {
           <div className="flex items-center gap-3 pt-2">
             <div className="flex-1 h-px bg-border" />
             <span className="text-xs font-semibold text-muted-foreground">
-              {report.surveyType === "element_stability" ? "אלמנטים" : report.surveyType === "risk_survey" ? "תמונות מפגעים" : "ממצאים"} ({report.items.length})
+              {report.surveyType === "element_stability" ? "אלמנטים" : report.surveyType === "risk_survey" ? "מפגעים" : "ממצאים"} ({report.items.length})
             </span>
             <div className="flex-1 h-px bg-border" />
           </div>
@@ -1024,7 +1025,7 @@ export default function ReportEditor() {
               return (
                 <div key={item.id} className="rounded-2xl border border-border border-r-4 border-r-[#c2410c] bg-card shadow-soft animate-fade-in overflow-hidden">
                   <div className="px-4 pt-3 pb-2 bg-muted/30 border-b border-border/60 flex items-center justify-between gap-2">
-                    <span className="text-xs font-semibold text-muted-foreground">תמונה {idx + 1}</span>
+                    <span className="text-xs font-semibold text-muted-foreground">מפגע {idx + 1}</span>
                     <div className="flex items-center gap-1.5">
                       <button onClick={() => moveItem(item.id, -1)} disabled={idx === 0} className="text-muted-foreground hover:text-foreground disabled:opacity-30 text-sm px-1" aria-label="הזז למעלה">▲</button>
                       <button onClick={() => moveItem(item.id, 1)} disabled={idx === report.items.length - 1} className="text-muted-foreground hover:text-foreground disabled:opacity-30 text-sm px-1" aria-label="הזז למטה">▼</button>
@@ -1032,7 +1033,7 @@ export default function ReportEditor() {
                     </div>
                   </div>
                   <div className="px-4 py-3 space-y-3">
-                    {item.photo && (
+                    {item.photo ? (
                       <div className="relative">
                         <img src={item.photo} alt="" className="w-full max-h-64 object-contain rounded-lg border border-border bg-muted" />
                         <button
@@ -1043,7 +1044,26 @@ export default function ReportEditor() {
                         >
                           <RotateCw className="h-4 w-4" />
                         </button>
+                        <button
+                          type="button"
+                          onClick={() => updateItem(item.id, { photo: undefined })}
+                          className="absolute top-2 left-14 grid h-9 w-9 place-items-center rounded-full bg-background/90 text-foreground shadow-elev hover:text-destructive"
+                          aria-label="הסר תמונה"
+                        >
+                          <X className="h-4 w-4" />
+                        </button>
                       </div>
+                    ) : (
+                      /* A hazard can be written down before there is a
+                         picture of it — at the gate, in the rain — so the
+                         card has to be able to take one afterwards. Without
+                         this the "מפגע חדש" button below would add a card
+                         that could never hold a photograph. */
+                      <PhotoPicker
+                        value={undefined}
+                        onChange={(url) => updateItem(item.id, { photo: url })}
+                        label="צרף תמונת המפגע"
+                      />
                     )}
                     <div>
                       <Label className="mb-1 block text-xs font-semibold text-foreground">תיאור המפגע</Label>
@@ -1336,11 +1356,14 @@ export default function ReportEditor() {
             );
           })}
 
-          {report.surveyType !== "risk_survey" && (
+          {/* Risk surveys had no way to add a hazard at all: every one of
+              them had to arrive as a photograph, so a hazard noticed without
+              a camera to hand could not be written down. */}
           <Button onClick={addItem} variant="outline" className="w-full gap-2 rounded-2xl border-2 border-[#1e3a8a] text-[#1e3a8a] font-bold hover:bg-[#1e3a8a]/10">
-            <Plus className="h-4 w-4" /> {report.surveyType === "element_stability" ? "אלמנט חדש" : "ממצא חדש"}
+            <Plus className="h-4 w-4" /> {report.surveyType === "element_stability"
+              ? "אלמנט חדש"
+              : report.surveyType === "risk_survey" ? "מפגע חדש" : "ממצא חדש"}
           </Button>
-          )}
 
           {report.surveyType !== "element_stability" && report.surveyType !== "risk_survey" && report.surveyType !== "general_safety" && (
           <div className="editor-total rounded-2xl bg-primary text-primary-foreground p-4 shadow-glow">
@@ -1597,10 +1620,19 @@ export default function ReportEditor() {
             );
           })()}
 
-          {/* Required approvals — general_safety only */}
-          {report.surveyType === "general_safety" && (() => {
-            const PREDEFINED = ["אישור חשמלאי בודק", "אגרונום", "קונסטרוקטור"];
-            const selected = report.requiredApprovals ?? [];
+          {/* Required approvals — general_safety and risk_survey.
+              The two differ in more than their list. A general safety
+              approval is opt-in: nothing is required until it is ticked. A
+              risk survey's are opt-out, all five on from the start, because
+              there the danger is the approval nobody remembered to ask for.
+              That difference is the whole reason riskApprovals exists
+              instead of a second literal here. */}
+          {(report.surveyType === "general_safety" || report.surveyType === "risk_survey") && (() => {
+            const isRisk = report.surveyType === "risk_survey";
+            const PREDEFINED = isRisk
+              ? [...RISK_APPROVALS_DEFAULT]
+              : ["אישור חשמלאי בודק", "אגרונום", "קונסטרוקטור"];
+            const selected = isRisk ? riskApprovals(report) : (report.requiredApprovals ?? []);
             const custom = selected.filter((a) => !PREDEFINED.includes(a));
             return (
               <div dir="rtl" className="rounded-2xl border-2 border-primary/20 bg-card p-4 space-y-3">
@@ -1661,6 +1693,54 @@ export default function ReportEditor() {
                     הוסף
                   </button>
                 </div>
+              </div>
+            );
+          })()}
+
+          {/* Disclaimers — risk_survey only, printed under the approvals.
+              Same editor as the element-stability terms, because it is the
+              same job and people should not have to learn it twice: edit in
+              place, reorder, remove, add, and put the standard set back. */}
+          {report.surveyType === "risk_survey" && (() => {
+            const lines = riskDisclaimerDrafts(report);
+            const setLines = (next: string[]) => update({ riskDisclaimers: next });
+            return (
+              <div dir="rtl" className="rounded-2xl border-2 border-primary/20 bg-card p-4 space-y-2">
+                <div className="flex items-center justify-between">
+                  <h3 className="font-bold text-sm text-primary">הערות וסייגים</h3>
+                  <button
+                    type="button"
+                    onClick={() => update({ riskDisclaimers: undefined })}
+                    className="text-sm text-muted-foreground underline hover:text-primary"
+                  >שחזר ברירת מחדל</button>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  מופיעים בדוח מתחת לאישורים הנדרשים. ניתן לערוך, להוסיף, למחוק ולשנות סדר.
+                </p>
+                {lines.map((line, i) => (
+                  <div key={i} className="flex items-start gap-1.5">
+                    <span className="text-xs font-bold text-muted-foreground pt-2 w-4 shrink-0">{i + 1}.</span>
+                    <GrowingTextarea
+                      value={line}
+                      onChange={(e) => { const n = [...lines]; n[i] = e.target.value; setLines(n); }}
+                      rows={3}
+                      className="flex-1"
+                      dir="rtl"
+                      style={{ unicodeBidi: "plaintext" }}
+                      aria-label={`סייג ${i + 1}`}
+                    />
+                    <div className="flex flex-col gap-0.5 pt-1">
+                      <button type="button" aria-label={`העבר למעלה סייג ${i + 1}`} onClick={() => { if (i === 0) return; const n = [...lines]; [n[i - 1], n[i]] = [n[i], n[i - 1]]; setLines(n); }} disabled={i === 0} className="text-muted-foreground hover:text-foreground disabled:opacity-30 text-xs">▲</button>
+                      <button type="button" aria-label={`העבר למטה סייג ${i + 1}`} onClick={() => { if (i === lines.length - 1) return; const n = [...lines]; [n[i + 1], n[i]] = [n[i], n[i + 1]]; setLines(n); }} disabled={i === lines.length - 1} className="text-muted-foreground hover:text-foreground disabled:opacity-30 text-xs">▼</button>
+                      <button type="button" aria-label={`מחק סייג ${i + 1}`} onClick={() => setLines(lines.filter((_, j) => j !== i))} className="text-muted-foreground hover:text-destructive text-base leading-none p-0.5">✕</button>
+                    </div>
+                  </div>
+                ))}
+                <button
+                  type="button"
+                  onClick={() => setLines([...lines, ""])}
+                  className="w-full rounded-lg border border-dashed border-border py-2 text-xs font-semibold text-muted-foreground hover:border-primary/50 hover:text-primary"
+                >+ הוסף סעיף</button>
               </div>
             );
           })()}
