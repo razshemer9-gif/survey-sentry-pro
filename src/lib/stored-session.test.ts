@@ -12,11 +12,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
  * two different answers again.
  */
 
-vi.mock("@supabase/supabase-js", () => ({
-  createClient: () => ({}),
-}));
-
-const { SESSION_STORAGE_KEY, storedSessionUser } = await import("./supabase");
+const { SESSION_STORAGE_KEY, storedSessionUser } = await import("./stored-session");
 
 const SESSION = {
   access_token: "a-token",

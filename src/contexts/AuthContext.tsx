@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useRef, useState, ReactNode } from "react";
 import { User } from "@supabase/supabase-js";
-import { storedSessionUser, supabase } from "@/lib/supabase";
+import { storedSessionUser } from "@/lib/stored-session";
+import { supabase } from "@/lib/supabase";
 import { withTimeout } from "@/lib/async";
 import { cacheRole, readCachedRole } from "@/lib/role-cache";
 
