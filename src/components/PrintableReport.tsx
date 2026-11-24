@@ -16,7 +16,7 @@ import {
 import { ELEMENT_STABILITY_HEADER_BANNER_APPROVAL, ELEMENT_STABILITY_HEADER_BANNER_SURVEY } from "@/lib/element-stability-banner";
 import { GENERAL_SAFETY_HEADER_BANNER_APPROVAL, GENERAL_SAFETY_HEADER_BANNER_SURVEY } from "@/lib/general-safety-banner";
 import { formatValidUntil, safetyClauses, splitItems } from "@/lib/general-safety";
-import { printableHazards, RISK_SURVEY_DEFAULT_FENCING_NOTE, RISK_SURVEY_SUBTITLE, riskApprovals } from "@/lib/risk-survey";
+import { printableHazards, RISK_SURVEY_DEFAULT_FENCING_NOTE, RISK_SURVEY_SUBTITLE, riskApprovals, riskDisclaimers } from "@/lib/risk-survey";
 import { RISK_SURVEY_HEADER_BANNER } from "@/lib/risk-survey-banner";
 import React, { forwardRef } from "react";
 
@@ -887,6 +887,7 @@ export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, sett
     const showFencingNote = report.riskFencingNoteEnabled !== false && fencingNote.trim().length > 0;
     const riskHazards = printableHazards(report.items);
     const riskApprovalList = riskApprovals(report);
+    const riskDisclaimerList = riskDisclaimers(report);
 
     return (
       // data-pdf-page-numbers: opt-in digits-only "1 / N" page indicator
@@ -990,6 +991,26 @@ export const PrintableReport = forwardRef<HTMLDivElement, Props>(({ report, sett
                     <div style={{ width: 72, padding: "8px 12px", textAlign: "center", borderRight: "1px solid #cbd5e1" }}>
                       <span style={{ display: "inline-block", width: 13, height: 13, background: accent, borderRadius: 3 }} />
                     </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Disclaimers — what the survey is, and what it is not.
+              Numbered, because they get referred to by number. Each clause
+              is marked rather than the block as a whole: nine of them will
+              not fit on the tail of a page, and a block that cannot fit
+              anywhere would be pushed to a page of its own with the rest of
+              the report left short. A clause, though, always fits. */}
+          {riskDisclaimerList.length > 0 && (
+            <div style={{ marginTop: 28, border: `1px solid ${accent}`, borderRadius: 12, padding: "16px 20px", background: "#f8fafc" }}>
+              <div data-pdf-no-break="" style={{ fontWeight: 800, color: accent, fontSize: 14, marginBottom: 10 }}>הערות וסייגים</div>
+              <div style={{ direction: "rtl" }}>
+                {riskDisclaimerList.map((line, i) => (
+                  <div key={i} data-pdf-no-break="" style={{ display: "flex", alignItems: "flex-start", gap: 8, marginBottom: 7 }}>
+                    <span style={{ flexShrink: 0, fontWeight: 700, minWidth: 20, textAlign: "right", fontSize: 12.5, color: accent }}>{i + 1}.</span>
+                    <span style={{ flex: 1, fontSize: 12.5, lineHeight: 1.75, color: "#1e293b", whiteSpace: "pre-wrap", unicodeBidi: "plaintext" }}>{line}</span>
                   </div>
                 ))}
               </div>

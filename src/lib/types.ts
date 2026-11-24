@@ -236,6 +236,14 @@ export interface SurveyReport {
   riskInspectorName?: string;        // שם עורך הדו"ח
   riskFencingNote?: string;          // הנחיה בנושא גידור — free text, editable
   riskFencingNoteEnabled?: boolean;  // allows hiding the note entirely
+  /**
+   * The disclaimers printed under the required approvals.
+   *
+   * Unset means the standard set; an edited list replaces it wholesale, and
+   * an empty one prints nothing. Same shape as stabilityTerms, so the editor
+   * that reorders and removes them is the one people already know.
+   */
+  riskDisclaimers?: string[];
   // ── Form 8 — חוות דעת מורשה נגישות (טופס 8) ────────────────────────────────
   // חלק א' — פרטי העסק (report-specific; never taken from the sample DOCX)
   form8LocalAuthority?: string;      // אל: רשות רישוי עסקים __

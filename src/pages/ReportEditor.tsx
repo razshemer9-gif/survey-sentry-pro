@@ -7,6 +7,7 @@ import { toast } from "sonner";
 
 import { AppShell } from "@/components/AppShell";
 import { Field } from "@/components/Field";
+import { GrowingTextarea } from "@/components/GrowingTextarea";
 import { PhotoPicker } from "@/components/PhotoPicker";
 import { PdfPageStack } from "@/components/PdfPageStack";
 import { PrintableReport } from "@/components/PrintableReport";
@@ -47,7 +48,7 @@ import { buildPdfFileName, isMobileDevice, sanitizeFileNamePart } from "@/lib/pd
 import { cropImageDataUrl, fileToCompressedDataUrl, formatCurrency, rotateImageDataUrl } from "@/lib/image";
 import { itemPhotos, itemPhotosPatch } from "@/lib/item-photos";
 import { AutoTextarea } from "@/components/AutoTextarea";
-import { RISK_APPROVALS_DEFAULT, RISK_SURVEY_DEFAULT_FENCING_NOTE, riskApprovals } from "@/lib/risk-survey";
+import { RISK_APPROVALS_DEFAULT, RISK_SURVEY_DEFAULT_FENCING_NOTE, riskApprovals, riskDisclaimerDrafts } from "@/lib/risk-survey";
 import { cn } from "@/lib/utils";
 import { SignaturePad } from "@/components/SignaturePad";
 import { useEngUi } from "@/hooks/use-eng-ui";
@@ -1692,6 +1693,54 @@ export default function ReportEditor() {
                     הוסף
                   </button>
                 </div>
+              </div>
+            );
+          })()}
+
+          {/* Disclaimers — risk_survey only, printed under the approvals.
+              Same editor as the element-stability terms, because it is the
+              same job and people should not have to learn it twice: edit in
+              place, reorder, remove, add, and put the standard set back. */}
+          {report.surveyType === "risk_survey" && (() => {
+            const lines = riskDisclaimerDrafts(report);
+            const setLines = (next: string[]) => update({ riskDisclaimers: next });
+            return (
+              <div dir="rtl" className="rounded-2xl border-2 border-primary/20 bg-card p-4 space-y-2">
+                <div className="flex items-center justify-between">
+                  <h3 className="font-bold text-sm text-primary">הערות וסייגים</h3>
+                  <button
+                    type="button"
+                    onClick={() => update({ riskDisclaimers: undefined })}
+                    className="text-sm text-muted-foreground underline hover:text-primary"
+                  >שחזר ברירת מחדל</button>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  מופיעים בדוח מתחת לאישורים הנדרשים. ניתן לערוך, להוסיף, למחוק ולשנות סדר.
+                </p>
+                {lines.map((line, i) => (
+                  <div key={i} className="flex items-start gap-1.5">
+                    <span className="text-xs font-bold text-muted-foreground pt-2 w-4 shrink-0">{i + 1}.</span>
+                    <GrowingTextarea
+                      value={line}
+                      onChange={(e) => { const n = [...lines]; n[i] = e.target.value; setLines(n); }}
+                      rows={3}
+                      className="flex-1"
+                      dir="rtl"
+                      style={{ unicodeBidi: "plaintext" }}
+                      aria-label={`סייג ${i + 1}`}
+                    />
+                    <div className="flex flex-col gap-0.5 pt-1">
+                      <button type="button" aria-label={`העבר למעלה סייג ${i + 1}`} onClick={() => { if (i === 0) return; const n = [...lines]; [n[i - 1], n[i]] = [n[i], n[i - 1]]; setLines(n); }} disabled={i === 0} className="text-muted-foreground hover:text-foreground disabled:opacity-30 text-xs">▲</button>
+                      <button type="button" aria-label={`העבר למטה סייג ${i + 1}`} onClick={() => { if (i === lines.length - 1) return; const n = [...lines]; [n[i + 1], n[i]] = [n[i], n[i + 1]]; setLines(n); }} disabled={i === lines.length - 1} className="text-muted-foreground hover:text-foreground disabled:opacity-30 text-xs">▼</button>
+                      <button type="button" aria-label={`מחק סייג ${i + 1}`} onClick={() => setLines(lines.filter((_, j) => j !== i))} className="text-muted-foreground hover:text-destructive text-base leading-none p-0.5">✕</button>
+                    </div>
+                  </div>
+                ))}
+                <button
+                  type="button"
+                  onClick={() => setLines([...lines, ""])}
+                  className="w-full rounded-lg border border-dashed border-border py-2 text-xs font-semibold text-muted-foreground hover:border-primary/50 hover:text-primary"
+                >+ הוסף סעיף</button>
               </div>
             );
           })()}
